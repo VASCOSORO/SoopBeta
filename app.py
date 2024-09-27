@@ -86,8 +86,8 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 # Cargar datos
 df = load_data()
 
-# Mostrar el GIF del logo 'SoopLogo1.gif' con tamaño reducido
-st.image('SoopLogo1.gif', width=192, use_column_width=False)  # 60% más pequeño que el original de 480
+# Mostrar el GIF del logo 'SoopLogo1.gif' en lugar del anterior
+st.image('SoopLogo1.gif', width=480, use_column_width='auto')  # Cambiado por SoopLogo1.gif
 
 # Título
 st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)  # Eliminé "Soop"
