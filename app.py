@@ -86,8 +86,8 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 # Cargar datos
 df = load_data()
 
-# Mostrar el bot GIF (vasco.op.gif) en lugar del logo anterior
-st.image('vasco.op.gif', width=480, use_column_width='auto')  # Ahora usamos el bot GIF aquí también
+# Mostrar el GIF del logo 'SoopLogo1.gif' en lugar del anterior
+st.image('SoopLogo1.gif', width=480, use_column_width='auto')  # Cambiado por SoopLogo1.gif
 
 # Título
 st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)  # Eliminé "Soop"
@@ -107,9 +107,9 @@ with col_opciones[1]:
 with col_opciones[2]:
     sugerir_por_rubro = st.checkbox("Sugerir por Rubro (Próximamente)")
 
-# Condición para mostrar la imagen del bot (mantenemos el bot como en el centro)
+# Condición para mostrar la imagen del bot (mantenemos el bot en el centro)
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
-    st.image('vasco.op.gif', width=480, use_column_width='auto')  # Cambio realizado aquí
+    st.image('vasco.op.gif', width=480, use_column_width='auto')  # El bot GIF sigue igual
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
