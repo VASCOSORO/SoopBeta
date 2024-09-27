@@ -86,11 +86,11 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 # Cargar datos
 df = load_data()
 
-# Mostrar el GIF del logo 'SoopLogo1.gif' centrado
-st.image('SoopLogo1.gif', width=480, use_column_width=False)  # El logo sigue igual
+# Mostrar el GIF del logo 'SoopLogo1.gif'
+st.image('SoopLogo1.gif', width=480, use_column_width='auto')  # Asegúrate de que el nombre y ubicación sean correctos
 
 # Título
-st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)  # Eliminé "Soop"
+st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)
 
 # Mostrar número de filas y columnas cargadas
 st.success(f"Se cargaron {df.shape[0]} filas y {df.shape[1]} columnas del archivo de Excel.")
@@ -107,7 +107,7 @@ with col_opciones[1]:
 with col_opciones[2]:
     sugerir_por_rubro = st.checkbox("Sugerir por Rubro (Próximamente)")
 
-# Condición para mostrar la imagen del bot
+# Condición para mostrar la imagen del bot (mantenemos el bot en el centro)
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
     st.image('vasco.op.gif', width=480, use_column_width='auto')  # El bot GIF sigue igual
 
