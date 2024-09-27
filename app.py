@@ -1,4 +1,4 @@
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 from PIL import Image
 import requests
@@ -10,7 +10,8 @@ def load_data():
     df = pd.read_excel('1083.xlsx', engine='openpyxl')  # Cargar el archivo Excel
     return df
 
-# Función para cargar la imagen desde una URL
+# Función para cargar la imagen desde una URL con caché
+@st.cache_data
 def cargar_imagen(url):
     try:
         response = requests.get(url)
@@ -33,7 +34,8 @@ def obtener_color_stock(stock):
 # Mostrar producto en formato completo (con imagen)
 def mostrar_producto_completo(producto):
     st.markdown(f"<h3 style='font-size: 36px;'>{producto['Nombre']}</h3>", unsafe_allow_html=True)
-    st.markdown(f"<span style='font-size: 28px; font-weight: bold;'>Código: {producto['Codigo']} | Precio: ${producto['Precio']} | Stock: {producto['Stock']}</span>", unsafe_allow_html=True)
+    precio_formateado = f"{producto['Precio']:,.0f}".replace(",", ".")  # Formatear el precio sin decimales
+    st.markdown(f"<span style='font-size: 28px; font-weight: bold;'>Código: {producto['Codigo']} | Precio: ${precio_formateado} | Stock: {producto['Stock']}</span>", unsafe_allow_html=True)
 
     imagen_url = producto.get('imagen', '')
     if imagen_url:
@@ -75,7 +77,8 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
         with col2:
             st.write(f"### {producto['Nombre']}")
             stock_color = obtener_color_stock(producto['Stock'])
-            st.markdown(f"Código: {producto['Codigo']} | Precio: ${producto['Precio']} | <span style='color: {stock_color};'>STOCK: {producto['Stock']}</span>", unsafe_allow_html=True)
+            precio_formateado = f"{producto['Precio']:,.0f}".replace(",", ".")  # Formatear el precio sin decimales
+            st.markdown(f"Código: {producto['Codigo']} | Precio: ${precio_formateado} | <span style='color: {stock_color};'>STOCK: {producto['Stock']}</span>", unsafe_allow_html=True)
             st.write(f"Descripción: {producto['Descripcion'] if not pd.isna(producto['Descripcion']) else 'Sin datos'}")
             st.write(f"Categorías: {producto['Categorias']}")
         st.write("---")
@@ -83,8 +86,11 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 # Cargar datos
 df = load_data()
 
+# Mostrar el GIF del logo 'SoopLogo1.gif' en lugar del anterior
+st.image('SoopLogo1.gif', width=480, use_column_width='auto')  # Cambiado por SoopLogo1.gif
+
 # Título
-st.markdown("<h1 style='text-align: center;'>🐻 Soop Buscador de Productos</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)  # Eliminé "Soop"
 
 # Mostrar número de filas y columnas cargadas
 st.success(f"Se cargaron {df.shape[0]} filas y {df.shape[1]} columnas del archivo de Excel.")
@@ -101,9 +107,9 @@ with col_opciones[1]:
 with col_opciones[2]:
     sugerir_por_rubro = st.checkbox("Sugerir por Rubro (Próximamente)")
 
-# Condición para mostrar la imagen del bot
+# Condición para mostrar la imagen del bot (mantenemos el bot en el centro)
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
-    st.image('bot (8).png', width=480, use_column_width='auto')
+    st.image('vasco.op.gif', width=480, use_column_width='auto')  # El bot GIF sigue igual
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
@@ -122,18 +128,21 @@ if ver_por_categorias:
     categoria_seleccionada = st.selectbox('Categorías:', sorted(categorias_individuales))
     if categoria_seleccionada:
         productos_categoria = df[df['Categorias'].str.contains(categoria_seleccionada)]
-        pagina = st.number_input('Página:', min_value=1, value=1)
+        num_paginas = (len(productos_categoria) // 10) + 1
+        pagina = st.number_input('Página:', min_value=1, max_value=num_paginas, value=1)
         mostrar_lista_productos(productos_categoria, pagina)
 
 # Ordenar por novedad
 if ordenar_por_novedad:
     if 'Fecha Creado' in df.columns:
         df_ordenado = df.sort_values('Fecha Creado', ascending=False)
-        pagina = st.number_input('Página:', min_value=1, value=1)
+        num_paginas = (len(df_ordenado) // 10) + 1
+        pagina = st.number_input('Página:', min_value=1, max_value=num_paginas, value=1)
         mostrar_lista_productos(df_ordenado, pagina)
     else:
         st.warning("No se encontró la columna 'Fecha Creado'.")
 
 # Sugerir por Rubro (en desarrollo)
 if sugerir_por_rubro:
+
     st.info("Esta función estará disponible próximamente.")
