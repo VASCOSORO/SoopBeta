@@ -86,11 +86,11 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 # Cargar datos
 df = load_data()
 
-# Mostrar el GIF del logo 'SoopLogo1.gif'
-st.image('SoopLogo1.gif', width=480, use_column_width='auto')  # Asegúrate de que el nombre y ubicación sean correctos
+# Mostrar el GIF del logo 'SoopLogo1.gif' en lugar del anterior
+st.image('SoopLogo1.gif', width=480, use_column_width='auto')  # Cambiado por SoopLogo1.gif
 
 # Título
-st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)  # Eliminé "Soop"
 
 # Mostrar número de filas y columnas cargadas
 st.success(f"Se cargaron {df.shape[0]} filas y {df.shape[1]} columnas del archivo de Excel.")
@@ -122,7 +122,7 @@ if busqueda:
 if ver_por_categorias:
     todas_las_categorias = df['Categorias'].dropna().unique()
     categorias_individuales = set()
-    for categorias in todas las categorías:
+    for categorias in todas_las_categorias:
         for categoria in categorias.split(','):
             categorias_individuales.add(categoria.strip())
     categoria_seleccionada = st.selectbox('Categorías:', sorted(categorias_individuales))
