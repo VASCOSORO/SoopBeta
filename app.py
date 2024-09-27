@@ -87,7 +87,7 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 df = load_data()
 
 # Mostrar el GIF del logo 'SoopLogo1.gif' centrado
-st.markdown("<div style='text-align: center;'><img src='SoopLogo1.gif' width='480'/></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center;'><img src='SoopLogo1.gif' style='display: block; margin-left: auto; margin-right: auto;'/></div>", unsafe_allow_html=True)
 
 # Título
 st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)
@@ -120,28 +120,11 @@ if busqueda:
 
 # Ver lista por categorías
 if ver_por_categorias:
-    todas_las_categorias = df['Categorias'].dropna().unique()
+    todas las categorías = df['Categorias'].dropna().unique()
     categorias_individuales = set()
-    for categorias in todas_las_categorias:
+    for categorias in todas las categorías:
         for categoria in categorias.split(','):
             categorias_individuales.add(categoria.strip())
     categoria_seleccionada = st.selectbox('Categorías:', sorted(categorias_individuales))
     if categoria_seleccionada:
-        productos_categoria = df[df['Categorias'].str.contains(categoria_seleccionada)]
-        num_paginas = (len(productos_categoria) // 10) + 1
-        pagina = st.number_input('Página:', min_value=1, max_value=num_paginas, value=1)
-        mostrar_lista_productos(productos_categoria, pagina)
-
-# Ordenar por novedad
-if ordenar_por_novedad:
-    if 'Fecha Creado' in df.columns:
-        df_ordenado = df.sort_values('Fecha Creado', ascending=False)
-        num_paginas = (len(df_ordenado) // 10) + 1
-        pagina = st.number_input('Página:', min_value=1, max_value=num_paginas, value=1)
-        mostrar_lista_productos(df_ordenado, pagina)
-    else:
-        st.warning("No se encontró la columna 'Fecha Creado'.")
-
-# Sugerir por Rubro (en desarrollo)
-if sugerir_por_rubro:
-    st.info("Esta función estará disponible próximamente.")
+        productos_categoria = df[df['Categorias'].str.contains(categoria_se
