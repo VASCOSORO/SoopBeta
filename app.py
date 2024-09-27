@@ -107,7 +107,7 @@ with col_opciones[2]:
 # Condición para mostrar la imagen del bot
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
     try:
-        st.image('bot (8).png', width=480, use_column_width='auto')  # Asegurate de que el path sea correcto y la imagen esté en la misma carpeta que el script
+        st.image('bot.png', width=480, use_column_width='auto')  # Asegurate de que el nombre sea bot.png y esté en la misma carpeta que el script
     except:
         st.write("Imagen del bot no disponible.")
 
@@ -122,26 +122,4 @@ if busqueda:
 if ver_por_categorias:
     todas_las_categorias = df['Categorias'].dropna().unique()
     categorias_individuales = set()
-    for categorias in todas_las_categorias:
-        for categoria in categorias.split(','):
-            categorias_individuales.add(categoria.strip())
-    categoria_seleccionada = st.selectbox('Categorías:', sorted(categorias_individuales))
-    if categoria_seleccionada:
-        productos_categoria = df[df['Categorias'].str.contains(categoria_seleccionada)]
-        num_paginas = (len(productos_categoria) // 10) + 1
-        pagina = st.number_input('Página:', min_value=1, max_value=num_paginas, value=1)
-        mostrar_lista_productos(productos_categoria, pagina)
-
-# Ordenar por novedad
-if ordenar_por_novedad:
-    if 'Fecha Creado' in df.columns:
-        df_ordenado = df.sort_values('Fecha Creado', ascending=False)
-        num_paginas = (len(df_ordenado) // 10) + 1
-        pagina = st.number_input('Página:', min_value=1, max_value=num_paginas, value=1)
-        mostrar_lista_productos(df_ordenado, pagina)
-    else:
-        st.warning("No se encontró la columna 'Fecha Creado'.")
-
-# Sugerir por Rubro (en desarrollo)
-if sugerir_por_rubro:
-    st.info("Esta función estará disponible próximamente.")
+   
