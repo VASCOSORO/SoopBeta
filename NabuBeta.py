@@ -15,40 +15,16 @@ vendedores = ['Emily', 'Joni', 'Johan', 'Valen', 'Marian', 'Sofi', 'Aniel', 'Mos
 # Título de la aplicación
 st.title("Sistema de Gestión de Ventas")
 
-# Crear columnas para seleccionar cliente y mostrar descuento y WhatsApp
-col1, col2, col3 = st.columns([3, 1, 1])
+# Crear columnas para el desplegable "+ Datos" y el selector de vendedor
+col_datos, col_vendedor = st.columns([2, 2])
 
-with col1:
-    # Seleccionar cliente
-    cliente_seleccionado = st.selectbox("Seleccioná el Cliente", clientes)
-
-# Encontrar el vendedor por defecto asociado al cliente seleccionado
-cliente_info = df_clientes[df_clientes["Nombre"] == cliente_seleccionado]
-vendedor_defecto = cliente_info["Vendedores"].values[0] if not cliente_info.empty else "Mostrador"
-
-# Mostrar el descuento del cliente fuera del desplegable
-with col2:
-    descuento_cliente = cliente_info['Descuento'].values[0] if not cliente_info.empty else 0
-    st.write(f"**Descuento**: {descuento_cliente}%")
-
-# Mostrar el ícono de WhatsApp fuera del desplegable
-with col3:
-    celular = cliente_info['Celular'].values[0] if not cliente_info.empty else None
-    if celular:
-        whatsapp_link = f"https://wa.me/{celular}"
-        st.markdown(f'<a href="{whatsapp_link}" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="25"/> Enviar WhatsApp</a>', unsafe_allow_html=True)
-
-# Mostrar vendedor asignado automáticamente
-col_vend1, col_vend2 = st.columns(2)
-
-with col_vend1:
-    st.write(f"**Vendedor asignado automáticamente**: {vendedor_defecto}")
-
-# Mostrar el botón +Datos y desplegar información adicional del cliente
-with col_vend2:
+# Mostrar el botón "+ Datos" y desplegar información adicional del cliente
+with col_datos:
     if st.checkbox("+ Datos"):
+        cliente_seleccionado = st.selectbox("Seleccioná el Cliente", clientes)
+        cliente_info = df_clientes[df_clientes["Nombre"] == cliente_seleccionado]
         if not cliente_info.empty:
-            # Mostrar datos en columnas, sin título de "Datos del cliente"
+            # Mostrar datos en columnas
             col_a, col_b = st.columns(2)
             with col_a:
                 st.write(f"**Teléfono**: {cliente_info['Telefono'].values[0]}")
@@ -56,6 +32,26 @@ with col_vend2:
             with col_b:
                 st.write(f"**Celular**: {cliente_info['Celular'].values[0]}")
                 st.write(f"**Dirección**: {cliente_info['Direccion'].values[0]}, {cliente_info['Ciudad'].values[0]}, {cliente_info['Provincia'].values[0]}")
+
+# Vinculación automática del vendedor y advertencia si se cambia
+with col_vendedor:
+    cliente_seleccionado = st.selectbox("Seleccioná el Cliente", clientes, key="cliente_selector")
+    cliente_info = df_clientes[df_clientes["Nombre"] == cliente_seleccionado]
+    vendedor_defecto = cliente_info["Vendedores"].values[0] if not cliente_info.empty else "Mostrador"
+    vendedor = st.selectbox("Seleccioná el Vendedor", vendedores, index=vendedores.index(vendedor_defecto) if vendedor_defecto in vendedores else 0)
+
+    if vendedor != vendedor_defecto:
+        st.success(f"Advertencia: {vendedor} no es el vendedor por defecto de este cliente.")
+
+# Mostrar el descuento del cliente fuera del desplegable
+descuento_cliente = cliente_info['Descuento'].values[0] if not cliente_info.empty else 0
+st.write(f"**Descuento**: {descuento_cliente}%")
+
+# Mostrar solo el ícono de WhatsApp
+celular = cliente_info['Celular'].values[0] if not cliente_info.empty else None
+if celular:
+    whatsapp_link = f"https://wa.me/{celular}"
+    st.markdown(f'<a href="{whatsapp_link}" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="25"/></a>', unsafe_allow_html=True)
 
 # Selector de productos
 producto_seleccionado = st.selectbox("Seleccioná un artículo", df_productos["Nombre"].values)
