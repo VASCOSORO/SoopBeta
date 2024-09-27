@@ -106,7 +106,7 @@ with col_opciones[2]:
 
 # Condición para mostrar la imagen del bot (cambio realizado aquí)
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
-    st.image('bot.gif', width=480, use_column_width='auto')  # Cambio realizado aquí
+    st.image('vasco.op.gif', width=480, use_column_width='auto')  # Cambio realizado aquí
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
