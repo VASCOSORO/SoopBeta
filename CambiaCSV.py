@@ -1,35 +1,45 @@
+import streamlit as st
 import pandas as pd
-from google.colab import files
-import io
 
-# 1. Subir archivo CSV
-print("Subí tu archivo CSV")
-uploaded = files.upload()
+# Interfaz para subir archivos en Streamlit
+st.title("Cargar y modificar CSV")
 
-# 2. Leer el archivo CSV subido con el delimitador adecuado
-for filename in uploaded.keys():
-    # Usamos ';' como delimitador
-    df = pd.read_csv(io.BytesIO(uploaded[filename]), encoding='ISO-8859-1', sep=';', on_bad_lines='skip', engine='python')
+# Subir archivo CSV
+uploaded_file = st.file_uploader("Subí tu archivo CSV", type=["csv"])
 
-# 3. Renombrar las columnas que especificaste
-df = df.rename(columns={
-    'Costo FOB': 'Costo en U$s',  # Cambio de 'Costo FOB' a 'Costo en U$s'
-    'Precio jugueteria Face': 'Precio',  # Cambio de 'Precio Jugueteria Face' a 'Precio'
-    'Precio': 'Precio x Mayor'  # Cambio de 'Precio' a 'Precio x Mayor'
-})
+if uploaded_file is not None:
+    # Leer el archivo CSV
+    df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
 
-# 4. Eliminar columnas que no sirven
-df = df.drop(columns=['Precio Face + 50', 'Precio Bonus'], errors='ignore')
+    # Renombrar las columnas que especificaste
+    df = df.rename(columns={
+        'Costo FOB': 'Costo en U$s',  # Cambio de 'Costo FOB' a 'Costo en U$s'
+        'Precio jugueteria Face': 'Precio',  # Cambio de 'Precio Jugueteria Face' a 'Precio'
+        'Precio': 'Precio x Mayor'  # Cambio de 'Precio' a 'Precio x Mayor'
+    })
 
-# 5. Agregar nuevas columnas vacías (pueden completarse luego)
-df['Proveedor'] = ''
-df['Pasillo'] = ''
-df['Estante'] = ''
-df['Fecha de Vencimiento'] = ''
+    # Eliminar columnas que no sirven
+    df = df.drop(columns=['Precio Face + 50', 'Precio Bonus'], errors='ignore')
 
-# 6. Guardar el archivo en formato Excel
-df.to_excel('archivo_modificado_corregido.xlsx', index=False)
+    # Agregar nuevas columnas vacías (pueden completarse luego)
+    df['Proveedor'] = ''
+    df['Pasillo'] = ''
+    df['Estante'] = ''
+    df['Fecha de Vencimiento'] = ''
 
-# 7. Descargar el archivo modificado
-print("Tu archivo modificado se está descargando...")
-files.download('archivo_modificado_corregido.xlsx')
+    # Mostrar una tabla de datos modificada en la interfaz de Streamlit
+    st.write("Archivo modificado:")
+    st.dataframe(df)
+
+    # Guardar el archivo modificado en Excel
+    st.write("Descargá el archivo modificado en formato Excel:")
+    df.to_excel("archivo_modificado_streamlit.xlsx", index=False)
+    
+    # Proporcionar un enlace para descargar el archivo
+    with open("archivo_modificado_streamlit.xlsx", "rb") as file:
+        btn = st.download_button(
+            label="Descargar archivo modificado",
+            data=file,
+            file_name="archivo_modificado.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
