@@ -1,4 +1,4 @@
-mport streamlit as st
+import streamlit as st
 import pandas as pd
 from PIL import Image
 import requests
@@ -144,5 +144,4 @@ if ordenar_por_novedad:
 
 # Sugerir por Rubro (en desarrollo)
 if sugerir_por_rubro:
-
     st.info("Esta función estará disponible próximamente.")
