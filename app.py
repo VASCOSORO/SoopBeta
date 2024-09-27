@@ -106,7 +106,10 @@ with col_opciones[2]:
 
 # Condición para mostrar la imagen del bot
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
-    st.image('bot (8).png', width=480, use_column_width='auto')
+    try:
+        st.image('path/to/bot (8).png', width=480, use_column_width='auto')  # Asegurate de que el path sea correcto
+    except:
+        st.write("Imagen del bot no disponible.")
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
