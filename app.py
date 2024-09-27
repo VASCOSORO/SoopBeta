@@ -104,9 +104,9 @@ with col_opciones[1]:
 with col_opciones[2]:
     sugerir_por_rubro = st.checkbox("Sugerir por Rubro (Próximamente)")
 
-# Condición para mostrar la imagen del bot
+# Condición para mostrar la imagen del bot (cambio realizado aquí)
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
-    st.image('bot (8).png', width=480, use_column_width='auto')
+    st.image('bot.gif', width=480, use_column_width='auto')  # Cambio realizado aquí
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
