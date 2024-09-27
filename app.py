@@ -86,8 +86,11 @@ def mostrar_lista_productos(df, pagina, productos_por_pagina=10):
 # Cargar datos
 df = load_data()
 
+# Mostrar el logo en formato GIF centrado en la parte superior
+st.markdown("<div style='text-align: center;'><img src='SoopLogo1.gif' width='400'/></div>", unsafe_allow_html=True)
+
 # Título
-st.markdown("<h1 style='text-align: center;'>🐻 Soop Buscador de Productos</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🐻 Buscador de Productos</h1>", unsafe_allow_html=True)  # Eliminé "Soop"
 
 # Mostrar número de filas y columnas cargadas
 st.success(f"Se cargaron {df.shape[0]} filas y {df.shape[1]} columnas del archivo de Excel.")
@@ -104,9 +107,9 @@ with col_opciones[1]:
 with col_opciones[2]:
     sugerir_por_rubro = st.checkbox("Sugerir por Rubro (Próximamente)")
 
-# Condición para mostrar la imagen del bot (cambio realizado aquí)
+# Condición para mostrar la imagen del bot (cambio realizado antes)
 if busqueda == '' and not (ver_por_categorias or ordenar_por_novedad or sugerir_por_rubro):
-    st.image('vasco.op.gif', width=480, use_column_width='auto')  # Cambio realizado aquí
+    st.image('vasco.op.gif', width=480, use_column_width='auto')
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
