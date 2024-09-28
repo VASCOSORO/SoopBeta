@@ -273,13 +273,6 @@ if uploaded_file is not None:
         # Crear el nombre del archivo con el timestamp
         file_name = f"productos_modificados_{timestamp}.xlsx"
 
-        st.download_button(
-            label="📥 Descargar Excel Modificado",
-            data=excel,
-            file_name=file_name,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
         with st.expander("Agregar Producto"):  # Cambié para que sea un expander
@@ -359,6 +352,13 @@ if uploaded_file is not None:
                         }
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
+                
+        st.download_button(
+            label="📥 Descargar Excel Modificado",
+            data=excel,
+            file_name=file_name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
     except Exception as e:
         st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
