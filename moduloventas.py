@@ -1,96 +1,99 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 
 # Configuración de la página
-st.set_page_config(
-    page_title="📁 Modulo Productos",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="📁 Módulo de Ventas", layout="wide")
 
 # Título de la aplicación
-st.title("📁 Modulo Productos")
+st.title("📁 Módulo de Ventas")
 
-# Función para convertir DataFrame a Excel en memoria usando openpyxl
-def convertir_a_excel(df):
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Productos')
-    excel_bytes = buffer.getvalue()
-    return excel_bytes
+# Simulamos una base de datos de clientes y productos
+df_clientes = pd.DataFrame({
+    'Nombre': ['Juan Perez', 'Maria Lopez', 'Carlos Fernandez'],
+    'Descuento': [10, 15, 5],
+    'Ultima compra': ['2024-09-10', '2024-09-15', '2024-09-12'],
+    'Vendedor': ['Carlos', 'Juan', 'Maria'],
+    'Notas': ['Cliente preferencial', '', 'Pendiente de pago'],
+    'WhatsApp': ['+5491123456789', '+5491198765432', '+5491187654321']
+})
 
-# Sidebar para cargar el archivo Excel
-st.sidebar.header("Cargar Archivo Excel de Productos")
-uploaded_file = st.sidebar.file_uploader("📤 Subir archivo Excel", type=["xlsx"])
+df_productos = pd.DataFrame({
+    'Codigo': ['TM-26494', '41649'],
+    'Nombre': ['Pulsera Puppy', 'Labial Infantil'],
+    'Precio': [1963, 1599],
+    'Stock': [5, 10]
+})
 
-if uploaded_file is not None:
-    try:
-        # Leer el archivo Excel
-        df = pd.read_excel(uploaded_file, engine='openpyxl')
+# Sección de cliente
+st.header("🧑‍💼 Datos del Cliente")
+cliente_buscado = st.text_input("Buscar cliente", placeholder="Escribí el nombre del cliente...")
 
-        # Mostrar los nombres de las columnas
-        st.write("🔍 **Columnas en el archivo cargado:**")
-        columnas = df.columns.tolist()
-        st.write(columnas)  # Muestra la lista de columnas
+# Buscar coincidencias
+clientes_filtrados = df_clientes[df_clientes['Nombre'].str.contains(cliente_buscado, case=False, na=False)]
 
-        # Verificar si existe la columna 'Producto' o 'Nombre'
-        if 'Producto' in columnas or 'Nombre' in columnas:
-            # Definir la columna correcta para filtrar
-            columna_producto = 'Producto' if 'Producto' in columnas else 'Nombre'
-            st.write(f"Usando la columna '{columna_producto}' para buscar productos.")
+if not clientes_filtrados.empty:
+    cliente_seleccionado = st.selectbox("Selecciona el cliente", clientes_filtrados['Nombre'].tolist())
+    
+    # Datos del cliente seleccionado
+    cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+    st.write(f"**Última compra:** {cliente_data['Ultima compra']}")
+    
+    # Selección del vendedor
+    vendedor = cliente_data['Vendedor'].split(',')[0]  # Primer vendedor asignado por defecto
+    vendedor_seleccionado = st.selectbox("Vendedor asignado", cliente_data['Vendedor'].split(','))
+    
+    if vendedor != vendedor_seleccionado:
+        st.warning(f"Estás cambiando el vendedor asignado. El vendedor original era {vendedor}.")
+    
+    # Notas del cliente
+    st.write(f"**Notas:** {cliente_data['Notas'] if cliente_data['Notas'] else 'Sin notas.'}")
+    
+    # Enlace a WhatsApp
+    whatsapp_url = f"https://wa.me/{cliente_data['WhatsApp']}"
+    st.markdown(f"[Enviar mensaje por WhatsApp]({whatsapp_url})", unsafe_allow_html=True)
 
-            # Mostrar los primeros valores de la columna
-            st.write(df[columna_producto].head())
+    # Botón para acceder a la ficha del cliente
+    st.button("Ver ficha del cliente")
 
-            # Inicialización de la variable df_modificado
-            df_modificado = df.copy()
+# Sección de productos
+st.header("🛒 Buscador de Productos")
+producto_buscado = st.text_input("Buscar producto", placeholder="Escribí el nombre del producto...")
 
-            # Buscador de productos
-            st.subheader("Buscar y seleccionar producto")
-            nombre_buscado = st.text_input("Buscar producto", value="", placeholder="Escribí el nombre del producto...")
+# Buscar coincidencias
+productos_filtrados = df_productos[df_productos['Nombre'].str.contains(producto_buscado, case=False, na=False)]
 
-            # Filtrar productos que coincidan con el texto buscado usando la columna seleccionada
-            productos_filtrados = df[df[columna_producto].str.contains(nombre_buscado, case=False, na=False)]
+if not productos_filtrados.empty:
+    producto_seleccionado = st.selectbox("Selecciona el producto", productos_filtrados['Nombre'].tolist())
+    
+    # Datos del producto seleccionado
+    producto_data = df_productos[df_productos['Nombre'] == producto_seleccionado].iloc[0]
+    st.write(f"**Precio:** ${producto_data['Precio']}")
+    st.write(f"**Stock disponible:** {producto_data['Stock']}")
+    
+    # Botón para agregar el producto al pedido
+    if st.button("Agregar producto"):
+        st.session_state.pedido.append(producto_data)  # Añadir producto al pedido
 
-            # Agregar un valor vacío al principio del desplegable
-            opciones = [""] + productos_filtrados[columna_producto].tolist()
+# Mostrar la tabla del pedido
+if 'pedido' not in st.session_state:
+    st.session_state.pedido = []
 
-            # Seleccionar un producto desde el desplegable filtrado
-            producto_seleccionado = st.selectbox("Selecciona el producto", opciones)
+if st.session_state.pedido:
+    st.header("📦 Pedido actual")
+    pedido_df = pd.DataFrame(st.session_state.pedido)
+    pedido_df['Importe'] = pedido_df['Cantidad'] * pedido_df['Precio']
+    
+    st.table(pedido_df[['Codigo', 'Nombre', 'Cantidad', 'Precio', 'Importe']])
+    
+    # Total de items y total del pedido
+    total_items = len(pedido_df)
+    total_monto = pedido_df['Importe'].sum()
+    
+    st.write(f"**Total de items:** {total_items}")
+    st.write(f"**Total del pedido:** ${total_monto}")
+    
+    # Botón de guardar
+    if st.button("Guardar pedido"):
+        st.success("Pedido guardado exitosamente.")
 
-            # Mostrar detalles del producto seleccionado
-            if producto_seleccionado:
-                producto = df_modificado[df_modificado[columna_producto] == producto_seleccionado].iloc[0]
-
-                st.subheader(f"Detalles del producto: {producto_seleccionado}")
-                
-                # Mostrar detalles en columnas
-                col1, col2 = st.columns([3, 1])
-
-                with col1:
-                    st.markdown(f"**ID:** {producto['Id']}")
-                    st.markdown(f"**Código:** {producto['Codigo']}")
-                    st.markdown(f"**Nombre:** {producto[columna_producto]}")
-                    st.markdown(f"**Precio:** {producto['Precio']}")
-                    st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
-                    st.markdown(f"**Descripción:** {producto['Descripcion']}")
-                    st.markdown(f"**Categorías:** {producto['Categorias']}")
-                
-        else:
-            st.error("La columna 'Producto' o 'Nombre' no existe en el archivo. Verifica el archivo Excel.")
-            st.stop()
-
-        # Opción para descargar la base de datos modificada
-        excel = convertir_a_excel(df_modificado)
-        st.download_button(
-            label="📥 Descargar Excel Modificado",
-            data=excel,
-            file_name="productos_modificados.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-    except Exception as e:
-        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
-else:
-    st.info("📂 Por favor, sube un archivo Excel para comenzar.")
