@@ -1,56 +1,40 @@
 import streamlit as st
 import numpy as np
-import pygame
 import random
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
-
-# Inicializamos pygame sin la pantalla física
-pygame.init()
-
-# Configuración de la pantalla virtual (dentro de Streamlit)
-screen_width = 800
-screen_height = 400
-
-# Colores
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-BEAR_COLOR = (150, 75, 0)
 
 # Definir el personaje (osito)
 class Bear:
     def __init__(self):
-        self.width = 50
-        self.height = 50
-        self.x = 100
-        self.y = screen_height - self.height - 10
-        self.vel_y = 0
-        self.gravity = 1
+        self.y = 0
         self.is_jumping = False
-    
+        self.gravity = 1
+        self.vel_y = 0
+        self.jump_strength = -10
+
+    def jump(self):
+        if not self.is_jumping:
+            self.is_jumping = True
+            self.vel_y = self.jump_strength
+
     def update(self):
         if self.is_jumping:
             self.vel_y += self.gravity
             self.y += self.vel_y
-            if self.y >= screen_height - self.height - 10:
-                self.y = screen_height - self.height - 10
+            if self.y >= 0:  # El suelo es la posición 0
+                self.y = 0
                 self.is_jumping = False
                 self.vel_y = 0
 
 # Definir los obstáculos
 class Obstacle:
     def __init__(self):
-        self.width = 20
-        self.height = random.randint(30, 70)
-        self.x = screen_width
-        self.y = screen_height - self.height - 10
-        self.speed = 5
+        self.position = random.randint(5, 10)
 
-    def update(self):
-        self.x -= self.speed
-        if self.x < -self.width:
-            self.x = screen_width
-            self.height = random.randint(30, 70)
-            self.y = screen_height - self.height - 10
+    def move(self):
+        self.position -= 1
+        if self.position < 0:
+            self.position = random.randint(5, 10)  # Reaparece en otra posición
 
 # Procesador de audio para detectar volumen
 class AudioProcessor(AudioProcessorBase):
@@ -67,9 +51,8 @@ class AudioProcessor(AudioProcessorBase):
             self.jump_detected = False
         return frame
 
+# Bucle principal del juego
 def game_loop(audio_processor):
-    st.write("Controlá al osito con el nivel de tu voz")
-
     bear = Bear()
     obstacle = Obstacle()
     score = 0
@@ -77,22 +60,25 @@ def game_loop(audio_processor):
 
     while not game_over:
         st.write(f"Score: {score}")
+        st.write(f"Posición del osito: {bear.y}")
+        st.write(f"Posición del obstáculo: {obstacle.position}")
 
         # Control del osito con el nivel de voz
-        if audio_processor.jump_detected and not bear.is_jumping:
-            bear.vel_y = -15
-            bear.is_jumping = True
+        if audio_processor.jump_detected:
+            bear.jump()
 
-        # Actualizar y dibujar (simulado)
+        # Actualizar estado del juego
         bear.update()
-        obstacle.update()
+        obstacle.move()
 
         # Detectar colisión
-        if bear.x < obstacle.x + obstacle.width and bear.x + bear.width > obstacle.x and bear.y + bear.height > obstacle.y:
+        if obstacle.position == 0 and bear.y == 0:
             st.write("Game Over!")
             game_over = True
 
         score += 1
+        st.write("---")
+        st.experimental_rerun()  # Actualizar la interfaz en cada ciclo
 
 # Configurar WebRTC para capturar audio y usar el procesador
 webrtc_ctx = webrtc_streamer(
