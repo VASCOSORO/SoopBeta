@@ -246,14 +246,17 @@ if uploaded_file is not None:
                         if not nuevo_nombre:
                             st.error("❌ El Nombre no puede estar vacío.")
                         else:
-                            # Actualizar el DataFrame
-                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+                            # Actualizar el DataFrame original y el modificado
+                            df.loc[df['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+
+                            # Actualizar el archivo subido
+                            df_modificado = df.copy()
 
                             if mostrar_campos_adicionales:
                                 df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
@@ -261,22 +264,6 @@ if uploaded_file is not None:
                                 df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
 
                             st.success("✅ Producto modificado exitosamente.")
-                            
-                            # Refrescar la tabla con los datos modificados
-                            df = df_modificado
-
-                            # Recargar la tabla para reflejar los cambios
-                            grid_response = AgGrid(
-                                df_modificado,
-                                gridOptions=gridOptions,
-                                data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-                                update_mode=GridUpdateMode.MODEL_CHANGED,
-                                fit_columns_on_grid_load=False,
-                                theme='streamlit',  # Tema válido
-                                enable_enterprise_modules=False,
-                                height=500,
-                                reload_data=True  # Recargar la tabla
-                            )
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
