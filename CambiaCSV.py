@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
+from datetime import datetime  # Importar el módulo datetime
 
 # Configuración de la página
 st.set_page_config(
@@ -111,14 +112,20 @@ def procesar_archivo(
             # Convertir el DataFrame a Excel en memoria
             excel = convertir_a_excel(df)
 
+            # Obtener la fecha y hora actual en formato 'YYYYMMDD_HHMMSS'
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            # Crear el nombre del archivo con el timestamp
+            file_name = f"archivo_modificado_{tipo.lower()}_{timestamp}.xlsx"
+
             # Verificar el tamaño del archivo Excel
             st.write(f"📝 **Tamaño del archivo Excel en bytes:** {len(excel)}")
 
-            # Proporcionar un enlace para descargar el archivo
+            # Proporcionar un enlace para descargar el archivo con fecha y hora
             st.download_button(
                 label=f"📥 Descargar archivo modificado de {tipo}",
                 data=excel,
-                file_name=f"archivo_modificado_{tipo.lower()}.xlsx",
+                file_name=file_name,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         except Exception as e:
