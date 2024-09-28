@@ -21,7 +21,7 @@ with col1:
     st.write("Esta herramienta te permite cargar y modificar archivos CSV.")
     st.write("Haz clic en el botón para ir al Loader de CSV.")
     if st.button("Ir al Loader de CSV"):
-        st.write("🔗 [Loader de CSV](https://cambiacsv.streamlit.app)")  # Enlace hacia el Loader de CSV
+        st.write("🔗 [Loader de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)")  # Enlace hacia el Loader de CSV
 
 with col2:
     st.header("Modificador de Productos")
