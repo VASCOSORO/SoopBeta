@@ -21,14 +21,25 @@ st.write(df.head())
 st.write("Valores nulos por columna:")
 st.write(df.isnull().sum())
 
+# Función para limpiar y normalizar los nombres de productos
+def limpiar_nombre_producto(nombre):
+    if pd.isna(nombre):
+        return ""
+    return nombre.strip().lower()
+
+# Limpiar los nombres de productos en el DataFrame
+df['Nombre Limpio'] = df['Nombre'].apply(limpiar_nombre_producto)
+
 # Campo de búsqueda
-busqueda = st.text_input("Escribí acá para buscar")  # Cambié a text_input para búsquedas más amplias
+busqueda = st.text_input("Escribí acá para buscar")  # Usamos text_input en vez de selectbox
 
 # Verificar si el usuario ha escrito algo y filtrar productos
 if busqueda:
-    productos_filtrados = df[df['Nombre'].str.contains(busqueda, case=False, na=False)]  # Incluí 'na=False' para evitar errores si hay valores nulos
+    busqueda_limpia = busqueda.strip().lower()  # Limpiamos y normalizamos la búsqueda
+    productos_filtrados = df[df['Nombre Limpio'].str.contains(busqueda_limpia, case=False, na=False)]
+    
     if not productos_filtrados.empty:
         st.write(f"Se encontraron {productos_filtrados.shape[0]} productos con el término '{busqueda}'.")
-        st.write(productos_filtrados)
+        st.write(productos_filtrados[['Nombre', 'Codigo', 'Precio', 'Stock']])  # Mostrar información clave
     else:
         st.write(f"No se encontraron productos con el término '{busqueda}'.")
