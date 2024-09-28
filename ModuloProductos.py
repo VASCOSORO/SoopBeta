@@ -161,11 +161,13 @@ if uploaded_file is not None:
             submit_nuevo = st.form_submit_button(label='Agregar Producto')
 
             if submit_nuevo:
+                # Validaciones
                 if not nuevo_id or not nuevo_nombre:
                     st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
                 elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
                     st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
                 else:
+                    # Agregar el nuevo producto al DataFrame
                     nuevo_producto = {
                         'Id': nuevo_id,
                         'Id Externo': nuevo_id_externo,
