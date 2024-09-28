@@ -306,7 +306,7 @@ if uploaded_file is not None:
 
                 if submit_nuevo:
                     # Validaciones
-                    if not nuevo_id o not nuevo_nombre:
+                    if not nuevo_id or not nuevo_nombre:
                         st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
                     elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
                         st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
