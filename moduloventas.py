@@ -1,63 +1,15 @@
 import streamlit as st
 import pandas as pd
 
-# Cargar los datos desde el archivo Excel
-file_path = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Ruta al archivo de clientes
-df_clientes = pd.read_excel(file_path)
-
-# Simulación de base de datos de productos
-df_productos = pd.DataFrame({
-    'Codigo': ['TM-26494', '41649'],
-    'Nombre': ['Pulsera Puppy', 'Labial Infantil'],
-    'Precio': [1963, 1599],
-    'Stock': [5, 10]
-})
+# Cargar los datos del archivo de productos
+file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Ruta al archivo
+df_productos = pd.read_excel(file_path_productos)
 
 # Configuración de la página
 st.set_page_config(page_title="📁 Módulo de Ventas", layout="wide")
 
 # Título de la aplicación
 st.title("📁 Módulo de Ventas")
-
-# Sección de cliente
-st.header("🧑‍💼 Datos del Cliente")
-
-# Buscador de cliente
-cliente_buscado = st.text_input("Buscar cliente", placeholder="Escribí el nombre del cliente...")
-
-# Buscar coincidencias de clientes
-clientes_filtrados = df_clientes[df_clientes['Nombre'].str.contains(cliente_buscado, case=False, na=False)]
-
-if not clientes_filtrados.empty:
-    cliente_seleccionado = st.selectbox("Selecciona el cliente", clientes_filtrados['Nombre'].tolist())
-    
-    # Obtener datos del cliente seleccionado
-    cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
-    
-    # Mostrar detalles del cliente
-    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
-    st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
-    
-    # Vendedor asignado
-    vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-    vendedor_default = vendedores[0]
-    vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
-    
-    if vendedor_default != vendedor_seleccionado:
-        st.warning(f"Estás cambiando el vendedor asignado. El vendedor original era {vendedor_default}.")
-    
-    # Notas del cliente
-    notas_cliente = cliente_data['Notas'] if pd.notna(cliente_data['Notas']) else 'Sin notas'
-    st.write(f"**Notas del cliente:** {notas_cliente}")
-    
-    # Enlace a WhatsApp usando el número de celular del cliente
-    celular_cliente = cliente_data['Celular'] if pd.notna(cliente_data['Celular']) else 'Sin número de WhatsApp'
-    if pd.notna(cliente_data['Celular']):
-        whatsapp_url = f"https://wa.me/{celular_cliente}"
-        st.markdown(f"[Enviar mensaje por WhatsApp]({whatsapp_url})", unsafe_allow_html=True)
-
-    # Botón para ir a la ficha del cliente
-    st.button("Ver ficha del cliente")
 
 # Sección de productos
 st.header("🛒 Buscador de Productos")
@@ -73,9 +25,12 @@ if not productos_filtrados.empty:
     
     # Datos del producto seleccionado
     producto_data = df_productos[df_productos['Nombre'] == producto_seleccionado].iloc[0]
+    st.write(f"**Código:** {producto_data['Codigo']}")
+    st.write(f"**Descripción:** {producto_data['Descripcion']}")
     st.write(f"**Precio:** ${producto_data['Precio']}")
     st.write(f"**Stock disponible:** {producto_data['Stock']}")
-    
+    st.image(producto_data['imagen'], width=150)
+
     # Campo para seleccionar cantidad
     cantidad = st.number_input("Cantidad", min_value=1, max_value=producto_data['Stock'], step=1)
     
@@ -116,5 +71,3 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     # Botón para guardar el pedido
     if st.button("Guardar pedido"):
         st.success("Pedido guardado exitosamente.")
-        # Aquí se guardaría el pedido en la base de datos
-
