@@ -154,6 +154,8 @@ if uploaded_file is not None:
                 
 
             with col2:
+
+                st.markdown(f"**Código:** {producto['Codigo']}")
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
                     try:
