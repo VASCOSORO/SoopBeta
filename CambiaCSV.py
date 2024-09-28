@@ -10,7 +10,10 @@ uploaded_file_productos = st.file_uploader("Subí tu archivo CSV de Productos", 
 
 if uploaded_file_productos is not None:
     # Leer el archivo CSV, forzando 'Id' a ser un número entero sin decimales
-    df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': int})
+    df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': str})
+
+    # Asegurar que los IDs no tengan comas y sean números enteros
+    df_productos['Id'] = df_productos['Id'].str.replace(".", "").astype(int)
 
     # Renombrar las columnas que especificaste
     df_productos = df_productos.rename(columns={
@@ -51,7 +54,11 @@ uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", ty
 
 if uploaded_file_clientes is not None:
     # Leer el archivo CSV, forzando 'Id' y 'Id Cliente' a ser enteros
-    df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': int, 'Id Cliente': int})
+    df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': str, 'Id Cliente': str})
+
+    # Asegurar que los IDs no tengan separadores de miles con comas, y sean enteros
+    df_clientes['Id'] = df_clientes['Id'].str.replace(".", "").astype(int)
+    df_clientes['Id Cliente'] = df_clientes['Id Cliente'].str.replace(".", "").astype(int)
 
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Clientes cargado:")
@@ -75,7 +82,11 @@ uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type
 
 if uploaded_file_pedidos is not None:
     # Leer el archivo CSV, forzando 'Id' y 'Id Cliente' a ser enteros
-    df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': int, 'Id Cliente': int})
+    df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': str, 'Id Cliente': str})
+
+    # Asegurar que los IDs no tengan separadores de miles con comas, y sean enteros
+    df_pedidos['Id'] = df_pedidos['Id'].str.replace(".", "").astype(int)
+    df_pedidos['Id Cliente'] = df_pedidos['Id Cliente'].str.replace(".", "").astype(int)
 
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Pedidos cargado:")
