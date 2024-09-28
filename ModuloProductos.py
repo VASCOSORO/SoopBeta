@@ -81,14 +81,14 @@ if uploaded_file is not None:
         filtro_activo = st.sidebar.selectbox("Estado Activo", options=['Todos', 'Sí', 'No'])
 
         if filtro_categoria:
-            df = df[df['Categorias'].str.contains('|'.join(filtro_categoria), case=False, na=False)]
+            df_modificado = df_modificado[df_modificado['Categorias'].str.contains('|'.join(filtro_categoria), case=False, na=False)]
 
         if filtro_activo != 'Todos':
             estado_activo = 1 if filtro_activo == 'Sí' else 0
-            df = df[df['Activo'] == estado_activo]
+            df_modificado = df_modificado[df_modificado['Activo'] == estado_activo]
 
         # Configuración de la tabla AgGrid
-        gb = GridOptionsBuilder.from_dataframe(df)
+        gb = GridOptionsBuilder.from_dataframe(df_modificado)
         gb.configure_pagination(paginationAutoPageSize=True)
         gb.configure_side_bar()
         gb.configure_default_column(
@@ -101,13 +101,13 @@ if uploaded_file is not None:
         )
 
         # Ajustar el tamaño de las columnas según el contenido
-        for column in df.columns:
+        for column in df_modificado.columns:
             gb.configure_column(column, autoWidth=True)
 
         gridOptions = gb.build()
 
         # Mostrar el número de artículos filtrados
-        st.write(f"Total de Artículos Filtrados: {len(df)}")
+        st.write(f"Total de Artículos Filtrados: {len(df_modificado)}")
 
         # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
         mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
@@ -115,7 +115,7 @@ if uploaded_file is not None:
         if mostrar_tabla:
             st.header("📊 Tabla de Productos:")
             grid_response = AgGrid(
-                df,
+                df_modificado,
                 gridOptions=gridOptions,
                 data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                 update_mode=GridUpdateMode.MODEL_CHANGED,
@@ -127,7 +127,7 @@ if uploaded_file is not None:
             )
 
             # Actualizar df_modificado con la respuesta del grid
-            df_modificado = grid_response['data']
+            df_modificado = pd.DataFrame(grid_response['data'])
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
@@ -262,8 +262,21 @@ if uploaded_file is not None:
 
                             st.success("✅ Producto modificado exitosamente.")
                             
-                            # Volver a cargar la tabla después de modificar el producto
+                            # Refrescar la tabla con los datos modificados
                             df = df_modificado
+
+                            # Recargar la tabla para reflejar los cambios
+                            grid_response = AgGrid(
+                                df_modificado,
+                                gridOptions=gridOptions,
+                                data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+                                update_mode=GridUpdateMode.MODEL_CHANGED,
+                                fit_columns_on_grid_load=False,
+                                theme='streamlit',  # Tema válido
+                                enable_enterprise_modules=False,
+                                height=500,
+                                reload_data=True  # Recargar la tabla
+                            )
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
