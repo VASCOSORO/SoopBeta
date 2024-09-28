@@ -256,107 +256,14 @@ if uploaded_file is not None:
                             df.loc[df['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
                             df.loc[df['Nombre'] == nuevo_nombre, 'Costo usd'] = nuevo_costo_usd
 
-                            # Actualizar df_modificado
-                            df_modificado = df.copy()
-
                             if mostrar_campos_adicionales:
                                 df.loc[df['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
                                 df.loc[df['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
                                 df.loc[df['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
-                                df_modificado = df.copy()
 
-                            # Al guardar cambios, se guarda automáticamente en caché
-                            excel = convertir_a_excel(df_modificado)
-
-                            # Guardar el archivo modificado
-                            st.download_button(
-                                label="📥 Descargar Excel Modificado",
-                                data=excel,
-                                file_name=f"productos_actualizados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            )
-
+                            # Al guardar cambios, se actualiza el DataFrame modificado
+                            df_modificado = df.copy()
                             st.success("✅ Producto modificado y archivo actualizado.")
-
-        # Funcionalidad para agregar un nuevo producto
-        st.header("➕ Agregar Nuevo Producto:")
-        with st.expander("Agregar Producto"):  # Cambié para que sea un expander
-            with st.form(key='agregar_producto_unique'):
-                nuevo_id = st.text_input("Id")
-                nuevo_id_externo = st.text_input("Id Externo")
-                nuevo_codigo = st.text_input("Código")
-                nuevo_nombre = st.text_input("Nombre")
-                nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01)
-                nuevo_activo = st.selectbox("Activo", options=[0, 1])
-                nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
-                nuevo_fecha_modificado = st.date_input("Fecha Modificado", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
-                nuevo_descripcion = st.text_area("Descripción")
-                nuevo_orden = st.number_input("Orden", min_value=0, step=1)
-                nuevo_codigo_barras = st.text_input("Código de Barras")
-                nuevo_unidad_bulto = st.number_input("Unidad por Bulto", min_value=0, step=1)
-                nuevo_inner = st.text_input("Inner")
-                nuevo_forzar_multiplos = st.text_input("Forzar Multiplos")
-                nuevo_costo_usd = st.number_input("Costo usd", min_value=0.0, step=0.01)
-                nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01)
-                nuevo_etiquetas = st.text_input("Etiquetas")
-                nuevo_stock = st.number_input("Stock", min_value=0, step=1)
-                nuevo_precio_mayorista = st.number_input("Precio Mayorista", min_value=0.0, step=0.01)
-                nuevo_precio_online = st.number_input("Precio Online", min_value=0.0, step=0.01)
-                nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
-                nuevo_precio_face_dolar = st.number_input("Precio face Dolar", min_value=0.0, step=0.01)
-                nuevo_precio_mayorista_usd = st.number_input("Precio Mayorista USD", min_value=0.0, step=0.01)
-                nuevo_marca = st.text_input("Marca")
-                nuevo_categorias = st.text_input("Categorias")
-                nuevo_imagen = st.text_input("Imagen URL")
-                nuevo_proveedor = st.text_input("Proveedor")
-                nuevo_pasillo = st.text_input("Pasillo")
-                nuevo_estante = st.text_input("Estante")
-                nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
-
-                submit_nuevo = st.form_submit_button(label='Agregar Producto')
-
-                if submit_nuevo:
-                    # Validaciones
-                    if not nuevo_id or not nuevo_nombre:
-                        st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
-                    elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
-                        st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
-                    else:
-                        # Agregar el nuevo producto al DataFrame
-                        nuevo_producto = {
-                            'Id': nuevo_id,
-                            'Id Externo': nuevo_id_externo,
-                            'Codigo': nuevo_codigo,
-                            'Nombre': nuevo_nombre,
-                            'Precio x Mayor': nuevo_precio_x_mayor,
-                            'Activo': nuevo_activo,
-                            'Fecha Creado': nuevo_fecha_creado,
-                            'Fecha Modificado': nuevo_fecha_modificado,
-                            'Descripcion': nuevo_descripcion,
-                            'Orden': nuevo_orden,
-                            'Codigo de Barras': nuevo_codigo_barras,
-                            'unidad por bulto': nuevo_unidad_bulto,
-                            'inner': nuevo_inner,
-                            'forzar multiplos': nuevo_forzar_multiplos,
-                            'Costo usd': nuevo_costo_usd,
-                            'Costo': nuevo_costo,
-                            'Etiquetas': nuevo_etiquetas,
-                            'Stock': nuevo_stock,
-                            'Precio Mayorista': nuevo_precio_mayorista,
-                            'Precio Online': nuevo_precio_online,
-                            'Precio': nuevo_precio,
-                            'Precio face Dolar': nuevo_precio_face_dolar,
-                            'Precio Mayorista USD': nuevo_precio_mayorista_usd,
-                            'Marca': nuevo_marca,
-                            'Categorias': nuevo_categorias,
-                            'imagen': nuevo_imagen,
-                            'Proveedor': nuevo_proveedor,
-                            'Pasillo': nuevo_pasillo,
-                            'Estante': nuevo_estante,
-                            'Fecha de Vencimiento': nuevo_fecha_vencimiento
-                        }
-                        df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
-                        st.success("✅ Producto agregado exitosamente.")
 
         # Botón para descargar el archivo Excel modificado al final de todo
         st.header("💾 Descargar Archivo Modificado:")
