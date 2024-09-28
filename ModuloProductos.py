@@ -98,16 +98,16 @@ if uploaded_file is not None:
             gb.configure_side_bar()
             gb.configure_default_column(
                 editable=False,
-                groupable=True,
-                resizable=True,
+                groupable=False,
+                resizable=False,
                 sortable=True,
-                wrapText=True,  # Envuelve el texto para columnas largas
-                autoHeight=True  # Ajusta la altura automáticamente
+                wrapText=False,  # Envuelve el texto para columnas largas
+                autoHeight=False  # Ajusta la altura automáticamente
             )
 
             # Ajustar el tamaño de las columnas según el contenido
             for column in df.columns:
-                gb.configure_column(column, autoWidth=True)
+                gb.configure_column(column, autoWidth=False)
 
             gridOptions = gb.build()
 
@@ -118,7 +118,7 @@ if uploaded_file is not None:
                 gridOptions=gridOptions,
                 data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                 update_mode=GridUpdateMode.MODEL_CHANGED,
-                fit_columns_on_grid_load=True,
+                fit_columns_on_grid_load=False,
                 theme='streamlit',  # Tema válido
                 enable_enterprise_modules=False,
                 height=500,
@@ -160,7 +160,7 @@ if uploaded_file is not None:
                         response = requests.get(producto['imagen'], timeout=5)
                         response.raise_for_status()
                         image = Image.open(BytesIO(response.content))
-                        st.image(image, width=150)
+                        st.image(image, width=170)
                     except Exception as e:
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
@@ -180,6 +180,13 @@ if uploaded_file is not None:
 
                     with editar_col1:
                         nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
+                        nuevo_precio = st.number_input(
+                            "Precio",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio']), 0.0),
+                            key='precio'
+                        )
                         nuevo_precio_x_mayor = st.number_input(
                             "Precio x Mayor",
                             min_value=0.0,
@@ -203,13 +210,7 @@ if uploaded_file is not None:
                         )
                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'], key='descripcion')
                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'], key='categorias')
-                        nuevo_precio = st.number_input(
-                            "Precio",
-                            min_value=0.0,
-                            step=0.01,
-                            value=safe_value(float(producto['Precio']), 0.0),
-                            key='precio'
-                        )
+                        
 
                     with editar_col2:
                         # Mostrar la imagen del producto
