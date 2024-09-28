@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
-# Ruta del archivo en el directorio actual
+# Ruta del archivo de productos
 archivo_excel = "1083.xlsx"
+archivo_ventas = "historial_ventas.xlsx"
 
 # Verificar si el archivo existe en el directorio
 try:
@@ -17,7 +19,7 @@ if 'df_productos' in locals():
     st.dataframe(df_productos)
 
     # Buscador de productos
-    st.subheader("Buscar y seleccionar producto")
+    st.subheader("Buscar y seleccionar producto para registrar venta")
     nombre_buscado = st.text_input("Buscar producto", value="", placeholder="Escribí el nombre del producto...")
 
     # Filtrar productos que coincidan con el texto buscado
@@ -29,50 +31,46 @@ if 'df_productos' in locals():
     # Seleccionar un producto desde el desplegable filtrado
     producto_seleccionado = st.selectbox("Selecciona el producto", opciones)
 
-    # Filtrar el producto seleccionado
+    # Registro de venta
     if producto_seleccionado:
         producto = df_productos[df_productos['Producto'] == producto_seleccionado].iloc[0]
+        st.subheader("Registrar venta")
 
-        # Mostrar y editar los atributos del producto
-        st.subheader("Editar los detalles del producto")
-        nombre = st.text_input("Nombre del Producto", producto['Producto'])
+        # Mostrar el stock actual
+        st.write(f"Stock actual: {producto['Stock']}")
 
-        # ID como número entero sin comas
-        codigo = st.number_input("Código (ID)", value=int(producto['Codigo']), step=1, format="%d")
+        # Ingresar cantidad vendida
+        cantidad_vendida = st.number_input("Cantidad vendida", min_value=1, max_value=int(producto['Stock']), step=1)
 
-        # Precio sin decimales
-        precio_mayor = st.number_input("Precio por Mayor", value=int(producto['Precio x Mayor']), step=1, format="%d")
-        precio_costo = st.number_input("Precio de Costo", value=int(producto['Costo']), step=1, format="%d")
+        # Ingresar precio de venta
+        precio_venta = st.number_input("Precio de Venta", value=int(producto['Precio x Mayor']), step=1, format="%d")
 
-        # Costo FOB en dólares (usando coma como separador de miles y punto como separador de decimales)
-        costo_dolares_fob = st.text_input("Costo en Dólares (FOB)", value=f"{producto.get('Costo FOB', 0):,.2f}".replace(",", "@").replace(".", ",").replace("@", "."))
+        # Registrar la venta
+        if st.button("Registrar venta"):
+            # Actualizar stock
+            nuevo_stock = producto['Stock'] - cantidad_vendida
+            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Stock'] = nuevo_stock
+            st.success(f"Venta registrada. Nuevo stock de {producto_seleccionado}: {nuevo_stock}")
 
-        ubicacion = st.text_input("Ubicación", producto.get('Ubicación', ''))
-        stock = st.number_input("Stock", value=int(producto['Stock']))
-        categoria = st.text_input("Categoría", producto.get('Categoría', ''))
-        descripcion = st.text_area("Descripción", producto.get('Descripción', ''))
+            # Guardar el historial de ventas
+            nueva_venta = {
+                'Producto': producto_seleccionado,
+                'Cantidad Vendida': cantidad_vendida,
+                'Precio de Venta': precio_venta,
+                'Fecha': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
 
-        # Activar o desactivar el producto
-        activo = st.checkbox("Producto Activo", value=producto.get('Activo', True))
+            # Verificar si existe el archivo de historial de ventas y actualizarlo
+            try:
+                df_ventas = pd.read_excel(archivo_ventas)
+                df_ventas = df_ventas.append(nueva_venta, ignore_index=True)
+            except FileNotFoundError:
+                df_ventas = pd.DataFrame([nueva_venta])
 
-        # Guardar los cambios en el DataFrame
-        if st.button("Guardar cambios"):
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Producto'] = nombre
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Codigo'] = codigo
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Precio x Mayor'] = precio_mayor
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo'] = precio_costo
-            
-            # Convertir de formato europeo (coma para decimales) a punto decimal y actualizar en el DataFrame
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo FOB'] = float(costo_dolares_fob.replace(".", "").replace(",", "."))
+            df_ventas.to_excel(archivo_ventas, index=False)
+            st.success("Venta registrada en el historial.")
 
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Ubicación'] = ubicacion
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Stock'] = stock
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Categoría'] = categoria
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Descripción'] = descripcion
-            df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Activo'] = activo
-            st.success("Los cambios fueron guardados exitosamente.")
-
-        # Opción para descargar el archivo modificado
+        # Opción para descargar la base de datos actualizada
         if st.button("Descargar base de datos actualizada"):
             df_productos.to_excel("productos_actualizados.xlsx", index=False)
             with open("productos_actualizados.xlsx", "rb") as file:
@@ -82,8 +80,17 @@ if 'df_productos' in locals():
                     file_name="productos_actualizados.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-    else:
-        st.write("Seleccioná un producto para editar sus detalles.")
+
+        # Opción para descargar el historial de ventas
+        if st.button("Descargar historial de ventas"):
+            df_ventas.to_excel("historial_ventas.xlsx", index=False)
+            with open("historial_ventas.xlsx", "rb") as file:
+                st.download_button(
+                    label="Descargar historial de ventas",
+                    data=file,
+                    file_name="historial_ventas.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
 else:
     st.write("El archivo no está disponible. Por favor, asegúrate de que el archivo '1083.xlsx' está en el directorio.")
