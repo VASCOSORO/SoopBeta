@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Interfaz para subir archivos en Streamlit
-st.title("Convertidor de CSV para Productos y Clientes")
+st.title("Convertidor de CSV para Productos, Clientes y Pedidos")
 
 # Sección para el archivo de Productos
 st.header("Convertidor para CSV de Productos")
@@ -47,7 +47,7 @@ if uploaded_file_productos is not None:
 
 # Sección para el archivo de Clientes
 st.header("Convertidor para CSV de Clientes")
-uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes")
+uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
 if uploaded_file_clientes is not None:
     # Leer el archivo CSV
@@ -69,26 +69,26 @@ if uploaded_file_clientes is not None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-# Sección para el archivo de Clientes
+# Sección para el archivo de Pedidos
 st.header("Convertidor para CSV de Pedidos")
-uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes")
+uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
 
-if uploaded_file_clientes is not None:
+if uploaded_file_pedidos is not None:
     # Leer el archivo CSV
-    df_clientes = pd.read_csv(uploaded_file_Pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+    df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
 
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Pedidos cargado:")
-    st.dataframe(df_Pedidos)
+    st.dataframe(df_pedidos)
 
     # Guardar el archivo en formato Excel
-    df_Pedidos.to_excel("archivo_modificado_Pedidos_streamlit.xlsx", index=False)
+    df_pedidos.to_excel("archivo_modificado_pedidos_streamlit.xlsx", index=False)
 
     # Proporcionar un enlace para descargar el archivo
-    with open("archivo_modificado_Pedidos_streamlit.xlsx", "rb") as file:
+    with open("archivo_modificado_pedidos_streamlit.xlsx", "rb") as file:
         btn = st.download_button(
             label="Descargar archivo modificado de Pedidos",
             data=file,
-            file_name="archivo_modificado_Pedidos.xlsx",
+            file_name="archivo_modificado_pedidos.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
