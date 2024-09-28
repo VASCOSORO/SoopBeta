@@ -272,8 +272,8 @@ if uploaded_file is not None:
                 nuevo_nombre = st.text_input("Nombre")
                 nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01)
                 nuevo_activo = st.selectbox("Activo", options=[0, 1])
-                nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(argentina))
-                nuevo_fecha_modificado = st.date_input("Fecha Modificado", value=datetime.now(argentina))
+                nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
+                nuevo_fecha_modificado = st.date_input("Fecha Modificado", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
                 nuevo_descripcion = st.text_area("Descripción")
                 nuevo_orden = st.number_input("Orden", min_value=0, step=1)
                 nuevo_codigo_barras = st.text_input("Código de Barras")
@@ -295,7 +295,7 @@ if uploaded_file is not None:
                 nuevo_proveedor = st.text_input("Proveedor")
                 nuevo_pasillo = st.text_input("Pasillo")
                 nuevo_estante = st.text_input("Estante")
-                nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(argentina))
+                nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
 
                 submit_nuevo = st.form_submit_button(label='Agregar Producto')
 
@@ -342,8 +342,7 @@ if uploaded_file is not None:
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
 
-        
-        # Botón para descargar el archivo Excel modificado
+        # Botón para descargar el archivo Excel modificado al final de todo
         st.header("💾 Descargar Archivo Modificado:")
         excel = convertir_a_excel(df_modificado)
 
