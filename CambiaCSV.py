@@ -1,18 +1,16 @@
 import streamlit as st
 import pandas as pd
-import re
 from io import BytesIO
 
 # Función para limpiar y convertir a entero eliminando solo puntos
 def limpiar_id(valor):
     if pd.isnull(valor):
-        return None
+        return ""
     # Eliminar solo puntos
     valor_limpio = str(valor).replace('.', '')
-    try:
-        return int(valor_limpio)
-    except ValueError:
-        return None
+    # Eliminar comas si las hubiera accidentalmente
+    valor_limpio = valor_limpio.replace(',', '')
+    return valor_limpio
 
 # Función para procesar y convertir DataFrame a Excel en memoria
 def convertir_a_excel(df):
@@ -43,7 +41,7 @@ def procesar_archivo(
             )
 
             # Mostrar los nombres de las columnas para depuración
-            st.write(f"Columnas encontradas en {tipo}: {df.columns.tolist()}")
+            st.write(f"🔍 **Columnas encontradas en {tipo}:** {df.columns.tolist()}")
 
             # Verificar y limpiar las columnas de identificación
             for columna in columnas_id:
@@ -55,12 +53,12 @@ def procesar_archivo(
             # Renombrar las columnas especificadas
             if columnas_a_renombrar:
                 # Mostrar qué columnas se intentarán renombrar
-                st.write(f"Renombrando columnas en {tipo}: {columnas_a_renombrar}")
+                st.write(f"🔄 **Renombrando columnas en {tipo}:** {columnas_a_renombrar}")
                 df = df.rename(columns=columnas_a_renombrar)
 
             # Eliminar columnas que no sirven
             if columnas_a_eliminar:
-                st.write(f"Eliminando columnas en {tipo}: {columnas_a_eliminar}")
+                st.write(f"🗑️ **Eliminando columnas en {tipo}:** {columnas_a_eliminar}")
                 df = df.drop(columns=columnas_a_eliminar, errors='ignore')
 
             # Agregar nuevas columnas vacías si no existen
@@ -72,10 +70,10 @@ def procesar_archivo(
             # Convertir las columnas de identificación a cadenas para evitar comas en la visualización
             for columna in columnas_id:
                 if columna in df.columns:
-                    df[columna] = df[columna].astype('Int64').astype(str)
+                    df[columna] = df[columna].astype(str)
 
             # Mostrar una tabla de datos modificada en la interfaz de Streamlit
-            st.write(f"Archivo de {tipo} modificado:")
+            st.write(f"📊 **Archivo de {tipo} modificado:**")
             st.dataframe(df)
 
             # Convertir el DataFrame a Excel en memoria
@@ -83,27 +81,26 @@ def procesar_archivo(
 
             # Proporcionar un enlace para descargar el archivo
             st.download_button(
-                label=f"Descargar archivo modificado de {tipo}",
+                label=f"📥 Descargar archivo modificado de {tipo}",
                 data=excel,
                 file_name=f"archivo_modificado_{tipo.lower()}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         except Exception as e:
-            st.error(f"Ocurrió un error al procesar el archivo de {tipo}: {e}")
+            st.error(f"❌ Ocurrió un error al procesar el archivo de {tipo}: {e}")
 
 # Interfaz para subir archivos en Streamlit
-st.title("Convertidor de CSV para Productos, Clientes y Pedidos")
+st.title("📁 Convertidor de CSV para Productos, Clientes y Pedidos")
 
 # Sección para el archivo de Productos
-st.header("Convertidor para CSV de Productos")
-uploaded_file_productos = st.file_uploader("Subí tu archivo CSV de Productos", type=["csv"], key="productos")
+st.header("🛍️ Convertidor para CSV de Productos")
+uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
 
 if uploaded_file_productos is not None:
     # Define las columnas específicas para Productos
     columnas_a_renombrar = {
         'Costo FOB': 'Costo en U$s',            # Cambio de 'Costo FOB' a 'Costo en U$s'
         'Precio jugueterias face': 'Precio'      # Cambio de 'Precio jugueterias face' a 'Precio'
-        # Eliminamos el renombrado de 'Precio' a 'Precio x Mayor' para evitar conflictos
     }
     columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
     columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
@@ -119,8 +116,8 @@ if uploaded_file_productos is not None:
     )
 
 # Sección para el archivo de Clientes
-st.header("Convertidor para CSV de Clientes")
-uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
+st.header("👥 Convertidor para CSV de Clientes")
+uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
 if uploaded_file_clientes is not None:
     # Define las columnas específicas para Clientes
@@ -139,8 +136,8 @@ if uploaded_file_clientes is not None:
     )
 
 # Sección para el archivo de Pedidos
-st.header("Convertidor para CSV de Pedidos")
-uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
+st.header("📦 Convertidor para CSV de Pedidos")
+uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
 
 if uploaded_file_pedidos is not None:
     # Define las columnas específicas para Pedidos
