@@ -26,10 +26,17 @@ if 'df_productos' in locals():
     # Mostrar y editar los atributos del producto
     st.subheader("Editar los detalles del producto")
     nombre = st.text_input("Nombre del Producto", producto['Producto'])
-    codigo = st.text_input("Código", producto['Codigo'])
-    precio_mayor = st.number_input("Precio por Mayor", value=float(producto['Precio x Mayor']))
-    precio_costo = st.number_input("Precio de Costo", value=float(producto['Costo']))
-    costo_dolares = st.number_input("Costo en Dólares", value=float(producto.get('Costo en U$s', 0)))
+
+    # ID como número entero sin comas
+    codigo = st.number_input("Código (ID)", value=int(producto['Codigo']), step=1, format="%d")
+
+    # Precio sin decimales
+    precio_mayor = st.number_input("Precio por Mayor", value=int(producto['Precio x Mayor']), step=1, format="%d")
+    precio_costo = st.number_input("Precio de Costo", value=int(producto['Costo']), step=1, format="%d")
+
+    # Costo FOB en dólares (usando coma como separador de miles y punto como separador de decimales)
+    costo_dolares_fob = st.text_input("Costo en Dólares (FOB)", value=f"{producto.get('Costo FOB', 0):,.2f}".replace(",", "@").replace(".", ",").replace("@", "."))
+
     ubicacion = st.text_input("Ubicación", producto.get('Ubicación', ''))
     stock = st.number_input("Stock", value=int(producto['Stock']))
     categoria = st.text_input("Categoría", producto.get('Categoría', ''))
@@ -44,7 +51,10 @@ if 'df_productos' in locals():
         df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Codigo'] = codigo
         df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Precio x Mayor'] = precio_mayor
         df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo'] = precio_costo
-        df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo en U$s'] = costo_dolares
+        
+        # Convertir de formato europeo (coma para decimales) a punto decimal y actualizar en el DataFrame
+        df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo FOB'] = float(costo_dolares_fob.replace(".", "").replace(",", "."))
+
         df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Ubicación'] = ubicacion
         df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Stock'] = stock
         df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Categoría'] = categoria
