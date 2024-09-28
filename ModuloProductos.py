@@ -51,6 +51,15 @@ def agregar_footer():
 def safe_value(value, min_value=0.0):
     return max(value, min_value)
 
+# Función para aplicar color al stock
+def color_stock(stock):
+    if stock > 10:
+        return '🟢 Suficiente stock'
+    elif stock > 0:
+        return '🟡 Poco stock'
+    else:
+        return '🔴 Sin stock'
+
 # Sidebar para cargar el archivo Excel
 st.sidebar.header("Cargar Archivo Excel de Productos")
 uploaded_file = st.sidebar.file_uploader("📤 Subir archivo Excel", type=["xlsx"])
@@ -153,8 +162,7 @@ if uploaded_file is not None:
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
 
             with col2:
-                
-                st.markdown(f"**Stock:** {producto['Stock']}")
+                st.markdown(f"**Stock:** {color_stock(producto['Stock'])}")
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
                     try:
@@ -168,7 +176,6 @@ if uploaded_file is not None:
                     st.write("🔗 **No hay imagen disponible.**")
                 st.markdown(f"**Costo:** {producto['Costo']}")
                 st.markdown(f"**Costo usd:** {producto['Costo usd']}")
-                
 
             # Opción para modificar el producto
             modificar = st.checkbox("🔄 Modificar Producto")
