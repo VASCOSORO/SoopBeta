@@ -12,6 +12,10 @@ def load_data():
         st.error("El archivo '1083.xlsx' no se encontró en la carpeta raíz.")
         return pd.DataFrame()  # Devolver un DataFrame vacío si no se encuentra el archivo
 
+# Botón para limpiar la caché y recargar los datos
+if st.button('Recargar archivo'):
+    st.cache_data.clear()  # Limpiar la caché
+
 # Cargar los datos
 df = load_data()
 
