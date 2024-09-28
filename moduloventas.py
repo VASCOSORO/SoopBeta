@@ -1,11 +1,6 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-from datetime import datetime
-import pytz
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
-import requests
-from PIL import Image
 
 # Configuración de la página
 st.set_page_config(
@@ -34,16 +29,21 @@ if uploaded_file is not None:
         # Leer el archivo Excel
         df = pd.read_excel(uploaded_file, engine='openpyxl')
 
-        # Mostrar los nombres de las columnas para depuración
-        st.sidebar.write("🔍 **Columnas en el archivo:**")
-        st.sidebar.write(df.columns.tolist())
+        # Mostrar los nombres de las columnas
+        st.write("🔍 **Columnas en el archivo cargado:**")
+        st.write(df.columns.tolist())  # Muestra la lista de columnas
+
+        # Asegurarnos de que la columna "Nombre" exista
+        if 'Nombre' in df.columns:
+            st.write("🔍 **Primeros valores de la columna 'Nombre':**")
+            st.write(df['Nombre'].head())  # Muestra los primeros valores de la columna 'Nombre'
+        else:
+            st.error("La columna 'Nombre' no existe en el archivo. Verifica el archivo Excel.")
+            st.stop()  # Detiene la ejecución si no se encuentra la columna 'Nombre'
 
         # Inicialización de la variable df_modificado
         df_modificado = df.copy()
 
-        # Opciones de filtrado y búsqueda
-        st.sidebar.header("Filtrar Productos")
-        
         # Buscador de productos
         st.subheader("Buscar y seleccionar producto")
         nombre_buscado = st.text_input("Buscar producto", value="", placeholder="Escribí el nombre del producto...")
@@ -74,28 +74,6 @@ if uploaded_file is not None:
                 st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
-
-            with col2:
-                # Mostrar el stock
-                stock_actual = producto['Stock']
-                if stock_actual > 10:
-                    st.markdown(f"🟢 **Stock: {stock_actual} unidades**")
-                elif stock_actual > 0:
-                    st.markdown(f"🟡 **Stock: {stock_actual} unidades**")
-                else:
-                    st.markdown(f"🔴 **Sin stock**")
-                
-                # Mostrar imagen del producto
-                if pd.notnull(producto['imagen']) and producto['imagen'] != '':
-                    try:
-                        response = requests.get(producto['imagen'], timeout=5)
-                        response.raise_for_status()
-                        image = Image.open(BytesIO(response.content))
-                        st.image(image, width=150)
-                    except Exception as e:
-                        st.write("🔗 **Imagen no disponible o URL inválida.**")
-                else:
-                    st.write("🔗 **No hay imagen disponible.**")
 
         # Opción para descargar la base de datos modificada
         excel = convertir_a_excel(df_modificado)
