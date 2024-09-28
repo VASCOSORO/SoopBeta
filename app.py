@@ -1,42 +1,37 @@
 import streamlit as st
 import pandas as pd
 
-# Cargar el archivo Excel
+# Función para cargar el archivo Excel desde la carpeta raíz
 @st.cache_data
 def load_data():
-    df = pd.read_excel('1083.xlsx', engine='openpyxl')  # Cargar el archivo Excel
-    return df
+    try:
+        # Cargar el archivo Excel desde la carpeta raíz
+        df = pd.read_excel('1083.xlsx', engine='openpyxl')
+        return df
+    except FileNotFoundError:
+        st.error("El archivo '1083.xlsx' no se encontró en la carpeta raíz.")
+        return pd.DataFrame()  # Devolver un DataFrame vacío si no se encuentra el archivo
 
-# Cargar datos
+# Cargar los datos
 df = load_data()
 
-# Verificar el número exacto de filas y columnas cargadas
-st.write(f"Se cargaron {df.shape[0]} filas y {df.shape[1]} columnas del archivo Excel.")
-
-# Mostrar las primeras 5 filas para verificar si se cargan correctamente
-st.write("Primeras 5 filas de los productos cargados:")
-st.write(df.head())
-
-# Mostrar cuántos valores nulos hay en cada columna
-st.write("Valores nulos por columna:")
-st.write(df.isnull().sum())
-
-# Función para limpiar y normalizar los nombres de productos
-def limpiar_nombre_producto(nombre):
-    if pd.isna(nombre):
-        return ""
-    return nombre.strip().lower()
-
-# Limpiar los nombres de productos en el DataFrame
-df['Nombre Limpio'] = df['Nombre'].apply(limpiar_nombre_producto)
+# Verificar si los datos fueron cargados correctamente
+if not df.empty:
+    st.success(f"Se cargaron {df.shape[0]} filas y {df.shape[1]} columnas del archivo Excel.")
+    
+    # Mostrar las primeras 5 filas para verificar si se cargan correctamente
+    st.write("Primeras 5 filas de los productos cargados:")
+    st.write(df.head())
+else:
+    st.error("No se cargaron datos. Verificá que el archivo '1083.xlsx' esté en la carpeta correcta.")
 
 # Campo de búsqueda
-busqueda = st.text_input("Escribí acá para buscar")  # Usamos text_input en vez de selectbox
+busqueda = st.text_input("Escribí acá para buscar")  # Campo de texto para la búsqueda
 
 # Verificar si el usuario ha escrito algo y filtrar productos
-if busqueda:
-    busqueda_limpia = busqueda.strip().lower()  # Limpiamos y normalizamos la búsqueda
-    productos_filtrados = df[df['Nombre Limpio'].str.contains(busqueda_limpia, case=False, na=False)]
+if busqueda and not df.empty:
+    # Hacer una búsqueda básica en la columna de 'Nombre'
+    productos_filtrados = df[df['Nombre'].str.contains(busqueda, case=False, na=False)]
     
     if not productos_filtrados.empty:
         st.write(f"Se encontraron {productos_filtrados.shape[0]} productos con el término '{busqueda}'.")
