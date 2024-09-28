@@ -40,12 +40,15 @@ if cliente_seleccionado:
         vendedor_default = vendedores[0]
         vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
 
-    # Mostrar detalles seleccionados
-    col3, col4 = st.columns([1, 1])
+    # Mostrar detalles: descuento y última compra uno al lado del otro, debajo del nombre del vendedor
+    st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
+
+    # Organizar descuento y última compra en una fila
+    col3, col4 = st.columns(2)
     with col3:
-        st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+        st.write(f"**Descuento:** {cliente_data['Descuento']}%")
     with col4:
-        st.write(f"**Descuento asignado:** {cliente_data['Descuento']}%")
+        st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
 
 # Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
 
