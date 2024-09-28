@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
-from datetime import datetime  # Importar el módulo datetime
+from datetime import datetime
+import pytz  # Importar pytz para manejo de zonas horarias
 
 # Configuración de la página
 st.set_page_config(
@@ -112,8 +113,9 @@ def procesar_archivo(
             # Convertir el DataFrame a Excel en memoria
             excel = convertir_a_excel(df)
 
-            # Obtener la fecha y hora actual en formato 'YYYYMMDD_HHMMSS'
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Obtener la fecha y hora actual en horario de Argentina
+            argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+            timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
 
             # Crear el nombre del archivo con el timestamp
             file_name = f"archivo_modificado_{tipo.lower()}_{timestamp}.xlsx"
