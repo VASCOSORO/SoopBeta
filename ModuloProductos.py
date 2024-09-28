@@ -94,10 +94,10 @@ if uploaded_file is not None:
         gb.configure_default_column(
             editable=False,
             groupable=True,
-            resizable=True,
+            resizable=False,
             sortable=True,
-            wrapText=True,  # Envuelve el texto para columnas largas
-            autoHeight=True  # Ajusta la altura automáticamente
+            wrapText=False,  # Envuelve el texto para columnas largas
+            autoHeight=False  # Ajusta la altura automáticamente
         )
 
         # Ajustar el tamaño de las columnas según el contenido
@@ -119,7 +119,7 @@ if uploaded_file is not None:
                 gridOptions=gridOptions,
                 data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                 update_mode=GridUpdateMode.MODEL_CHANGED,
-                fit_columns_on_grid_load=True,
+                fit_columns_on_grid_load=False,
                 theme='streamlit',  # Tema válido
                 enable_enterprise_modules=False,
                 height=500,
@@ -147,12 +147,13 @@ if uploaded_file is not None:
                 st.markdown(f"**ID:** {producto['Id']}")
                 st.markdown(f"**Código:** {producto['Codigo']}")
                 st.markdown(f"**Nombre:** {producto['Nombre']}")
+                st.markdown(f"**Precio:** {producto['Precio']}")
                 st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
                 st.markdown(f"**Costo:** {producto['Costo']}")
                 st.markdown(f"**Stock:** {producto['Stock']}")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
-                st.markdown(f"**Precio:** {producto['Precio']}")
+                
 
             with col2:
                 # Mostrar la imagen del producto
