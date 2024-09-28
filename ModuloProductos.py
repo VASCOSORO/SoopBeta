@@ -84,29 +84,34 @@ if uploaded_file is not None:
             estado_activo = 1 if filtro_activo == 'Sí' else 0
             df = df[df['Activo'] == estado_activo]
 
-        # Configuración de la tabla AgGrid
-        gb = GridOptionsBuilder.from_dataframe(df)
-        gb.configure_pagination(paginationAutoPageSize=True)
-        gb.configure_side_bar()
-        gb.configure_default_column(
-            editable=False,
-            groupable=True,
-            resizable=True,
-            sortable=True,
-            wrapText=True,  # Envuelve el texto para columnas largas
-            autoHeight=True  # Ajusta la altura automáticamente
-        )
+        # Mostrar el total de artículos filtrados arriba del checkbox
+        st.write(f"Total de Artículos Filtrados: {len(df)}")
 
-        # Ajustar el tamaño de las columnas según el contenido
-        for column in df.columns:
-            gb.configure_column(column, autoWidth=True)
+        # Checkbox para mostrar la vista preliminar
+        mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
 
-        gridOptions = gb.build()
-
-        # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
-        mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla", value=True)
-
+        # Si el checkbox está activado, se muestra la tabla
         if mostrar_tabla:
+            # Configuración de la tabla AgGrid
+            gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(paginationAutoPageSize=True)
+            gb.configure_side_bar()
+            gb.configure_default_column(
+                editable=False,
+                groupable=True,
+                resizable=True,
+                sortable=True,
+                wrapText=True,  # Envuelve el texto para columnas largas
+                autoHeight=True  # Ajusta la altura automáticamente
+            )
+
+            # Ajustar el tamaño de las columnas según el contenido
+            for column in df.columns:
+                gb.configure_column(column, autoWidth=True)
+
+            gridOptions = gb.build()
+
+            # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
             st.header("📊 Tabla de Productos:")
             grid_response = AgGrid(
                 df,
@@ -122,9 +127,6 @@ if uploaded_file is not None:
 
             # Obtener el DataFrame modificado
             df_modificado = grid_response['data']
-
-            # Mostrar el total de artículos filtrados
-            st.write(f"Total de Artículos Filtrados: {len(df_modificado)}")
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
@@ -308,10 +310,10 @@ if uploaded_file is not None:
                             'Id Externo': nuevo_id_externo,
                             'Codigo': nuevo_codigo,
                             'Nombre': nuevo_nombre,
-                            'Precio': nuevo_precio,
                             'Precio x Mayor': nuevo_precio_x_mayor,
                             'Activo': nuevo_activo,
                             'Fecha Creado': nuevo_fecha_creado,
+                            'Fecha Modificado': nuevo_fecha_modificado,
                             'Descripcion': nuevo_descripcion,
                             'Orden': nuevo_orden,
                             'Codigo de Barras': nuevo_codigo_barras,
@@ -321,7 +323,11 @@ if uploaded_file is not None:
                             'Costo usd': nuevo_costo_usd,
                             'Costo': nuevo_costo,
                             'Etiquetas': nuevo_etiquetas,
-                            'Stock': nuevo_stock,                         
+                            'Stock': nuevo_stock,
+                            'Precio Mayorista': nuevo_precio_mayorista,
+                            'Precio Online': nuevo_precio_online,
+                            'Precio': nuevo_precio,
+                            'Precio face Dolar': nuevo_precio_face_dolar,
                             'Precio Mayorista USD': nuevo_precio_mayorista_usd,
                             'Marca': nuevo_marca,
                             'Categorias': nuevo_categorias,
