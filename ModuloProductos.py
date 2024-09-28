@@ -185,6 +185,12 @@ if uploaded_file is not None:
 
                     with editar_col1:
                         nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
+                        nuevo_precio = st.number_input(
+                            "Precio",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio']), 0.0)
+                        )
                         nuevo_precio_x_mayor = st.number_input(
                             "Precio x Mayor",
                             min_value=0.0,
@@ -205,12 +211,7 @@ if uploaded_file is not None:
                         )
                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
-                        nuevo_precio = st.number_input(
-                            "Precio",
-                            min_value=0.0,
-                            step=0.01,
-                            value=safe_value(float(producto['Precio']), 0.0)
-                        )
+                        
 
                         # Mostrar campos adicionales si se selecciona el checkbox
                         if mostrar_campos_adicionales:
