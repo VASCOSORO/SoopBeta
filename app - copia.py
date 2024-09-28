@@ -1,70 +1,61 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 
-# Configuración inicial para Streamlit
-st.title("Análisis de Clientes - Creación y Asignación")
+# Título de la aplicación
+st.title("Sistema de Gestión de Pedidos")
 
-# Subir archivo Excel
-uploaded_file = st.file_uploader("Subí tu archivo Excel", type=["xlsx"])
+# Cargar archivo de pedidos
+uploaded_file = st.file_uploader("Subí el archivo de pedidos", type=["xlsx"])
 
 if uploaded_file is not None:
     # Leer el archivo Excel
-    df = pd.read_excel(uploaded_file)
+    df_pedidos = pd.read_excel(uploaded_file)
 
-    # Asegurarse que las fechas están en formato de fecha
-    df['Fecha Creado'] = pd.to_datetime(df['Fecha Creado'], errors='coerce')
+    # Mostrar la tabla original
+    st.write("Tabla original de pedidos:")
+    st.dataframe(df_pedidos)
 
-    # 1. Gráfico de clientes creados por mes/año
-    def grafico_creados_por_mes(df, year=None):
-        df['Mes Creado'] = df['Fecha Creado'].dt.to_period('M')  # Agregamos una columna con el mes
-        if year:
-            df = df[df['Fecha Creado'].dt.year == year]  # Filtramos por el año
-        clientes_por_mes = df['Mes Creado'].value_counts().sort_index()
+    # Filtros para la gestión
+    st.header("Filtros para modificar los pedidos")
 
-        # Crear el gráfico
-        plt.figure(figsize=(10, 6))
-        clientes_por_mes.plot(kind='bar')
-        plt.title(f'Clientes creados por mes en {year if year else "todos los años"}')
-        plt.xlabel('Mes')
-        plt.ylabel('Cantidad de clientes')
-        plt.xticks(rotation=45)
-        st.pyplot(plt)
+    # Filtrar por vendedor
+    vendedores = df_pedidos['Vendedor'].unique()
+    vendedor_seleccionado = st.selectbox("Filtrar por vendedor", options=vendedores, index=0)
+    df_filtrado = df_pedidos[df_pedidos['Vendedor'] == vendedor_seleccionado]
 
-    # 2. Gráfico de clientes por vendedor
-    def grafico_clientes_por_vendedor(df):
-        df['Vendedores_principal'] = df['Vendedores'].apply(lambda x: x.split(',')[0].strip() if pd.notna(x) else 'Sin vendedor')  # Primer vendedor como principal
-        clientes_por_vendedor = df['Vendedores_principal'].value_counts()
+    # Filtrar por estado de pedido
+    status_unicos = df_pedidos['Status'].unique()
+    status_seleccionado = st.selectbox("Filtrar por status", options=status_unicos, index=0)
+    df_filtrado = df_filtrado[df_filtrado['Status'] == status_seleccionado]
 
-        # Crear el gráfico
-        plt.figure(figsize=(12, 6))
-        clientes_por_vendedor.plot(kind='bar')
-        plt.title('Clientes por Vendedor Principal')
-        plt.xlabel('Vendedor')
-        plt.ylabel('Cantidad de clientes')
-        plt.xticks(rotation=45)
-        st.pyplot(plt)
+    # Mostrar la tabla filtrada
+    st.write(f"Pedidos filtrados por vendedor: {vendedor_seleccionado} y status: {status_seleccionado}")
+    st.dataframe(df_filtrado)
 
-    # 3. Gráfico de clientes sin vendedor
-    def grafico_clientes_sin_vendedor(df):
-        sin_vendedor = df[df['Vendedores_principal'] == 'Sin vendedor'].shape[0]
-        con_vendedor = df[df['Vendedores_principal'] != 'Sin vendedor'].shape[0]
+    # Modificar algunos campos
+    st.header("Modificar pedidos seleccionados")
 
-        # Crear el gráfico
-        plt.figure(figsize=(6, 6))
-        plt.pie([con_vendedor, sin_vendedor], labels=['Con Vendedor', 'Sin Vendedor'], autopct='%1.1f%%', startangle=90)
-        plt.title('Clientes con y sin Vendedor')
-        st.pyplot(plt)
+    # Seleccionar fila para editar
+    fila_seleccionada = st.selectbox("Seleccionar un pedido por Id", options=df_filtrado['Id'].unique())
+    pedido_seleccionado = df_pedidos[df_pedidos['Id'] == fila_seleccionada]
 
-    # Interfaz para elegir el año
-    year = st.number_input("Elegí el año para ver cuántos clientes fueron creados", min_value=2000, max_value=2100, step=1, value=2023)
+    # Modificar campos del pedido seleccionado
+    nuevo_status = st.selectbox("Modificar el status", options=status_unicos, index=list(status_unicos).index(pedido_seleccionado['Status'].values[0]))
+    nuevo_vendedor = st.selectbox("Modificar el vendedor", options=vendedores, index=list(vendedores).index(pedido_seleccionado['Vendedor'].values[0]))
 
-    # Mostrar los gráficos
-    st.subheader("Clientes creados por mes")
-    grafico_creados_por_mes(df, year=year)  # Filtrar por el año seleccionado
+    # Aplicar los cambios
+    if st.button("Guardar cambios"):
+        df_pedidos.loc[df_pedidos['Id'] == fila_seleccionada, 'Status'] = nuevo_status
+        df_pedidos.loc[df_pedidos['Id'] == fila_seleccionada, 'Vendedor'] = nuevo_vendedor
+        st.success(f"Pedido {fila_seleccionada} actualizado")
 
-    st.subheader("Clientes por Vendedor Principal")
-    grafico_clientes_por_vendedor(df)
-
-    st.subheader("Clientes con y sin Vendedor")
-    grafico_clientes_sin_vendedor(df)
+    # Opción para descargar el archivo modificado
+    st.write("Descargá el archivo modificado en formato Excel:")
+    df_pedidos.to_excel("pedidos_modificados.xlsx", index=False)
+    with open("pedidos_modificados.xlsx", "rb") as file:
+        st.download_button(
+            label="Descargar archivo modificado",
+            data=file,
+            file_name="pedidos_modificados.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
