@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # Título de la aplicación
-st.title("📁 Convertidor de CSV para Productos, Clientes y Pedidos")
+st.title("📁 Convertidor de CSV")
 
 # Función para limpiar y convertir las columnas 'Id' y 'Id Cliente' eliminando solo puntos
 def limpiar_id(valor):
