@@ -66,7 +66,7 @@ if uploaded_file is not None:
 
         # Opciones de filtrado y búsqueda
         st.sidebar.header("Filtrar Productos")
-        
+
         # Corregir que cada categoría sea individual en el multiselect
         categorias_separadas = set()
         for cat in df['Categorias'].dropna():
@@ -84,7 +84,11 @@ if uploaded_file is not None:
             estado_activo = 1 if filtro_activo == 'Sí' else 0
             df = df[df['Activo'] == estado_activo]
 
-        # Checkbox para mostrar la tabla
+        # Mostrar el total de artículos filtrados antes de la tabla
+        total_articulos_filtrados = len(df)
+        st.write(f"**Total de Artículos Filtrados: {total_articulos_filtrados}**")
+
+        # Checkbox para mostrar la vista preliminar de la tabla
         mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
 
         if mostrar_tabla:
@@ -121,18 +125,15 @@ if uploaded_file is not None:
                 reload_data=False
             )
 
-            # Mostrar el total de artículos filtrados
-            st.write(f"Total de Artículos Filtrados: {len(grid_response['data'])}")
-
             # Obtener el DataFrame modificado
             df_modificado = grid_response['data']
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
-        selected_product = st.selectbox("Selecciona un Producto", [''] + df['Nombre'].tolist())  # Opción vacía
+        selected_product = st.selectbox("Selecciona un Producto", [''] + df_modificado['Nombre'].tolist())  # Opción vacía
 
         if selected_product:
-            producto = df[df['Nombre'] == selected_product].iloc[0]
+            producto = df_modificado[df_modificado['Nombre'] == selected_product].iloc[0]
 
             # Mostrar los detalles del producto
             st.subheader(f"Detalles de: {selected_product}")
@@ -175,49 +176,56 @@ if uploaded_file is not None:
                 # Mostrar un formulario con los detalles del producto para editar
                 with st.form(key='editar_producto_unique'):
                     # Organizar los campos en columnas para una mejor estética
-                    nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
-                    nuevo_precio = st.number_input(
-                        "Precio",
-                        min_value=0.0,
-                        step=0.01,
-                        value=safe_value(float(producto['Precio']), 0.0)
-                    )
-                    nuevo_precio_x_mayor = st.number_input(
-                        "Precio x Mayor",
-                        min_value=0.0,
-                        step=0.01,
-                        value=safe_value(float(producto['Precio x Mayor']), 0.0)
-                    )
-                    nuevo_costo = st.number_input(
-                        "Costo",
-                        min_value=0.0,
-                        step=0.01,
-                        value=safe_value(float(producto['Costo']), 0.0)
-                    )
-                    nuevo_costo_usd = st.number_input(
-                        "Costo USD",
-                        min_value=0.0,
-                        step=0.01
-                    )
-                    nuevo_stock = st.number_input(
-                        "Stock",
-                        min_value=0,
-                        step=1,
-                        value=int(safe_value(producto['Stock'], 0))
-                    )
-                    nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
+                    editar_col1, editar_col2 = st.columns([3, 1])
 
-                    # Categorías en formato con "X" para eliminar como en el filtro
-                    categorias_separadas = set(producto['Categorias'].split(','))
-                    nuevo_categorias = st.multiselect("Categorías", options=sorted(categorias_separadas), default=categorias_separadas)
+                    with editar_col1:
+                        nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
+                        nuevo_precio_x_mayor = st.number_input(
+                            "Precio x Mayor",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio x Mayor']), 0.0)
+                        )
+                        nuevo_costo = st.number_input(
+                            "Costo",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Costo']), 0.0)
+                        )
+                        nuevo_costo_usd = st.number_input(
+                            "Costo USD",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto.get('Costo USD', 0.0)), 0.0)
+                        )
+                        nuevo_stock = st.number_input(
+                            "Stock",
+                            min_value=0,
+                            step=1,
+                            value=int(safe_value(producto['Stock'], 0))
+                        )
+                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
+                        nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
 
-                    # Checkbox para habilitar la edición de pasillo, estante y proveedor
-                    expandir_datos_adicionales = st.checkbox("Editar datos adicionales (pasillo, estante, proveedor)")
+                    with editar_col2:
+                        # Mostrar la imagen del producto
+                        if pd.notnull(producto['imagen']) and producto['imagen'] != '':
+                            try:
+                                response = requests.get(producto['imagen'], timeout=5)
+                                response.raise_for_status()
+                                image = Image.open(BytesIO(response.content))
+                                st.image(image, width=150)
+                            except:
+                                st.write("🔗 **Imagen no disponible o URL inválida.**")
+                        else:
+                            st.write("🔗 **No hay imagen disponible.**")
 
-                    if expandir_datos_adicionales:
+                    # Checkbox para desplegar proveedor, pasillo y estante
+                    mostrar_info_extra = st.checkbox("Agregar proveedor, pasillo y estante")
+                    if mostrar_info_extra:
+                        nuevo_proveedor = st.text_input("Proveedor", value=producto.get('Proveedor', ''))
                         nuevo_pasillo = st.text_input("Pasillo", value=producto.get('Pasillo', ''))
                         nuevo_estante = st.text_input("Estante", value=producto.get('Estante', ''))
-                        nuevo_proveedor = st.text_input("Proveedor", value=producto.get('Proveedor', ''))
 
                     submit_edit = st.form_submit_button(label='Guardar Cambios')
 
@@ -227,24 +235,22 @@ if uploaded_file is not None:
                             st.error("❌ El Nombre no puede estar vacío.")
                         else:
                             # Actualizar el DataFrame
-                            df.loc[df['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
-                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
-                            df.loc[df['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
-                            df.loc[df['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
-                            df.loc[df['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
-                            df.loc[df['Nombre'] == nuevo_nombre, 'Categorias'] = ','.join(nuevo_categorias)
-                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
-
-                            if expandir_datos_adicionales:
-                                df.loc[df['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
-                                df.loc[df['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
-                                df.loc[df['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
+                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
+                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
+                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
+                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
+                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
+                            if mostrar_info_extra:
+                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
+                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
+                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
 
                             st.success("✅ Producto modificado exitosamente.")
 
         # Botón para descargar el archivo Excel modificado
         st.header("💾 Descargar Archivo Modificado:")
-        excel = convertir_a_excel(df)
+        excel = convertir_a_excel(df_modificado)
 
         # Obtener la fecha y hora actual en horario de Argentina
         argentina = pytz.timezone('America/Argentina/Buenos_Aires')
@@ -301,7 +307,7 @@ if uploaded_file is not None:
                     # Validaciones
                     if not nuevo_id or not nuevo_nombre:
                         st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
-                    elif df['Id'].astype(str).str.contains(nuevo_id).any():
+                    elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
                         st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
                     else:
                         # Agregar el nuevo producto al DataFrame
@@ -337,7 +343,7 @@ if uploaded_file is not None:
                             'Estante': nuevo_estante,
                             'Fecha de Vencimiento': nuevo_fecha_vencimiento
                         }
-                        df = df.append(nuevo_producto, ignore_index=True)
+                        df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
 
     except Exception as e:
