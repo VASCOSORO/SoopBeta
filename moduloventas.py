@@ -104,4 +104,9 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     total_items = pedido_df['Cantidad'].sum()
     total_monto = pedido_df['Importe'].sum()
     
-    st.write(f"**Total de
+    st.write(f"**Total de items:** {total_items}")
+    st.write(f"**Total del pedido:** ${total_monto}")
+    
+    # Botón para guardar el pedido
+    if st.button("Guardar pedido"):
+        st.success("Pedido guardado exitosamente.")
