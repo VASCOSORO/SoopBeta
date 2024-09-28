@@ -65,7 +65,7 @@ def procesar_archivo(
             if columnas_a_renombrar:
                 columnas_a_renombrar_final = {}
                 for original, nuevo in columnas_a_renombrar.items():
-                    # Crear un patrón regex para manejar singular/plural y mayúsculas/minúsculas
+                    # Crear un patrón regex para manejar mayúsculas/minúsculas
                     pattern = re.compile(re.escape(original), re.IGNORECASE)
                     matches = [col for col in df.columns if pattern.fullmatch(col)]
                     for match in matches:
@@ -128,9 +128,8 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     # Define las columnas específicas para Productos
     columnas_a_renombrar = {
-        'Costo FOB': 'Costo en U$s',                # Cambio de 'Costo FOB' a 'Costo en U$s'
-        'Precio jugueteria face': 'Precio x Mayor',  # Cambio de 'Precio jugueteria face' a 'Precio x Mayor'
-        'Precio jugueterias face': 'Precio x Mayor'  # Cambio de 'Precio jugueterias face' a 'Precio x Mayor'
+        'precio': 'Precio x Mayor',                       # Cambio de 'precio' a 'Precio x Mayor'
+        'Precio Jugueterias Face': 'Precio'               # Cambio de 'Precio Jugueterias Face' a 'Precio'
     }
     columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
     columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
