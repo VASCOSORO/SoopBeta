@@ -151,11 +151,8 @@ if uploaded_file is not None:
                 st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
-                
 
             with col2:
-
-                st.markdown(f"**Código:** {producto['Codigo']}")
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
                     try:
@@ -177,6 +174,9 @@ if uploaded_file is not None:
             if modificar:
                 st.markdown("---")
                 st.subheader(f"📝 Editar Detalles de: {selected_product}")
+
+                # Checkbox para mostrar campos adicionales
+                mostrar_campos_adicionales = st.checkbox("Agregar Datos de Ubicación y Proveedor")
 
                 # Mostrar un formulario con los detalles del producto para editar
                 with st.form(key='editar_producto_unique'):
@@ -212,6 +212,12 @@ if uploaded_file is not None:
                             value=safe_value(float(producto['Precio']), 0.0)
                         )
 
+                        # Mostrar campos adicionales si se selecciona el checkbox
+                        if mostrar_campos_adicionales:
+                            nuevo_proveedor = st.text_input("Proveedor", value=producto.get('Proveedor', ''))
+                            nuevo_pasillo = st.text_input("Pasillo", value=producto.get('Pasillo', ''))
+                            nuevo_estante = st.text_input("Estante", value=producto.get('Estante', ''))
+
                     with editar_col2:
                         # Mostrar la imagen del producto
                         if pd.notnull(producto['imagen']) and producto['imagen'] != '':
@@ -240,6 +246,11 @@ if uploaded_file is not None:
                             df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
                             df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
                             df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+
+                            if mostrar_campos_adicionales:
+                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
+                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
+                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
 
                             st.success("✅ Producto modificado exitosamente.")
 
