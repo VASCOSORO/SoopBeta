@@ -51,14 +51,14 @@ def agregar_footer():
 def safe_value(value, min_value=0.0):
     return max(value, min_value)
 
-# Función para aplicar color al stock
+# Función para aplicar color al stock y mostrar la cantidad
 def color_stock(stock):
     if stock > 10:
-        return '🟢 Suficiente stock'
+        return f'🟢 {stock} unidades (Suficiente stock)'
     elif stock > 0:
-        return '🟡 Poco stock'
+        return f'🟡 {stock} unidades (Poco stock)'
     else:
-        return '🔴 Sin stock'
+        return f'🔴 {stock} unidades (Sin stock)'
 
 # Sidebar para cargar el archivo Excel
 st.sidebar.header("Cargar Archivo Excel de Productos")
