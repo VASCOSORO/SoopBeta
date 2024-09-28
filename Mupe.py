@@ -1,8 +1,6 @@
 import streamlit as st
-import speech_recognition as sr
 import pygame
 import random
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
 
 # Inicializamos pygame sin la pantalla física, ya que lo manejaremos como un backend
 pygame.init()
@@ -52,18 +50,8 @@ class Obstacle:
             self.height = random.randint(30, 70)
             self.y = screen_height - self.height - 10
 
-# Audio Processor para detección de voz
-class AudioProcessor(AudioProcessorBase):
-    def __init__(self):
-        self.recognizer = sr.Recognizer()
-    
-    def recv(self, frame):
-        audio = frame.to_ndarray()
-        # Aquí podríamos agregar más lógica para analizar el audio
-        return frame
-
 def game_loop():
-    st.write("Controlá al osito con tu voz")
+    st.write("Controlá al osito haciendo clic en el botón de 'Saltar'")
 
     bear = Bear()
     obstacle = Obstacle()
@@ -72,11 +60,10 @@ def game_loop():
     game_over = False
 
     while not game_over:
-        # Actualizar la interfaz de Streamlit
         st.write(f"Score: {score}")
 
-        # Control del osito por la voz
-        if st.session_state.get("jump_detected", False) and not bear.is_jumping:
+        # Control del osito con botón
+        if st.button("Saltar") and not bear.is_jumping:
             bear.vel_y = -15
             bear.is_jumping = True
 
@@ -91,15 +78,6 @@ def game_loop():
 
         score += 1
 
-# Configurar la función del Streamlit WebRTC para capturar la voz
-webrtc_ctx = webrtc_streamer(
-    key="example",
-    mode=WebRtcMode.SENDRECV,
-    audio_processor_factory=AudioProcessor,
-    media_stream_constraints={"audio": True, "video": False},
-    async_processing=True,
-)
-
-# Inicializamos el juego
+# Iniciar el juego
 if st.button("Iniciar el juego"):
     game_loop()
