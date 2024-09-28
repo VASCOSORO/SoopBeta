@@ -85,48 +85,56 @@ if uploaded_file is not None:
             estado_activo = 1 if filtro_activo == 'Sí' else 0
             df = df[df['Activo'] == estado_activo]
 
-        # Configuración de la tabla AgGrid
-        gb = GridOptionsBuilder.from_dataframe(df)
-        gb.configure_pagination(paginationAutoPageSize=True)
-        gb.configure_side_bar()
-        gb.configure_default_column(
-            editable=False,
-            groupable=True,
-            resizable=True,
-            sortable=True,
-            wrapText=True,  # Envuelve el texto para columnas largas
-            autoHeight=True  # Ajusta la altura automáticamente
-        )
+        # Checkbox para mostrar/ocultar la tabla
+        mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
 
-        # Ajustar el tamaño de las columnas según el contenido
-        for column in df.columns:
-            gb.configure_column(column, autoWidth=True)  # Ajustar el ancho automáticamente
+        # Si se selecciona el checkbox, mostrar la tabla
+        if mostrar_tabla:
+            # Configuración de la tabla AgGrid
+            gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(paginationAutoPageSize=True)
+            gb.configure_side_bar()
+            gb.configure_default_column(
+                editable=False,
+                groupable=True,
+                resizable=True,
+                sortable=True,
+                wrapText=True,  # Envuelve el texto para columnas largas
+                autoHeight=True  # Ajusta la altura automáticamente
+            )
 
-        gridOptions = gb.build()
+            # Ajustar el tamaño de las columnas según el contenido
+            for column in df.columns:
+                gb.configure_column(column, autoWidth=True)  # Ajustar el ancho automáticamente
 
-        # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
-        st.header("📊 Tabla de Productos:")
-        grid_response = AgGrid(
-            df,
-            gridOptions=gridOptions,
-            data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-            update_mode=GridUpdateMode.MODEL_CHANGED,
-            fit_columns_on_grid_load=True,
-            theme='streamlit',  # Tema válido
-            enable_enterprise_modules=False,
-            height=500,
-            reload_data=False
-        )
+            gridOptions = gb.build()
 
-        # Obtener el DataFrame modificado
-        df_modificado = grid_response['data']
+            # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
+            st.header("📊 Tabla de Productos:")
+            grid_response = AgGrid(
+                df,
+                gridOptions=gridOptions,
+                data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+                update_mode=GridUpdateMode.MODEL_CHANGED,
+                fit_columns_on_grid_load=True,
+                theme='streamlit',  # Tema válido
+                enable_enterprise_modules=False,
+                height=500,
+                reload_data=False
+            )
+
+            # Obtener el DataFrame modificado
+            df_modificado = grid_response['data']
+
+            # Mostrar el total de artículos filtrados
+            st.write(f"**Total de Artículos Filtrados: {len(df_modificado)}**")
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
-        selected_product = st.selectbox("Selecciona un Producto", [''] + df_modificado['Nombre'].tolist())  # Opción vacía
+        selected_product = st.selectbox("Selecciona un Producto", [''] + df['Nombre'].tolist())  # Opción vacía
 
         if selected_product:
-            producto = df_modificado[df_modificado['Nombre'] == selected_product].iloc[0]
+            producto = df[df['Nombre'] == selected_product].iloc[0]
 
             # Mostrar los detalles del producto
             st.subheader(f"Detalles de: {selected_product}")
@@ -221,19 +229,19 @@ if uploaded_file is not None:
                             st.error("❌ El Nombre no puede estar vacío.")
                         else:
                             # Actualizar el DataFrame
-                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+                            df.loc[df['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
 
                             st.success("✅ Producto modificado exitosamente.")
 
         # Botón para descargar el archivo Excel modificado
         st.header("💾 Descargar Archivo Modificado:")
-        excel = convertir_a_excel(df_modificado)
+        excel = convertir_a_excel(df)
 
         # Obtener la fecha y hora actual en horario de Argentina
         argentina = pytz.timezone('America/Argentina/Buenos_Aires')
@@ -251,7 +259,7 @@ if uploaded_file is not None:
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
-        with st.expander("Agregar Producto"):  # Cambié para que sea un expander
+        with st.expander("Agregar Producto"):
             with st.form(key='agregar_producto_unique'):
                 nuevo_id = st.text_input("Id")
                 nuevo_id_externo = st.text_input("Id Externo")
@@ -290,7 +298,7 @@ if uploaded_file is not None:
                     # Validaciones
                     if not nuevo_id or not nuevo_nombre:
                         st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
-                    elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
+                    elif df['Id'].astype(str).str.contains(nuevo_id).any():
                         st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
                     else:
                         # Agregar el nuevo producto al DataFrame
@@ -326,7 +334,7 @@ if uploaded_file is not None:
                             'Estante': nuevo_estante,
                             'Fecha de Vencimiento': nuevo_fecha_vencimiento
                         }
-                        df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
+                        df = df.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
 
     except Exception as e:
