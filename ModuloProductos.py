@@ -246,29 +246,24 @@ if uploaded_file is not None:
                         if not nuevo_nombre:
                             st.error("❌ El Nombre no puede estar vacío.")
                         else:
-                            # Actualizar el DataFrame
-                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+                            # Actualizar el DataFrame original y el modificado
+                            df.loc[df['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Costo usd'] = nuevo_costo_usd
 
                             if mostrar_campos_adicionales:
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
+                                df.loc[df['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
+                                df.loc[df['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
+                                df.loc[df['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
 
-                            # Guardar el nuevo archivo Excel con los cambios aplicados automáticamente
-                            excel_modificado = convertir_a_excel(df_modificado)
-                            st.success("✅ Producto modificado exitosamente y cambios guardados en Excel.")
-                            st.download_button(
-                                label="📥 Descargar Excel Modificado",
-                                data=excel_modificado,
-                                file_name="productos_modificados.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            )
+                            # Al guardar cambios, se actualiza el DataFrame modificado
+                            df_modificado = df.copy()
+                            st.success("✅ Producto modificado y archivo actualizado.")
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
