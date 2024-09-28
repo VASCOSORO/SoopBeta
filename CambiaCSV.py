@@ -53,6 +53,10 @@ if uploaded_file_clientes is not None:
     # Leer el archivo CSV
     df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
 
+    # Convertir columnas Id y Id Cliente a enteros
+    df_clientes['Id'] = pd.to_numeric(df_clientes['Id'], errors='coerce').fillna(0).astype(int)
+    df_clientes['Id Cliente'] = pd.to_numeric(df_clientes['Id Cliente'], errors='coerce').fillna(0).astype(int)
+
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Clientes cargado:")
     st.dataframe(df_clientes)
@@ -76,6 +80,10 @@ uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type
 if uploaded_file_pedidos is not None:
     # Leer el archivo CSV
     df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+
+    # Convertir columnas Id y Id Cliente a enteros
+    df_pedidos['Id'] = pd.to_numeric(df_pedidos['Id'], errors='coerce').fillna(0).astype(int)
+    df_pedidos['Id Cliente'] = pd.to_numeric(df_pedidos['Id Cliente'], errors='coerce').fillna(0).astype(int)
 
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Pedidos cargado:")
