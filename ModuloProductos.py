@@ -5,15 +5,21 @@ from datetime import datetime
 import pytz
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 
+# Opcional: Verificar paquetes instalados (eliminar después de verificar)
+# import pkg_resources
+# installed_packages = pkg_resources.working_set
+# installed_packages_list = sorted(["%s==%s" % (i.key, i.version) for i in installed_packages])
+# st.write(installed_packages_list)
+
 # Configuración de la página
 st.set_page_config(
-    page_title="CRM de Productos",
+    page_title="📁 Modulo Productos",  # Actualizado el título
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título de la aplicación
-st.title("📁 CRM de Productos")
+st.title("📁 Modulo Productos")  # Actualizado el título
 
 # Función para convertir DataFrame a Excel en memoria usando openpyxl
 def convertir_a_excel(df):
@@ -89,7 +95,7 @@ if uploaded_file is not None:
 
         gridOptions = gb.build()
 
-        # Mostrar la tabla editable
+        # Mostrar la tabla editable con un tema válido
         st.header("📊 **Tabla de Productos:**")
         grid_response = AgGrid(
             df,
@@ -97,7 +103,7 @@ if uploaded_file is not None:
             data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
             update_mode=GridUpdateMode.MODEL_CHANGED,
             fit_columns_on_grid_load=True,
-            theme='light',
+            theme='streamlit',  # Cambiado a un tema válido
             enable_enterprise_modules=False,
             height=500,
             reload_data=False
@@ -148,7 +154,7 @@ if uploaded_file is not None:
             nuevo_precio_mayorista = st.number_input("Precio Mayorista", min_value=0.0, step=0.01)
             nuevo_precio_online = st.number_input("Precio Online", min_value=0.0, step=0.01)
             nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
-            nuevo_precio_face_dolar = st.number_input("Precio Precio face Dolar", min_value=0.0, step=0.01)
+            nuevo_precio_face_dolar = st.number_input("Precio face Dolar", min_value=0.0, step=0.01)
             nuevo_precio_mayorista_usd = st.number_input("Precio Mayorista USD", min_value=0.0, step=0.01)
             nuevo_marca = st.text_input("Marca")
             nuevo_categorias = st.text_input("Categorias")
@@ -190,7 +196,7 @@ if uploaded_file is not None:
                         'Precio Mayorista': nuevo_precio_mayorista,
                         'Precio Online': nuevo_precio_online,
                         'Precio': nuevo_precio,
-                        'Precio Precio face Dolar': nuevo_precio_face_dolar,
+                        'Precio face Dolar': nuevo_precio_face_dolar,
                         'Precio Mayorista USD': nuevo_precio_mayorista_usd,
                         'Marca': nuevo_marca,
                         'Categorias': nuevo_categorias,
@@ -210,7 +216,7 @@ if uploaded_file is not None:
         if st.button("Eliminar Producto"):
             df_modificado = df_modificado[df_modificado['Nombre'] != producto_a_eliminar]
             st.warning(f"⚠️ Producto '{producto_a_eliminar}' eliminado.")
-        
+
         # Funcionalidad para mostrar imágenes de productos
         st.header("🖼️ **Imágenes de Productos:**")
         for index, row in df_modificado.iterrows():
