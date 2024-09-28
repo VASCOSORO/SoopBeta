@@ -215,10 +215,7 @@ if uploaded_file is not None:
                             step=1,
                             value=int(safe_value(producto['Stock'], 0))
                         )
-                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
-                        nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
-                        
-
+                       
                         # Mostrar campos adicionales si se selecciona el checkbox
                         if mostrar_campos_adicionales:
                             nuevo_proveedor = st.text_input("Proveedor", value=producto.get('Proveedor', ''))
@@ -239,6 +236,9 @@ if uploaded_file is not None:
                                 st.write("🔗 **Imagen no disponible o URL inválida.**")
                         else:
                             st.write("🔗 **No hay imagen disponible.**")
+                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
+                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
+                        
 
                     submit_edit = st.form_submit_button(label='Guardar Cambios')
 
