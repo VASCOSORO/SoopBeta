@@ -28,7 +28,7 @@ with col2:
     st.write("Aquí puedes gestionar y modificar productos.")
     st.write("Haz clic en el botón para ir al Modificador de Productos.")
     if st.button("Ir al Modificador de Productos"):
-        st.write("🔗 [Modificador de Productos](https://moduloproductos.streamlit.app)")  # Enlace hacia el Modificador de Productos
+        st.write("🔗 [Modificador de Productos](https://modulodepro.streamlit.app)")  # Enlace hacia el Modificador de Productos
 
 # Agregar el footer
 def agregar_footer():
