@@ -223,7 +223,6 @@ if uploaded_file is not None:
                             nuevo_estante = st.text_input("Estante", value=producto.get('Estante', ''))
 
                     with editar_col2:
-
                         nuevo_codigo = st.text_input("Codigo", value=producto['Codigo'])
                         # Mostrar la imagen del producto
                         if pd.notnull(producto['imagen']) and producto['imagen'] != '':
@@ -236,9 +235,9 @@ if uploaded_file is not None:
                                 st.write("🔗 **Imagen no disponible o URL inválida.**")
                         else:
                             st.write("🔗 **No hay imagen disponible.**")
-                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
-                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
                         
+                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
+                        nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
 
                     submit_edit = st.form_submit_button(label='Guardar Cambios')
 
