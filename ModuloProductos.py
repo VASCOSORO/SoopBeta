@@ -312,7 +312,6 @@ if uploaded_file is not None:
                             'Precio x Mayor': nuevo_precio_x_mayor,
                             'Activo': nuevo_activo,
                             'Fecha Creado': nuevo_fecha_creado,
-                            'Fecha Modificado',
                             'Descripcion': nuevo_descripcion,
                             'Orden': nuevo_orden,
                             'Codigo de Barras': nuevo_codigo_barras,
