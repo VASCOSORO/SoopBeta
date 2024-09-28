@@ -226,6 +226,8 @@ if uploaded_file is not None:
                             nuevo_estante = st.text_input("Estante", value=producto.get('Estante', ''))
 
                     with editar_col2:
+
+                        nuevo_codigo = st.text_input("Codigo", value=producto['Codigo'])
                         # Mostrar la imagen del producto
                         if pd.notnull(producto['imagen']) and producto['imagen'] != '':
                             try:
