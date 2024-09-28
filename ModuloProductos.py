@@ -68,11 +68,14 @@ if uploaded_file is not None:
         st.sidebar.header("Filtrar Productos")
 
         # Filtrado avanzado
+        # Corregir que cada categoría sea individual en el multiselect
         categorias_separadas = set()
         for cat in df['Categorias'].dropna():
             categorias_separadas.update(cat.split(','))  # Separar por coma y agregar al conjunto
 
         filtro_categoria = st.sidebar.multiselect("Selecciona Categorías", options=sorted(categorias_separadas))
+
+        # Corregir el filtro de estado activo para que sea Sí y No
         filtro_activo = st.sidebar.selectbox("Estado Activo", options=['Todos', 'Sí', 'No'])
 
         if filtro_categoria:
@@ -97,7 +100,7 @@ if uploaded_file is not None:
 
         # Ajustar el tamaño de las columnas según el contenido
         for column in df.columns:
-            gb.configure_column(column, autoWidth=True)
+            gb.configure_column(column, autoWidth=True)  # Ajustar el ancho automáticamente
 
         gridOptions = gb.build()
 
@@ -120,8 +123,7 @@ if uploaded_file is not None:
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
-        # Selector de producto con la primera opción vacía para que vuelva a su estado vacío
-        selected_product = st.selectbox("Selecciona un Producto", [''] + df_modificado['Nombre'].tolist())
+        selected_product = st.selectbox("Selecciona un Producto", [''] + df_modificado['Nombre'].tolist())  # Opción vacía
 
         if selected_product:
             producto = df_modificado[df_modificado['Nombre'] == selected_product].iloc[0]
@@ -249,7 +251,7 @@ if uploaded_file is not None:
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
-        with st.expander("Agregar Producto"):
+        with st.expander("Agregar Producto"):  # Cambié para que sea un expander
             with st.form(key='agregar_producto_unique'):
                 nuevo_id = st.text_input("Id")
                 nuevo_id_externo = st.text_input("Id Externo")
