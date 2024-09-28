@@ -42,8 +42,11 @@ if cliente_seleccionado:
     st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
     # Colocamos el descuento y la última compra uno debajo del otro
-    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
-    st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+    with col4:
+        st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
 
 # Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
 
@@ -101,9 +104,4 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     total_items = pedido_df['Cantidad'].sum()
     total_monto = pedido_df['Importe'].sum()
     
-    st.write(f"**Total de items:** {total_items}")
-    st.write(f"**Total del pedido:** ${total_monto}")
-    
-    # Botón para guardar el pedido
-    if st.button("Guardar pedido"):
-        st.success("Pedido guardado exitosamente.")
+    st.write(f"**Total de
