@@ -203,6 +203,12 @@ if uploaded_file is not None:
                             step=0.01,
                             value=safe_value(float(producto['Costo']), 0.0)
                         )
+                        nuevo_costo_usd = st.number_input(
+                            "Costo usd",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Costo usd']), 0.0)
+                        )
                         nuevo_stock = st.number_input(
                             "Stock",
                             min_value=0,
