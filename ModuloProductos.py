@@ -66,8 +66,7 @@ if uploaded_file is not None:
 
         # Opciones de filtrado y búsqueda
         st.sidebar.header("Filtrar Productos")
-
-        # Filtrado avanzado
+        
         # Corregir que cada categoría sea individual en el multiselect
         categorias_separadas = set()
         for cat in df['Categorias'].dropna():
@@ -85,28 +84,29 @@ if uploaded_file is not None:
             estado_activo = 1 if filtro_activo == 'Sí' else 0
             df = df[df['Activo'] == estado_activo]
 
-        # Checkbox para mostrar/ocultar la tabla
-        mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
+        # Configuración de la tabla AgGrid
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_pagination(paginationAutoPageSize=True)
+        gb.configure_side_bar()
+        gb.configure_default_column(
+            editable=False,
+            groupable=True,
+            resizable=True,
+            sortable=True,
+            wrapText=True,  # Envuelve el texto para columnas largas
+            autoHeight=True  # Ajusta la altura automáticamente
+        )
 
-        # Si se selecciona el checkbox, mostrar la tabla
+        # Ajustar el tamaño de las columnas según el contenido
+        for column in df.columns:
+            gb.configure_column(column, autoWidth=True)
+
+        gridOptions = gb.build()
+
+        # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
+        mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla", value=True)
+
         if mostrar_tabla:
-            # Configuración de la tabla AgGrid
-            gb = GridOptionsBuilder.from_dataframe(df)
-            gb.configure_pagination(paginationAutoPageSize=True)
-            gb.configure_side_bar()
-            gb.configure_default_column(
-                editable=False,
-                sortable=True, # Envuelve el texto para columnas largas
-                autoHeight=True  # Ajusta la altura automáticamente
-            )
-
-            # Ajustar el tamaño de las columnas según el contenido
-            for column in df.columns:
-                gb.configure_column(column, autoWidth=True)  # Ajustar el ancho automáticamente
-
-            gridOptions = gb.build()
-
-            # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
             st.header("📊 Tabla de Productos:")
             grid_response = AgGrid(
                 df,
@@ -124,7 +124,7 @@ if uploaded_file is not None:
             df_modificado = grid_response['data']
 
             # Mostrar el total de artículos filtrados
-            st.write(f"**Total de Artículos Filtrados: {len(df_modificado)}**")
+            st.write(f"Total de Artículos Filtrados: {len(df_modificado)}")
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
@@ -144,13 +144,13 @@ if uploaded_file is not None:
                 st.markdown(f"**ID:** {producto['Id']}")
                 st.markdown(f"**Código:** {producto['Codigo']}")
                 st.markdown(f"**Nombre:** {producto['Nombre']}")
-                st.markdown(f"**Precio:** {producto['Precio']}")
                 st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
                 st.markdown(f"**Costo:** {producto['Costo']}")
                 st.markdown(f"**Stock:** {producto['Stock']}")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
-                
+                st.markdown(f"**Precio:** {producto['Precio']}")
+
             with col2:
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
@@ -158,7 +158,7 @@ if uploaded_file is not None:
                         response = requests.get(producto['imagen'], timeout=5)
                         response.raise_for_status()
                         image = Image.open(BytesIO(response.content))
-                        st.image(image, width=170)
+                        st.image(image, width=150)
                     except Exception as e:
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
@@ -178,33 +178,36 @@ if uploaded_file is not None:
 
                     with editar_col1:
                         nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
-                        nuevo_precio = st.number_input(
-                            "Precio",
-                            min_value=0.0,
-                            step=0.01,
-                            value=safe_value(float(producto['Precio']), 0.0)
-                        )
                         nuevo_precio_x_mayor = st.number_input(
                             "Precio x Mayor",
                             min_value=0.0,
                             step=0.01,
-                            value=safe_value(float(producto['Precio x Mayor']), 0.0)
+                            value=safe_value(float(producto['Precio x Mayor']), 0.0),
+                            key='precio_x_mayor'
                         )
                         nuevo_costo = st.number_input(
                             "Costo",
                             min_value=0.0,
                             step=0.01,
-                            value=safe_value(float(producto['Costo']), 0.0)
+                            value=safe_value(float(producto['Costo']), 0.0),
+                            key='costo'
                         )
                         nuevo_stock = st.number_input(
                             "Stock",
                             min_value=0,
                             step=1,
-                            value=int(safe_value(producto['Stock'], 0))
+                            value=int(safe_value(producto['Stock'], 0)),
+                            key='stock'
                         )
-                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
-                        nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
-                        
+                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'], key='descripcion')
+                        nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'], key='categorias')
+                        nuevo_precio = st.number_input(
+                            "Precio",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio']), 0.0),
+                            key='precio'
+                        )
 
                     with editar_col2:
                         # Mostrar la imagen del producto
@@ -257,35 +260,38 @@ if uploaded_file is not None:
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
-        with st.expander("Agregar Producto"):
+        with st.expander("Agregar Producto"):  # Cambié para que sea un expander
             with st.form(key='agregar_producto_unique'):
-                nuevo_id = st.text_input("Id")
-                nuevo_id_externo = st.text_input("Id Externo")
-                nuevo_codigo = st.text_input("Código")
-                nuevo_nombre = st.text_input("Nombre")
-                nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
-                nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01)
-                nuevo_activo = st.selectbox("Activo", options=[0, 1])
-                nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(argentina))
-                nuevo_fecha_modificado = st.date_input("Fecha Modificado", value=datetime.now(argentina))
-                nuevo_descripcion = st.text_area("Descripción")
-                nuevo_orden = st.number_input("Orden", min_value=0, step=1)
-                nuevo_codigo_barras = st.text_input("Código de Barras")
-                nuevo_unidad_bulto = st.number_input("Unidad por Bulto", min_value=0, step=1)
-                nuevo_inner = st.text_input("Inner")
-                nuevo_forzar_multiplos = st.text_input("Forzar Multiplos")
-                nuevo_costo_usd = st.number_input("Costo usd", min_value=0.0, step=0.01)
-                nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01)
-                nuevo_etiquetas = st.text_input("Etiquetas")
-                nuevo_stock = st.number_input("Stock", min_value=0, step=1)
-                nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
-                nuevo_marca = st.text_input("Marca")
-                nuevo_categorias = st.text_input("Categorias")
-                nuevo_imagen = st.text_input("Imagen URL")
-                nuevo_proveedor = st.text_input("Proveedor")
-                nuevo_pasillo = st.text_input("Pasillo")
-                nuevo_estante = st.text_input("Estante")
-                nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(argentina))
+                nuevo_id = st.text_input("Id", key='id')
+                nuevo_id_externo = st.text_input("Id Externo", key='id_externo')
+                nuevo_codigo = st.text_input("Código", key='codigo')
+                nuevo_nombre = st.text_input("Nombre", key='nombre')
+                nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01, key='nuevo_precio_x_mayor')
+                nuevo_activo = st.selectbox("Activo", options=[0, 1], key='activo')
+                nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(argentina), key='fecha_creado')
+                nuevo_fecha_modificado = st.date_input("Fecha Modificado", value=datetime.now(argentina), key='fecha_modificado')
+                nuevo_descripcion = st.text_area("Descripción", key='nueva_descripcion')
+                nuevo_orden = st.number_input("Orden", min_value=0, step=1, key='orden')
+                nuevo_codigo_barras = st.text_input("Código de Barras", key='codigo_barras')
+                nuevo_unidad_bulto = st.number_input("Unidad por Bulto", min_value=0, step=1, key='unidad_bulto')
+                nuevo_inner = st.text_input("Inner", key='inner')
+                nuevo_forzar_multiplos = st.text_input("Forzar Multiplos", key='forzar_multiplos')
+                nuevo_costo_usd = st.number_input("Costo usd", min_value=0.0, step=0.01, key='costo_usd')
+                nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01, key='nuevo_costo')
+                nuevo_etiquetas = st.text_input("Etiquetas", key='etiquetas')
+                nuevo_stock = st.number_input("Stock", min_value=0, step=1, key='nuevo_stock')
+                nuevo_precio_mayorista = st.number_input("Precio Mayorista", min_value=0.0, step=0.01, key='precio_mayorista')
+                nuevo_precio_online = st.number_input("Precio Online", min_value=0.0, step=0.01, key='precio_online')
+                nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01, key='nuevo_precio')
+                nuevo_precio_face_dolar = st.number_input("Precio face Dolar", min_value=0.0, step=0.01, key='precio_face_dolar')
+                nuevo_precio_mayorista_usd = st.number_input("Precio Mayorista USD", min_value=0.0, step=0.01, key='precio_mayorista_usd')
+                nuevo_marca = st.text_input("Marca", key='marca')
+                nuevo_categorias = st.text_input("Categorias", key='nuevas_categorias')
+                nuevo_imagen = st.text_input("Imagen URL", key='nueva_imagen')
+                nuevo_proveedor = st.text_input("Proveedor", key='nuevo_proveedor')
+                nuevo_pasillo = st.text_input("Pasillo", key='nuevo_pasillo')
+                nuevo_estante = st.text_input("Estante", key='nuevo_estante')
+                nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(argentina), key='fecha_vencimiento')
 
                 submit_nuevo = st.form_submit_button(label='Agregar Producto')
 
