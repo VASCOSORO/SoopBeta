@@ -1,23 +1,34 @@
 import streamlit as st
 import pandas as pd
+import requests
 
-# Función para cargar el archivo Excel desde la carpeta raíz
+# Función para descargar el archivo desde GitHub y cargarlo en pandas
 @st.cache_data
-def load_data():
+def load_data_from_github():
     try:
-        # Cargar el archivo Excel desde la carpeta raíz
+        # URL cruda del archivo Excel en tu repositorio de GitHub
+        url = "https://raw.githubusercontent.com/VASCOSORO/tu_repositorio/main/1083.xlsx"
+        
+        # Descargar el archivo Excel
+        response = requests.get(url)
+        
+        # Guardar el contenido del archivo descargado en un archivo temporal
+        with open('1083.xlsx', 'wb') as f:
+            f.write(response.content)
+        
+        # Cargar el archivo Excel
         df = pd.read_excel('1083.xlsx', engine='openpyxl')
         return df
-    except FileNotFoundError:
-        st.error("El archivo '1083.xlsx' no se encontró en la carpeta raíz.")
-        return pd.DataFrame()  # Devolver un DataFrame vacío si no se encuentra el archivo
+    except Exception as e:
+        st.error(f"Error al cargar los datos: {e}")
+        return pd.DataFrame()
 
-# Botón para limpiar la caché y recargar los datos
-if st.button('Recargar archivo'):
+# Botón para recargar los datos
+if st.button('Recargar archivo desde GitHub'):
     st.cache_data.clear()  # Limpiar la caché
 
 # Cargar los datos
-df = load_data()
+df = load_data_from_github()
 
 # Verificar si los datos fueron cargados correctamente
 if not df.empty:
@@ -27,7 +38,7 @@ if not df.empty:
     st.write("Primeras 5 filas de los productos cargados:")
     st.write(df.head())
 else:
-    st.error("No se cargaron datos. Verificá que el archivo '1083.xlsx' esté en la carpeta correcta.")
+    st.error("No se cargaron datos. Verificá que el archivo '1083.xlsx' esté en el repositorio de GitHub.")
 
 # Campo de búsqueda
 busqueda = st.text_input("Escribí acá para buscar")  # Campo de texto para la búsqueda
