@@ -150,6 +150,7 @@ if uploaded_file is not None:
                 st.markdown(f"**Precio:** {producto['Precio']}")
                 st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
                 st.markdown(f"**Costo:** {producto['Costo']}")
+                st.markdown(f"**Costo usd:** {producto['Costo usd']}")
                 st.markdown(f"**Stock:** {producto['Stock']}")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
