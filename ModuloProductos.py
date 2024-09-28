@@ -64,6 +64,9 @@ if uploaded_file is not None:
         st.sidebar.write("🔍 **Columnas en el archivo:**")
         st.sidebar.write(df.columns.tolist())
 
+        # Inicialización de la variable df_modificado
+        df_modificado = df.copy()
+
         # Opciones de filtrado y búsqueda
         st.sidebar.header("Filtrar Productos")
 
@@ -84,34 +87,32 @@ if uploaded_file is not None:
             estado_activo = 1 if filtro_activo == 'Sí' else 0
             df = df[df['Activo'] == estado_activo]
 
-        # Mostrar el total de artículos filtrados antes de la tabla
-        total_articulos_filtrados = len(df)
-        st.write(f"**Total de Artículos Filtrados: {total_articulos_filtrados}**")
+        # Configuración de la tabla AgGrid
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_pagination(paginationAutoPageSize=True)
+        gb.configure_side_bar()
+        gb.configure_default_column(
+            editable=False,
+            groupable=True,
+            resizable=True,
+            sortable=True,
+            wrapText=True,  # Envuelve el texto para columnas largas
+            autoHeight=True  # Ajusta la altura automáticamente
+        )
 
-        # Checkbox para mostrar la vista preliminar de la tabla
+        # Ajustar el tamaño de las columnas según el contenido
+        for column in df.columns:
+            gb.configure_column(column, autoWidth=True)
+
+        gridOptions = gb.build()
+
+        # Mostrar el número de artículos filtrados
+        st.write(f"Total de Artículos Filtrados: {len(df)}")
+
+        # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
         mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
 
         if mostrar_tabla:
-            # Configuración de la tabla AgGrid
-            gb = GridOptionsBuilder.from_dataframe(df)
-            gb.configure_pagination(paginationAutoPageSize=True)
-            gb.configure_side_bar()
-            gb.configure_default_column(
-                editable=False,
-                groupable=True,
-                resizable=True,
-                sortable=True,
-                wrapText=True,  # Envuelve el texto para columnas largas
-                autoHeight=True  # Ajusta la altura automáticamente
-            )
-
-            # Ajustar el tamaño de las columnas según el contenido
-            for column in df.columns:
-                gb.configure_column(column, autoWidth=True)
-
-            gridOptions = gb.build()
-
-            # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
             st.header("📊 Tabla de Productos:")
             grid_response = AgGrid(
                 df,
@@ -125,7 +126,7 @@ if uploaded_file is not None:
                 reload_data=False
             )
 
-            # Obtener el DataFrame modificado
+            # Actualizar df_modificado con la respuesta del grid
             df_modificado = grid_response['data']
 
         # Seleccionar un producto
@@ -192,12 +193,6 @@ if uploaded_file is not None:
                             step=0.01,
                             value=safe_value(float(producto['Costo']), 0.0)
                         )
-                        nuevo_costo_usd = st.number_input(
-                            "Costo USD",
-                            min_value=0.0,
-                            step=0.01,
-                            value=safe_value(float(producto.get('Costo USD', 0.0)), 0.0)
-                        )
                         nuevo_stock = st.number_input(
                             "Stock",
                             min_value=0,
@@ -206,6 +201,12 @@ if uploaded_file is not None:
                         )
                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
+                        nuevo_precio = st.number_input(
+                            "Precio",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio']), 0.0)
+                        )
 
                     with editar_col2:
                         # Mostrar la imagen del producto
@@ -219,13 +220,6 @@ if uploaded_file is not None:
                                 st.write("🔗 **Imagen no disponible o URL inválida.**")
                         else:
                             st.write("🔗 **No hay imagen disponible.**")
-
-                    # Checkbox para desplegar proveedor, pasillo y estante
-                    mostrar_info_extra = st.checkbox("Agregar proveedor, pasillo y estante")
-                    if mostrar_info_extra:
-                        nuevo_proveedor = st.text_input("Proveedor", value=producto.get('Proveedor', ''))
-                        nuevo_pasillo = st.text_input("Pasillo", value=producto.get('Pasillo', ''))
-                        nuevo_estante = st.text_input("Estante", value=producto.get('Estante', ''))
 
                     submit_edit = st.form_submit_button(label='Guardar Cambios')
 
@@ -241,10 +235,7 @@ if uploaded_file is not None:
                             df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
                             df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
                             df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
-                            if mostrar_info_extra:
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
+                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
 
                             st.success("✅ Producto modificado exitosamente.")
 
