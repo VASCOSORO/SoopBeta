@@ -73,14 +73,11 @@ if uploaded_file is not None:
                     df['Codigo'].str.contains(search_term, case=False, na=False)]
 
         # Filtrado avanzado
-        # Corregir que cada categoría sea individual en el multiselect
         categorias_separadas = set()
         for cat in df['Categorias'].dropna():
             categorias_separadas.update(cat.split(','))  # Separar por coma y agregar al conjunto
 
         filtro_categoria = st.sidebar.multiselect("Selecciona Categorías", options=sorted(categorias_separadas))
-
-        # Corregir el filtro de estado activo para que sea Sí y No
         filtro_activo = st.sidebar.selectbox("Estado Activo", options=['Todos', 'Sí', 'No'])
 
         if filtro_categoria:
