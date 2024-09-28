@@ -51,17 +51,14 @@ def agregar_footer():
 def safe_value(value, min_value=0.0):
     return max(value, min_value)
 
-# Función para aplicar color al stock y mostrar la cantidad
+# Función para aplicar color al stock y mostrar el título, cantidad y detalle
 def color_stock(stock):
     if stock > 10:
-        return f'🟢 
-        {stock} unidades (Suficiente stock)'
+        return f'🟢 Stock\n**{stock} unidades**\n(Suficiente stock)'
     elif stock > 0:
-        return f'🟡 
-        {stock} unidades (Poco stock)'
+        return f'🟡 Stock\n**{stock} unidades**\n(Poco stock)'
     else:
-        return f'🔴 
-        {stock} unidades (Sin stock)'
+        return f'🔴 Stock\n**{stock} unidades**\n(Sin stock)'
 
 # Sidebar para cargar el archivo Excel
 st.sidebar.header("Cargar Archivo Excel de Productos")
@@ -165,7 +162,7 @@ if uploaded_file is not None:
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
 
             with col2:
-                st.markdown(f"**Stock:** {color_stock(producto['Stock'])}")
+                st.markdown(f"{color_stock(producto['Stock'])}")
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
                     try:
