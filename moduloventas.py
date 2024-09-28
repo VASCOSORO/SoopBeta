@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
 
-# Cargar la base de datos real de productos
+# Cargar la base de datos real de productos desde el archivo Excel
 df_productos = pd.read_excel("1083.xlsx")
+
+# Mostrar las columnas disponibles para verificar los nombres correctos
+st.write("Columnas disponibles en el archivo:", df_productos.columns)
 
 # Inicializar la lista de pedidos en el estado de la sesión
 if "pedido" not in st.session_state:
@@ -12,8 +15,8 @@ if "pedido" not in st.session_state:
 def agregar_producto(producto_nombre, cantidad):
     producto = df_productos[df_productos['Producto'] == producto_nombre]
     if not producto.empty:
-        nombre = producto.iloc[0]['Producto']
-        precio = producto.iloc[0]['Precio']
+        nombre = producto.iloc[0]['Producto']  # Verifica el nombre correcto de la columna si es necesario
+        precio = producto.iloc[0]['Precio']    # Verifica si "Precio" es el nombre correcto
         venta_forzada = producto.iloc[0].get('Venta Forzada', False)
         multiplo = producto.iloc[0].get('Multiplo_Venta', 1)
         
