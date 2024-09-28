@@ -9,8 +9,8 @@ st.header("Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("Subí tu archivo CSV de Productos", type=["csv"], key="productos")
 
 if uploaded_file_productos is not None:
-    # Leer el archivo CSV
-    df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+    # Leer el archivo CSV, forzando 'Id' a ser un número entero sin decimales
+    df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': int})
 
     # Renombrar las columnas que especificaste
     df_productos = df_productos.rename(columns={
@@ -50,8 +50,8 @@ st.header("Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
 if uploaded_file_clientes is not None:
-    # Leer el archivo CSV, tratando 'Id' y 'Id Cliente' como texto para evitar comas
-    df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': str, 'Id Cliente': str})
+    # Leer el archivo CSV, forzando 'Id' y 'Id Cliente' a ser enteros
+    df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': int, 'Id Cliente': int})
 
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Clientes cargado:")
@@ -74,8 +74,8 @@ st.header("Convertidor para CSV de Pedidos")
 uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
 
 if uploaded_file_pedidos is not None:
-    # Leer el archivo CSV, tratando 'Id' y 'Id Cliente' como texto para evitar comas
-    df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': str, 'Id Cliente': str})
+    # Leer el archivo CSV, forzando 'Id' y 'Id Cliente' a ser enteros
+    df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip', dtype={'Id': int, 'Id Cliente': int})
 
     # Mostrar una tabla de datos en la interfaz de Streamlit
     st.write("Archivo de Pedidos cargado:")
