@@ -81,14 +81,14 @@ if uploaded_file is not None:
         filtro_activo = st.sidebar.selectbox("Estado Activo", options=['Todos', 'Sí', 'No'])
 
         if filtro_categoria:
-            df_modificado = df_modificado[df_modificado['Categorias'].str.contains('|'.join(filtro_categoria), case=False, na=False)]
+            df = df[df['Categorias'].str.contains('|'.join(filtro_categoria), case=False, na=False)]
 
         if filtro_activo != 'Todos':
             estado_activo = 1 if filtro_activo == 'Sí' else 0
-            df_modificado = df_modificado[df_modificado['Activo'] == estado_activo]
+            df = df[df['Activo'] == estado_activo]
 
         # Configuración de la tabla AgGrid
-        gb = GridOptionsBuilder.from_dataframe(df_modificado)
+        gb = GridOptionsBuilder.from_dataframe(df)
         gb.configure_pagination(paginationAutoPageSize=True)
         gb.configure_side_bar()
         gb.configure_default_column(
@@ -101,13 +101,13 @@ if uploaded_file is not None:
         )
 
         # Ajustar el tamaño de las columnas según el contenido
-        for column in df_modificado.columns:
+        for column in df.columns:
             gb.configure_column(column, autoWidth=True)
 
         gridOptions = gb.build()
 
         # Mostrar el número de artículos filtrados
-        st.write(f"Total de Artículos Filtrados: {len(df_modificado)}")
+        st.write(f"Total de Artículos Filtrados: {len(df)}")
 
         # Mostrar la tabla editable con un tema válido y mejor tamaño de columnas
         mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
@@ -115,7 +115,7 @@ if uploaded_file is not None:
         if mostrar_tabla:
             st.header("📊 Tabla de Productos:")
             grid_response = AgGrid(
-                df_modificado,
+                df,
                 gridOptions=gridOptions,
                 data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                 update_mode=GridUpdateMode.MODEL_CHANGED,
@@ -127,7 +127,7 @@ if uploaded_file is not None:
             )
 
             # Actualizar df_modificado con la respuesta del grid
-            df_modificado = pd.DataFrame(grid_response['data'])
+            df_modificado = grid_response['data']
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
@@ -254,14 +254,16 @@ if uploaded_file is not None:
                             df.loc[df['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
                             df.loc[df['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
                             df.loc[df['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
+                            df.loc[df['Nombre'] == nuevo_nombre, 'Costo usd'] = nuevo_costo_usd
 
-                            # Actualizar el archivo subido
+                            # Actualizar df_modificado
                             df_modificado = df.copy()
 
                             if mostrar_campos_adicionales:
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
-                                df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
+                                df.loc[df['Nombre'] == nuevo_nombre, 'Proveedor'] = nuevo_proveedor
+                                df.loc[df['Nombre'] == nuevo_nombre, 'Pasillo'] = nuevo_pasillo
+                                df.loc[df['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
+                                df_modificado = df.copy()
 
                             st.success("✅ Producto modificado exitosamente.")
 
@@ -304,7 +306,7 @@ if uploaded_file is not None:
 
                 if submit_nuevo:
                     # Validaciones
-                    if not nuevo_id or not nuevo_nombre:
+                    if not nuevo_id o not nuevo_nombre:
                         st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
                     elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
                         st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
