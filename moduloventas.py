@@ -1,78 +1,59 @@
 import streamlit as st
 import pandas as pd
 
-# Cargar la base de datos real de productos desde el archivo Excel
-df_productos = pd.read_excel("1083.xlsx")
+# Cargar la base de datos de productos desde el archivo Excel
+df_productos = pd.read_excel("/mnt/data/1083.xlsx")
 
-# Mostrar las columnas disponibles para verificar los nombres correctos
-st.write("Columnas disponibles en el archivo:", df_productos.columns)
+# Título de la app
+st.title("Sistema de Gestión de Productos")
 
-# Inicializar la lista de pedidos en el estado de la sesión
-if "pedido" not in st.session_state:
-    st.session_state.pedido = []
+# Mostrar la tabla original de productos
+st.write("Datos actuales de la base de productos:")
+st.dataframe(df_productos)
 
-# Función para agregar un producto al pedido
-def agregar_producto(producto_nombre, cantidad):
-    producto = df_productos[df_productos['Producto'] == producto_nombre]
-    if not producto.empty:
-        nombre = producto.iloc[0]['Producto']  # Verifica el nombre correcto de la columna si es necesario
-        precio = producto.iloc[0]['Precio']    # Verifica si "Precio" es el nombre correcto
-        venta_forzada = producto.iloc[0].get('Venta Forzada', False)
-        multiplo = producto.iloc[0].get('Multiplo_Venta', 1)
-        
-        # Validar si la venta está forzada
-        if venta_forzada and cantidad % multiplo != 0:
-            st.warning(f"La cantidad debe ser múltiplo de {multiplo}.")
-        else:
-            st.session_state.pedido.append({
-                "producto": nombre,
-                "cantidad": cantidad,
-                "precio_unitario": precio,
-                "importe": cantidad * precio
-            })
-            st.success(f"Producto {nombre} agregado con éxito!")
-
-# Función para eliminar un producto del pedido
-def eliminar_producto(index):
-    st.session_state.pedido.pop(index)
-    st.success("Producto eliminado del pedido.")
-
-# Encabezado
-st.title("Sistema de Gestión de Pedidos con Base de Datos Real")
-
-# Campo para ingresar el nombre del producto
+# Seleccionar un producto para editar
+st.subheader("Seleccionar producto para editar")
 producto_seleccionado = st.selectbox("Selecciona el producto", df_productos['Producto'].unique())
-cantidad_seleccionada = st.number_input("Cantidad", min_value=1, value=1)
 
-# Botón para agregar el producto al pedido
-if st.button("Agregar producto"):
-    agregar_producto(producto_seleccionado, cantidad_seleccionada)
+# Filtrar el producto seleccionado
+producto = df_productos[df_productos['Producto'] == producto_seleccionado].iloc[0]
 
-# Mostrar la lista de productos en el pedido
-st.subheader("Pedido actual:")
-if len(st.session_state.pedido) > 0:
-    total_articulos = sum(item["cantidad"] for item in st.session_state.pedido)
-    total_importe = sum(item["importe"] for item in st.session_state.pedido)
+# Mostrar y editar los atributos del producto
+st.subheader("Editar los detalles del producto")
+nombre = st.text_input("Nombre del Producto", producto['Producto'])
+codigo = st.text_input("Código", producto['Codigo'])
+precio_mayor = st.number_input("Precio por Mayor", value=float(producto['Precio x Mayor']))
+precio_costo = st.number_input("Precio de Costo", value=float(producto['Costo']))
+costo_dolares = st.number_input("Costo en Dólares", value=float(producto.get('Costo en U$s', 0)))
+ubicacion = st.text_input("Ubicación", producto.get('Ubicación', ''))
+stock = st.number_input("Stock", value=int(producto['Stock']))
+categoria = st.text_input("Categoría", producto.get('Categoría', ''))
+descripcion = st.text_area("Descripción", producto.get('Descripción', ''))
 
-    st.write(f"Total de artículos: {total_articulos}")
-    st.write(f"Total del pedido: ${total_importe:.2f}")
+# Activar o desactivar el producto
+activo = st.checkbox("Producto Activo", value=producto.get('Activo', True))
 
-    # Mostrar la tabla de productos en el pedido
-    for index, item in enumerate(st.session_state.pedido):
-        st.write(f"{item['cantidad']} x {item['producto']} - ${item['precio_unitario']:.2f} c/u - Importe: ${item['importe']:.2f}")
-        if st.button(f"Eliminar {item['producto']}", key=f"eliminar_{index}"):
-            eliminar_producto(index)
-else:
-    st.write("No hay productos en el pedido.")
+# Guardar los cambios en el DataFrame
+if st.button("Guardar cambios"):
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Producto'] = nombre
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Codigo'] = codigo
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Precio x Mayor'] = precio_mayor
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo'] = precio_costo
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Costo en U$s'] = costo_dolares
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Ubicación'] = ubicacion
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Stock'] = stock
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Categoría'] = categoria
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Descripción'] = descripcion
+    df_productos.loc[df_productos['Producto'] == producto_seleccionado, 'Activo'] = activo
+    st.success("Los cambios fueron guardados exitosamente.")
 
-# Botón para descargar el pedido en Excel si hay productos
-if len(st.session_state.pedido) > 0:
-    df_pedido = pd.DataFrame(st.session_state.pedido)
-    df_pedido.to_excel("pedido_final.xlsx", index=False)
-    with open("pedido_final.xlsx", "rb") as file:
+# Opción para descargar el archivo modificado
+if st.button("Descargar base de datos actualizada"):
+    df_productos.to_excel("productos_actualizados.xlsx", index=False)
+    with open("productos_actualizados.xlsx", "rb") as file:
         st.download_button(
-            label="Descargar pedido en Excel",
+            label="Descargar archivo modificado",
             data=file,
-            file_name="pedido_final.xlsx",
+            file_name="productos_actualizados.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
