@@ -1,21 +1,31 @@
 import streamlit as st
 import pandas as pd
+import re
 from io import BytesIO
 
-# Función para limpiar y convertir eliminando solo puntos
+# Configuración de la página
+st.set_page_config(
+    page_title="Convertidor de CSV a Excel",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Título de la aplicación
+st.title("📁 Convertidor de CSV para Productos, Clientes y Pedidos")
+
+# Función para limpiar y convertir las columnas 'Id' y 'Id Cliente'
 def limpiar_id(valor):
     if pd.isnull(valor):
         return ""
-    # Eliminar solo puntos
-    valor_limpio = str(valor).replace('.', '')
+    # Eliminar puntos y comas
+    valor_limpio = str(valor).replace('.', '').replace(',', '')
     return valor_limpio
 
-# Función para procesar y convertir DataFrame a Excel en memoria
+# Función para convertir DataFrame a Excel en memoria
 def convertir_a_excel(df):
     buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Hoja1')
-    # Obtener los bytes del buffer
     excel_bytes = buffer.getvalue()
     return excel_bytes
 
@@ -40,31 +50,51 @@ def procesar_archivo(
             )
 
             # Mostrar los nombres de las columnas para depuración
-            st.write(f"🔍 **Columnas encontradas en {tipo}:** {df.columns.tolist()}")
+            st.write(f"🔍 **Columnas encontradas en {tipo}:**")
+            st.write(df.columns.tolist())
 
             # Verificar y limpiar las columnas de identificación
             for columna in columnas_id:
                 if columna in df.columns:
                     df[columna] = df[columna].apply(limpiar_id)
+                    st.write(f"✅ **Columna '{columna}' limpiada correctamente.**")
                 else:
-                    st.warning(f"La columna '{columna}' no se encuentra en el archivo de {tipo}.")
+                    st.warning(f"⚠️ La columna '{columna}' no se encuentra en el archivo de {tipo}.")
 
-            # Renombrar las columnas especificadas
+            # Renombrar las columnas especificadas, manejando variaciones en el nombre
             if columnas_a_renombrar:
-                # Mostrar qué columnas se intentarán renombrar
-                st.write(f"🔄 **Renombrando columnas en {tipo}:** {columnas_a_renombrar}")
-                df = df.rename(columns=columnas_a_renombrar)
+                columnas_a_renombrar_final = {}
+                for original, nuevo in columnas_a_renombrar.items():
+                    # Crear un patrón regex para manejar singular/plural y mayúsculas/minúsculas
+                    pattern = re.compile(re.escape(original), re.IGNORECASE)
+                    matches = [col for col in df.columns if pattern.fullmatch(col)]
+                    for match in matches:
+                        columnas_a_renombrar_final[match] = nuevo
+                if columnas_a_renombrar_final:
+                    df = df.rename(columns=columnas_a_renombrar_final)
+                    st.write(f"🔄 **Renombrando columnas en {tipo}:**")
+                    st.write(columnas_a_renombrar_final)
+                else:
+                    st.warning(f"⚠️ No se encontraron columnas para renombrar en {tipo}.")
 
             # Eliminar columnas que no sirven
             if columnas_a_eliminar:
-                st.write(f"🗑️ **Eliminando columnas en {tipo}:** {columnas_a_eliminar}")
-                df = df.drop(columns=columnas_a_eliminar, errors='ignore')
+                columnas_existentes_a_eliminar = [col for col in columnas_a_eliminar if col in df.columns]
+                if columnas_existentes_a_eliminar:
+                    df = df.drop(columns=columnas_existentes_a_eliminar, errors='ignore')
+                    st.write(f"🗑️ **Eliminando columnas en {tipo}:** {columnas_existentes_a_eliminar}")
+                else:
+                    st.warning(f"⚠️ No se encontraron columnas para eliminar en {tipo}.")
 
             # Agregar nuevas columnas vacías si no existen
             if columnas_a_agregar:
+                nuevas_agregadas = []
                 for columna in columnas_a_agregar:
                     if columna not in df.columns:
                         df[columna] = ''
+                        nuevas_agregadas.append(columna)
+                if nuevas_agregadas:
+                    st.write(f"➕ **Nuevas columnas agregadas en {tipo}:** {nuevas_agregadas}")
 
             # Convertir las columnas de identificación a cadenas para evitar comas en la visualización
             for columna in columnas_id:
@@ -91,9 +121,6 @@ def procesar_archivo(
         except Exception as e:
             st.error(f"❌ Ocurrió un error al procesar el archivo de {tipo}: {e}")
 
-# Interfaz para subir archivos en Streamlit
-st.title("📁 Convertidor de CSV para Productos, Clientes y Pedidos")
-
 # Sección para el archivo de Productos
 st.header("🛍️ Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
@@ -102,6 +129,7 @@ if uploaded_file_productos is not None:
     # Define las columnas específicas para Productos
     columnas_a_renombrar = {
         'Costo FOB': 'Costo en U$s',                # Cambio de 'Costo FOB' a 'Costo en U$s'
+        'Precio jugueteria face': 'Precio x Mayor',  # Cambio de 'Precio jugueteria face' a 'Precio x Mayor'
         'Precio jugueterias face': 'Precio x Mayor'  # Cambio de 'Precio jugueterias face' a 'Precio x Mayor'
     }
     columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
