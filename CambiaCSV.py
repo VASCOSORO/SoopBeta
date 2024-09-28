@@ -128,10 +128,11 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     # Define las columnas específicas para Productos
     columnas_a_renombrar = {
-        'precio': 'Precio x Mayor',                       # Cambio de 'precio' a 'Precio x Mayor'
-        'Precio Jugueterias Face': 'Precio'               # Cambio de 'Precio Jugueterias Face' a 'Precio'
+        'Costo FOB': 'Costo usd',                     # Cambio de 'Costo FOB' a 'Costo usd'
+        'precio': 'Precio x Mayor',                   # Cambio de 'precio' a 'Precio x Mayor'
+        'Precio Jugueterias Face': 'Precio'           # Cambio de 'Precio Jugueterias Face' a 'Precio'
     }
-    columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
+    columnas_a_eliminar = ['Precio Face + 50', 'precio 25 plus', 'precio bonus']
     columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
     columnas_id = ['Id']
 
