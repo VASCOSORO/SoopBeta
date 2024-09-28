@@ -26,22 +26,27 @@ with col1:
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
-# Obtener los datos del cliente seleccionado
-cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+# Solo si se selecciona un cliente válido
+if cliente_seleccionado:
+    # Obtener los datos del cliente seleccionado
+    cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-with col2:
-    # Vendedor asignado
-    vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-    vendedor_default = vendedores[0]
-    vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
+    with col2:
+        # Vendedor asignado
+        vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+        vendedor_default = vendedores[0]
+        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
 
-# Mostrar cliente y vendedor
-st.write(f"**Cliente:** {cliente_seleccionado}")
-st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
+    # Mostrar cliente y vendedor
+    st.write(f"**Cliente:** {cliente_seleccionado}")
+    st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
-# Colocamos el descuento y la última compra uno debajo del otro
-st.write(f"**Descuento:** {cliente_data['Descuento']}%")
-st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+    # Colocamos el descuento y la última compra uno debajo del otro
+    col3, col4 = st.columns(2)
+    with col3:
+        st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+    with col4:
+        st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
 
 # Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
 
