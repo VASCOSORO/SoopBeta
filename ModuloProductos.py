@@ -47,6 +47,10 @@ def agregar_footer():
     """
     st.markdown(footer, unsafe_allow_html=True)
 
+# Función para asegurar que el valor es al menos el mínimo permitido
+def safe_value(value, min_value=0.0):
+    return max(value, min_value)
+
 # Sidebar para cargar el archivo Excel
 st.sidebar.header("Cargar Archivo Excel de Productos")
 uploaded_file = st.sidebar.file_uploader("📤 Subir archivo Excel", type=["xlsx"])
@@ -160,12 +164,32 @@ if uploaded_file is not None:
 
                     with editar_col1:
                         nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
-                        nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01, value=float(producto['Precio x Mayor']))
-                        nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01, value=float(producto['Costo']))
-                        nuevo_stock = st.number_input("Stock", min_value=0, step=1, value=int(producto['Stock']))
+                        nuevo_precio_x_mayor = st.number_input(
+                            "Precio x Mayor",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio x Mayor']), 0.0)
+                        )
+                        nuevo_costo = st.number_input(
+                            "Costo",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Costo']), 0.0)
+                        )
+                        nuevo_stock = st.number_input(
+                            "Stock",
+                            min_value=0,
+                            step=1,
+                            value=int(safe_value(producto['Stock'], 0))
+                        )
                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
-                        nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01, value=float(producto['Precio']))
+                        nuevo_precio = st.number_input(
+                            "Precio",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio']), 0.0)
+                        )
 
                     with editar_col2:
                         # Mostrar la imagen del producto
