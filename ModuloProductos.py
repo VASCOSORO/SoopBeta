@@ -51,6 +51,17 @@ def agregar_footer():
 def safe_value(value, min_value=0.0):
     return max(value, min_value)
 
+# Lista de categorías válidas (ajustar según tus categorías)
+categorias_validas = [
+    "Completo Online",
+    "Libros y Revistas",
+    "Menu Infantil",
+    "Ofertas/Saldos",
+    "PROM COD 3",
+    "Tickets",
+    # Agrega más categorías según sea necesario
+]
+
 # Sidebar para cargar el archivo Excel
 st.sidebar.header("Cargar Archivo Excel de Productos")
 uploaded_file = st.sidebar.file_uploader("📤 Subir archivo Excel", type=["xlsx"])
@@ -59,6 +70,16 @@ if uploaded_file is not None:
     try:
         # Leer el archivo Excel
         df = pd.read_excel(uploaded_file, engine='openpyxl')
+
+        # Verificar y agregar columnas para valores anteriores si no existen
+        columnas_necesarias = [
+            'Stock Anterior', 'Fecha Stock Anterior',
+            'Costo Anterior', 'Fecha Costo Anterior',
+            'Costo USD Anterior', 'Fecha Costo USD Anterior'
+        ]
+        for col in columnas_necesarias:
+            if col not in df.columns:
+                df[col] = None
 
         # Mostrar los nombres de las columnas para depuración
         st.sidebar.write("🔍 **Columnas en el archivo:**")
@@ -73,7 +94,7 @@ if uploaded_file is not None:
                     df['Codigo'].str.contains(search_term, case=False, na=False)]
 
         # Filtrado avanzado
-        filtro_categoria = st.sidebar.multiselect("Selecciona Categorías", options=df['Categorias'].dropna().unique())
+        filtro_categoria = st.sidebar.multiselect("Selecciona Categorías", options=categorias_validas)
         filtro_activo = st.sidebar.selectbox("Estado Activo", options=['Todos', 0, 1])
 
         if filtro_categoria:
@@ -88,10 +109,15 @@ if uploaded_file is not None:
         gb.configure_side_bar()
         gb.configure_default_column(editable=False, groupable=True, resizable=True, sortable=True)
         # Especificar las columnas que se pueden editar (inicialmente no editable)
-        columnas_editables = ['Nombre', 'Precio x Mayor', 'Costo', 'Stock', 'Descripcion', 'Categorias', 'Precio']
+        columnas_editables = ['Codigo', 'Nombre', 'Precio', 'Precio x Mayor', 'Stock', 'Costo', 'Costo USD', 'Categorias']
 
         for col in columnas_editables:
             gb.configure_column(col, editable=False)
+
+        # Configuración de formato condicional para Stock Actual
+        gb.configure_column("Stock", cellStyle=lambda params: {
+            'color': 'red' if params.value < 0 else ('orange' if 1 <= params.value <= 4 else 'green') if params.value > 0 else 'black'
+        })
 
         gridOptions = gb.build()
 
@@ -105,18 +131,19 @@ if uploaded_file is not None:
             fit_columns_on_grid_load=True,
             theme='streamlit',  # Tema válido
             enable_enterprise_modules=False,
-            height=500,
+            height=600,
             reload_data=False
         )
 
         # Obtener el DataFrame modificado
         df_modificado = grid_response['data']
 
-        # Seleccionar un producto
+        # Seleccionar un producto con opción inicial vacía
         st.header("🔍 Seleccionar Producto:")
-        selected_product = st.selectbox("Selecciona un Producto", df_modificado['Nombre'])
+        productos_lista = ["-- Selecciona un producto --"] + df_modificado['Nombre'].tolist()
+        selected_product = st.selectbox("Selecciona un Producto", productos_lista)
 
-        if selected_product:
+        if selected_product != "-- Selecciona un producto --":
             producto = df_modificado[df_modificado['Nombre'] == selected_product].iloc[0]
 
             # Mostrar los detalles del producto
@@ -130,12 +157,19 @@ if uploaded_file is not None:
                 st.markdown(f"**ID:** {producto['Id']}")
                 st.markdown(f"**Código:** {producto['Codigo']}")
                 st.markdown(f"**Nombre:** {producto['Nombre']}")
-                st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
-                st.markdown(f"**Costo:** {producto['Costo']}")
-                st.markdown(f"**Stock:** {producto['Stock']}")
+                st.markdown(f"**Precio:** ${producto['Precio']:.2f}")
+                st.markdown(f"**Precio x Mayor:** ${producto['Precio x Mayor']:.2f}")
+                st.markdown(f"**Costo:** ${producto['Costo']:.2f}")
+                st.markdown(f"**Costo USD:** ${producto['Costo USD']:.2f}")
+                st.markdown(f"**Stock Actual:** {producto['Stock']}")
+                st.markdown(f"**Stock Anterior:** {producto['Stock Anterior']} (Última actualización: {producto['Fecha Stock Anterior']})")
+                st.markdown(f"**Costo Anterior:** ${producto['Costo Anterior']:.2f} (Última actualización: {producto['Fecha Costo Anterior']})")
+                st.markdown(f"**Costo USD Anterior:** ${producto['Costo USD Anterior']:.2f} (Última actualización: {producto['Fecha Costo USD Anterior']})")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
-                st.markdown(f"**Precio:** {producto['Precio']}")
+                st.markdown(f"**Activo:** {'Sí' if producto['Activo'] == 1 else 'No'}")
+                st.markdown(f"**Fecha Creado:** {producto['Fecha Creado']}")
+                st.markdown(f"**Fecha Modificado:** {producto['Fecha Modificado']}")
 
             with col2:
                 # Mostrar la imagen del producto
@@ -163,7 +197,9 @@ if uploaded_file is not None:
                     editar_col1, editar_col2 = st.columns([3, 1])
 
                     with editar_col1:
+                        nuevo_codigo = st.text_input("Código", value=producto['Codigo'])
                         nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
+                        nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01, value=float(producto['Precio']))
                         nuevo_precio_x_mayor = st.number_input(
                             "Precio x Mayor",
                             min_value=0.0,
@@ -176,20 +212,28 @@ if uploaded_file is not None:
                             step=0.01,
                             value=safe_value(float(producto['Costo']), 0.0)
                         )
-                        nuevo_stock = st.number_input(
-                            "Stock",
-                            min_value=0,
-                            step=1,
-                            value=int(safe_value(producto['Stock'], 0))
-                        )
-                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
-                        nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
-                        nuevo_precio = st.number_input(
-                            "Precio",
+                        nuevo_costo_usd = st.number_input(
+                            "Costo USD",
                             min_value=0.0,
                             step=0.01,
-                            value=safe_value(float(producto['Precio']), 0.0)
+                            value=safe_value(float(producto['Costo USD']), 0.0)
                         )
+                        nuevo_stock = st.number_input(
+                            "Stock Actual",
+                            min_value=-1000,  # Ajustar según necesidades
+                            step=1,
+                            value=int(producto['Stock'])
+                        )
+                        nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
+                        
+                        # Gestión avanzada de categorías
+                        st.markdown("**Categorías:**")
+                        categorias_seleccionadas = st.multiselect(
+                            "Selecciona Categorías",
+                            options=categorias_validas,
+                            default=producto['Categorias'].split(',') if isinstance(producto['Categorias'], str) else []
+                        )
+                        categorias_str = ','.join(categorias_seleccionadas)
 
                     with editar_col2:
                         # Mostrar la imagen del producto
@@ -208,21 +252,45 @@ if uploaded_file is not None:
 
                     if submit_edit:
                         # Validaciones
-                        if not nuevo_nombre:
-                            st.error("❌ El Nombre no puede estar vacío.")
+                        if not nuevo_codigo or not nuevo_nombre:
+                            st.error("❌ Por favor, completa los campos obligatorios (Código y Nombre).")
+                        elif df_modificado['Id'].astype(str).str.contains(str(producto['Id'])).any() and (nuevo_codigo != producto['Codigo']):
+                            st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
                         else:
-                            # Actualizar el DataFrame
+                            # Guardar valores anteriores
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Stock Anterior'] = producto['Stock']
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Fecha Stock Anterior'] = producto['Fecha Modificado']
+                            
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Costo Anterior'] = producto['Costo']
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Fecha Costo Anterior'] = producto['Fecha Modificado']
+                            
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Costo USD Anterior'] = producto['Costo USD']
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Fecha Costo USD Anterior'] = producto['Fecha Modificado']
+                            
+                            # Actualizar los campos modificados
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Codigo'] = nuevo_codigo
                             df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Nombre'] = nuevo_nombre
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio x Mayor'] = nuevo_precio_x_mayor
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Costo'] = nuevo_costo
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Stock'] = nuevo_stock
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Descripcion'] = nuevo_descripcion
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Categorias'] = nuevo_categorias
-                            df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Precio'] = nuevo_precio
-
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Precio'] = nuevo_precio
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Precio x Mayor'] = nuevo_precio_x_mayor
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Costo'] = nuevo_costo
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Costo USD'] = nuevo_costo_usd
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Stock'] = nuevo_stock
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Descripcion'] = nuevo_descripcion
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Categorias'] = categorias_str
+                            
+                            # Actualizar fecha de modificación
+                            argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+                            df_modificado.loc[df_modificado['Nombre'] == selected_product, 'Fecha Modificado'] = datetime.now(argentina).strftime("%Y-%m-%d %H:%M:%S")
+                            
                             st.success("✅ Producto modificado exitosamente.")
+    
+        except Exception as e:
+            st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+    else:
+        st.info("📂 Por favor, sube un archivo Excel para comenzar.")
 
-        # Botón para descargar el archivo Excel modificado
+    # Botón para descargar el archivo Excel modificado
+    if uploaded_file is not None and 'df_modificado' in locals():
         st.header("💾 Descargar Archivo Modificado:")
         excel = convertir_a_excel(df_modificado)
 
@@ -257,7 +325,7 @@ if uploaded_file is not None:
             nuevo_unidad_bulto = st.number_input("Unidad por Bulto", min_value=0, step=1)
             nuevo_inner = st.text_input("Inner")
             nuevo_forzar_multiplos = st.text_input("Forzar Multiplos")
-            nuevo_costo_usd = st.number_input("Costo usd", min_value=0.0, step=0.01)
+            nuevo_costo_usd = st.number_input("Costo USD", min_value=0.0, step=0.01)
             nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01)
             nuevo_etiquetas = st.text_input("Etiquetas")
             nuevo_stock = st.number_input("Stock", min_value=0, step=1)
@@ -267,7 +335,13 @@ if uploaded_file is not None:
             nuevo_precio_face_dolar = st.number_input("Precio face Dolar", min_value=0.0, step=0.01)
             nuevo_precio_mayorista_usd = st.number_input("Precio Mayorista USD", min_value=0.0, step=0.01)
             nuevo_marca = st.text_input("Marca")
-            nuevo_categorias = st.text_input("Categorias")
+            # Gestión avanzada de categorías
+            st.markdown("**Categorías:**")
+            categorias_seleccionadas_agregar = st.multiselect(
+                "Selecciona Categorías",
+                options=categorias_validas
+            )
+            categorias_str_agregar = ','.join(categorias_seleccionadas_agregar)
             nuevo_imagen = st.text_input("Imagen URL")
             nuevo_proveedor = st.text_input("Proveedor")
             nuevo_pasillo = st.text_input("Pasillo")
@@ -278,10 +352,12 @@ if uploaded_file is not None:
 
             if submit_nuevo:
                 # Validaciones
-                if not nuevo_id or not nuevo_nombre:
-                    st.error("❌ Por favor, completa los campos obligatorios (Id y Nombre).")
-                elif df_modificado['Id'].astype(str).str.contains(nuevo_id).any():
+                if not nuevo_id or not nuevo_nombre or not nuevo_codigo:
+                    st.error("❌ Por favor, completa los campos obligatorios (Id, Código y Nombre).")
+                elif df_modificado['Id'].astype(str).str.contains(str(nuevo_id)).any():
                     st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
+                elif df_modificado['Codigo'].astype(str).str.contains(nuevo_codigo).any():
+                    st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
                 else:
                     # Agregar el nuevo producto al DataFrame
                     nuevo_producto = {
@@ -291,8 +367,8 @@ if uploaded_file is not None:
                         'Nombre': nuevo_nombre,
                         'Precio x Mayor': nuevo_precio_x_mayor,
                         'Activo': nuevo_activo,
-                        'Fecha Creado': nuevo_fecha_creado,
-                        'Fecha Modificado': nuevo_fecha_modificado,
+                        'Fecha Creado': nuevo_fecha_creado.strftime("%Y-%m-%d"),
+                        'Fecha Modificado': datetime.now(argentina).strftime("%Y-%m-%d %H:%M:%S"),
                         'Descripcion': nuevo_descripcion,
                         'Orden': nuevo_orden,
                         'Codigo de Barras': nuevo_codigo_barras,
@@ -309,20 +385,27 @@ if uploaded_file is not None:
                         'Precio face Dolar': nuevo_precio_face_dolar,
                         'Precio Mayorista USD': nuevo_precio_mayorista_usd,
                         'Marca': nuevo_marca,
-                        'Categorias': nuevo_categorias,
+                        'Categorias': categorias_str_agregar,
                         'imagen': nuevo_imagen,
                         'Proveedor': nuevo_proveedor,
                         'Pasillo': nuevo_pasillo,
                         'Estante': nuevo_estante,
-                        'Fecha de Vencimiento': nuevo_fecha_vencimiento
+                        'Fecha de Vencimiento': nuevo_fecha_vencimiento.strftime("%Y-%m-%d"),
+                        # Inicializar valores anteriores
+                        'Stock Anterior': None,
+                        'Fecha Stock Anterior': None,
+                        'Costo Anterior': None,
+                        'Fecha Costo Anterior': None,
+                        'Costo USD Anterior': None,
+                        'Fecha Costo USD Anterior': None
                     }
                     df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                     st.success("✅ Producto agregado exitosamente.")
 
-    except Exception as e:
-        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
-else:
-    st.info("📂 Por favor, sube un archivo Excel para comenzar.")
+        except Exception as e:
+            st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+    else:
+        st.info("📂 Por favor, sube un archivo Excel para comenzar.")
 
-# Agregar el footer
-agregar_footer()
+    # Agregar el footer
+    agregar_footer()
