@@ -154,7 +154,7 @@ if uploaded_file is not None:
                 st.subheader(f"📝 Editar Detalles de: {selected_product}")
 
                 # Mostrar un formulario con los detalles del producto para editar
-                with st.form(key='editar_producto'):
+                with st.form(key='editar_producto_unique'):
                     # Organizar los campos en columnas para una mejor estética
                     editar_col1, editar_col2 = st.columns([3, 1])
 
@@ -295,6 +295,8 @@ if uploaded_file is not None:
                     df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                     st.success("✅ Producto agregado exitosamente.")
 
+    except Exception as e:
+        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
 else:
     st.info("📂 Por favor, sube un archivo Excel para comenzar.")
 
