@@ -1,61 +1,77 @@
 import streamlit as st
 import pandas as pd
 
-# Título de la aplicación
+# Simular base de datos de productos
+productos = {
+    "SE-52817": {"nombre": "PISTOLA PREMIUM LANZA DARDOS BATMAN", "precio": 7645.00, "forzado": False},
+    "EP-4138": {"nombre": "Goma de Borrar En Mamadera", "precio": 900.00, "forzado": True, "multiplo": 24},
+    # Agrega más productos aquí
+}
+
+# Inicializar sesión de estado para el pedido
+if "pedido" not in st.session_state:
+    st.session_state.pedido = []
+
+# Función para agregar un producto al pedido
+def agregar_producto(codigo, cantidad):
+    producto = productos.get(codigo)
+    if producto:
+        if producto.get("forzado") and cantidad % producto.get("multiplo", 1) != 0:
+            st.warning(f"La cantidad debe ser múltiplo de {producto['multiplo']}.")
+        else:
+            st.session_state.pedido.append({
+                "codigo": codigo,
+                "nombre": producto["nombre"],
+                "cantidad": cantidad,
+                "precio_unitario": producto["precio"],
+                "importe": cantidad * producto["precio"]
+            })
+            st.success(f"Producto {producto['nombre']} agregado con éxito!")
+
+# Función para eliminar un producto del pedido
+def eliminar_producto(index):
+    st.session_state.pedido.pop(index)
+    st.success("Producto eliminado del pedido.")
+
+# Encabezado
 st.title("Sistema de Gestión de Pedidos")
 
-# Cargar archivo de pedidos
-uploaded_file = st.file_uploader("Subí el archivo de pedidos", type=["xlsx"])
+# Selector de cliente (simulado)
+st.selectbox("Cliente", ["Pedido de prueba", "Cliente 2", "Cliente 3"])
 
-if uploaded_file is not None:
-    # Leer el archivo Excel
-    df_pedidos = pd.read_excel(uploaded_file)
+# Campo de búsqueda de productos
+producto_seleccionado = st.text_input("Código del producto", placeholder="EP-4138...")
+cantidad_seleccionada = st.number_input("Cantidad", min_value=1, value=1)
 
-    # Mostrar la tabla original
-    st.write("Tabla original de pedidos:")
-    st.dataframe(df_pedidos)
+# Agregar producto al pedido
+if st.button("Agregar"):
+    agregar_producto(producto_seleccionado, cantidad_seleccionada)
 
-    # Filtros para la gestión
-    st.header("Filtros para modificar los pedidos")
+# Mostrar lista de productos en el pedido
+st.subheader("Pedido actual")
+if len(st.session_state.pedido) > 0:
+    total_articulos = sum(item["cantidad"] for item in st.session_state.pedido)
+    total_importe = sum(item["importe"] for item in st.session_state.pedido)
 
-    # Filtrar por vendedor
-    vendedores = df_pedidos['Vendedor'].unique()
-    vendedor_seleccionado = st.selectbox("Filtrar por vendedor", options=vendedores, index=0)
-    df_filtrado = df_pedidos[df_pedidos['Vendedor'] == vendedor_seleccionado]
+    st.write(f"Total de artículos: {total_articulos}")
+    st.write(f"Total del pedido: ${total_importe:.2f}")
 
-    # Filtrar por estado de pedido
-    status_unicos = df_pedidos['Status'].unique()
-    status_seleccionado = st.selectbox("Filtrar por status", options=status_unicos, index=0)
-    df_filtrado = df_filtrado[df_filtrado['Status'] == status_seleccionado]
+    # Mostrar la tabla de productos en el pedido
+    for index, item in enumerate(st.session_state.pedido):
+        st.write(f"{item['cantidad']} x {item['nombre']} - ${item['precio_unitario']:.2f} c/u - Importe: ${item['importe']:.2f}")
+        if st.button(f"Eliminar {item['nombre']}", key=f"eliminar_{index}"):
+            eliminar_producto(index)
+else:
+    st.write("No hay productos en el pedido.")
 
-    # Mostrar la tabla filtrada
-    st.write(f"Pedidos filtrados por vendedor: {vendedor_seleccionado} y status: {status_seleccionado}")
-    st.dataframe(df_filtrado)
-
-    # Modificar algunos campos
-    st.header("Modificar pedidos seleccionados")
-
-    # Seleccionar fila para editar
-    fila_seleccionada = st.selectbox("Seleccionar un pedido por Id", options=df_filtrado['Id'].unique())
-    pedido_seleccionado = df_pedidos[df_pedidos['Id'] == fila_seleccionada]
-
-    # Modificar campos del pedido seleccionado
-    nuevo_status = st.selectbox("Modificar el status", options=status_unicos, index=list(status_unicos).index(pedido_seleccionado['Status'].values[0]))
-    nuevo_vendedor = st.selectbox("Modificar el vendedor", options=vendedores, index=list(vendedores).index(pedido_seleccionado['Vendedor'].values[0]))
-
-    # Aplicar los cambios
-    if st.button("Guardar cambios"):
-        df_pedidos.loc[df_pedidos['Id'] == fila_seleccionada, 'Status'] = nuevo_status
-        df_pedidos.loc[df_pedidos['Id'] == fila_seleccionada, 'Vendedor'] = nuevo_vendedor
-        st.success(f"Pedido {fila_seleccionada} actualizado")
-
-    # Opción para descargar el archivo modificado
-    st.write("Descargá el archivo modificado en formato Excel:")
-    df_pedidos.to_excel("pedidos_modificados.xlsx", index=False)
-    with open("pedidos_modificados.xlsx", "rb") as file:
+# Botón para descargar el pedido en Excel
+if len(st.session_state.pedido) > 0:
+    df_pedido = pd.DataFrame(st.session_state.pedido)
+    df_pedido.to_excel("pedido_final.xlsx", index=False)
+    with open("pedido_final.xlsx", "rb") as file:
         st.download_button(
-            label="Descargar archivo modificado",
+            label="Descargar pedido en Excel",
             data=file,
-            file_name="pedidos_modificados.xlsx",
+            file_name="pedido_final.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
