@@ -265,7 +265,18 @@ if uploaded_file is not None:
                                 df.loc[df['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
                                 df_modificado = df.copy()
 
-                            st.success("✅ Producto modificado exitosamente.")
+                            # Al guardar cambios, se guarda automáticamente en caché
+                            excel = convertir_a_excel(df_modificado)
+
+                            # Guardar el archivo modificado
+                            st.download_button(
+                                label="📥 Descargar Excel Modificado",
+                                data=excel,
+                                file_name=f"productos_actualizados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+
+                            st.success("✅ Producto modificado y archivo actualizado.")
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
