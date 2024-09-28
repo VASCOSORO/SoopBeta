@@ -326,4 +326,97 @@ if uploaded_file is not None:
         with st.form(key='agregar_producto_unique'):
             nuevo_id = st.text_input("Id")
             nuevo_id_externo = st.text_input("Id Externo")
-      
+            nuevo_codigo = st.text_input("Código")
+            nuevo_nombre = st.text_input("Nombre")
+            nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01)
+            nuevo_activo = st.selectbox("Activo", options=[0, 1])
+            nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(argentina))
+            nuevo_fecha_modificado = st.date_input("Fecha Modificado", value=datetime.now(argentina))
+            nuevo_descripcion = st.text_area("Descripción")
+            nuevo_orden = st.number_input("Orden", min_value=0, step=1)
+            nuevo_codigo_barras = st.text_input("Código de Barras")
+            nuevo_unidad_bulto = st.number_input("Unidad por Bulto", min_value=0, step=1)
+            nuevo_inner = st.text_input("Inner")
+            nuevo_forzar_multiplos = st.text_input("Forzar Multiplos")
+            nuevo_costo_usd = st.number_input("Costo USD", min_value=0.0, step=0.01)
+            nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01)
+            nuevo_etiquetas = st.text_input("Etiquetas")
+            nuevo_stock = st.number_input("Stock", min_value=0, step=1)
+            nuevo_precio_mayorista = st.number_input("Precio Mayorista", min_value=0.0, step=0.01)
+            nuevo_precio_online = st.number_input("Precio Online", min_value=0.0, step=0.01)
+            nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
+            nuevo_precio_face_dolar = st.number_input("Precio face Dolar", min_value=0.0, step=0.01)
+            nuevo_precio_mayorista_usd = st.number_input("Precio Mayorista USD", min_value=0.0, step=0.01)
+            nuevo_marca = st.text_input("Marca")
+            # Gestión avanzada de categorías
+            st.markdown("**Categorías:**")
+            categorias_seleccionadas_agregar = st.multiselect(
+                "Selecciona Categorías",
+                options=categorias_validas
+            )
+            categorias_str_agregar = ','.join(categorias_seleccionadas_agregar)
+            nuevo_imagen = st.text_input("Imagen URL")
+            nuevo_proveedor = st.text_input("Proveedor")
+            nuevo_pasillo = st.text_input("Pasillo")
+            nuevo_estante = st.text_input("Estante")
+            nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(argentina))
+
+            submit_nuevo = st.form_submit_button(label='Agregar Producto')
+
+            if submit_nuevo:
+                # Validaciones
+                if not nuevo_id or not nuevo_nombre or not nuevo_codigo:
+                    st.error("❌ Por favor, completa los campos obligatorios (Id, Código y Nombre).")
+                elif df_modificado['Id'].astype(str).str.contains(str(nuevo_id)).any():
+                    st.error("❌ El Id ya existe. Por favor, utiliza un Id único.")
+                elif df_modificado['Codigo'].astype(str).str.contains(nuevo_codigo).any():
+                    st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
+                else:
+                    # Agregar el nuevo producto al DataFrame
+                    nuevo_producto = {
+                        'Id': nuevo_id,
+                        'Id Externo': nuevo_id_externo,
+                        'Codigo': nuevo_codigo,
+                        'Nombre': nuevo_nombre,
+                        'Precio x Mayor': nuevo_precio_x_mayor,
+                        'Activo': nuevo_activo,
+                        'Fecha Creado': nuevo_fecha_creado.strftime("%Y-%m-%d"),
+                        'Fecha Modificado': datetime.now(argentina).strftime("%Y-%m-%d %H:%M:%S"),
+                        'Descripcion': nuevo_descripcion,
+                        'Orden': nuevo_orden,
+                        'Codigo de Barras': nuevo_codigo_barras,
+                        'unidad por bulto': nuevo_unidad_bulto,
+                        'inner': nuevo_inner,
+                        'forzar multiplos': nuevo_forzar_multiplos,
+                        'Costo usd': nuevo_costo_usd,
+                        'Costo': nuevo_costo,
+                        'Etiquetas': nuevo_etiquetas,
+                        'Stock': nuevo_stock,
+                        'Precio Mayorista': nuevo_precio_mayorista,
+                        'Precio Online': nuevo_precio_online,
+                        'Precio': nuevo_precio,
+                        'Precio face Dolar': nuevo_precio_face_dolar,
+                        'Precio Mayorista USD': nuevo_precio_mayorista_usd,
+                        'Marca': nuevo_marca,
+                        'Categorias': categorias_str_agregar,
+                        'imagen': nuevo_imagen,
+                        'Proveedor': nuevo_proveedor,
+                        'Pasillo': nuevo_pasillo,
+                        'Estante': nuevo_estante,
+                        'Fecha de Vencimiento': nuevo_fecha_vencimiento.strftime("%Y-%m-%d"),
+                        # Inicializar valores anteriores
+                        'Stock Anterior': None,
+                        'Fecha Stock Anterior': None,
+                        'Costo Anterior': None,
+                        'Fecha Costo Anterior': None,
+                        'Costo USD Anterior': None,
+                        'Fecha Costo USD Anterior': None
+                    }
+                    df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
+                    st.success("✅ Producto agregado exitosamente.")
+
+else:
+    st.info("📂 Por favor, sube un archivo Excel para comenzar.")
+
+# Agregar el footer
+agregar_footer()
