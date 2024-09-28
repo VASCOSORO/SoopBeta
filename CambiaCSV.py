@@ -196,3 +196,27 @@ if uploaded_file_pedidos is not None:
         columnas_a_agregar=columnas_a_agregar_pedidos,
         columnas_id=columnas_id_pedidos
     )
+
+# ------------------------- Agregar el Footer Aquí ------------------------- #
+
+# Agregar CSS personalizado para el footer
+footer = """
+<style>
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f1f1f1;
+    color: #555;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+}
+</style>
+<div class="footer">
+    Powered by VASCO.SORO
+</div>
+"""
+
+st.markdown(footer, unsafe_allow_html=True)
