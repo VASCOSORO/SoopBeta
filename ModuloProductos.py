@@ -66,11 +66,6 @@ if uploaded_file is not None:
 
         # Opciones de filtrado y búsqueda
         st.sidebar.header("Filtrar Productos")
-        search_term = st.sidebar.text_input("Buscar por Nombre o Código")
-
-        if search_term:
-            df = df[df['Nombre'].str.contains(search_term, case=False, na=False) |
-                    df['Codigo'].str.contains(search_term, case=False, na=False)]
 
         # Filtrado avanzado
         categorias_separadas = set()
@@ -125,7 +120,8 @@ if uploaded_file is not None:
 
         # Seleccionar un producto
         st.header("🔍 Seleccionar Producto:")
-        selected_product = st.selectbox("Selecciona un Producto", [''] + df_modificado['Nombre'].tolist())  # Opción vacía
+        # Selector de producto con la primera opción vacía para que vuelva a su estado vacío
+        selected_product = st.selectbox("Selecciona un Producto", [''] + df_modificado['Nombre'].tolist())
 
         if selected_product:
             producto = df_modificado[df_modificado['Nombre'] == selected_product].iloc[0]
@@ -253,7 +249,7 @@ if uploaded_file is not None:
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
-        with st.expander("Agregar Producto"):  # Cambié para que sea un expander
+        with st.expander("Agregar Producto"):
             with st.form(key='agregar_producto_unique'):
                 nuevo_id = st.text_input("Id")
                 nuevo_id_externo = st.text_input("Id Externo")
