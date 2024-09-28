@@ -261,6 +261,9 @@ if uploaded_file is not None:
                                 df_modificado.loc[df_modificado['Nombre'] == nuevo_nombre, 'Estante'] = nuevo_estante
 
                             st.success("✅ Producto modificado exitosamente.")
+                            
+                            # Volver a cargar la tabla después de modificar el producto
+                            df = df_modificado
 
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
