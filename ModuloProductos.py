@@ -341,6 +341,7 @@ if uploaded_file is not None:
                         }
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
+
         
         # Botón para descargar el archivo Excel modificado
         st.header("💾 Descargar Archivo Modificado:")
