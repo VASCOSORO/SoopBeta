@@ -68,3 +68,27 @@ if uploaded_file_clientes is not None:
             file_name="archivo_modificado_clientes.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+# Sección para el archivo de Clientes
+st.header("Convertidor para CSV de Pedidos")
+uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes")
+
+if uploaded_file_clientes is not None:
+    # Leer el archivo CSV
+    df_clientes = pd.read_csv(uploaded_file_Pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+
+    # Mostrar una tabla de datos en la interfaz de Streamlit
+    st.write("Archivo de Pedidos cargado:")
+    st.dataframe(df_Pedidos)
+
+    # Guardar el archivo en formato Excel
+    df_Pedidos.to_excel("archivo_modificado_Pedidos_streamlit.xlsx", index=False)
+
+    # Proporcionar un enlace para descargar el archivo
+    with open("archivo_modificado_Pedidos_streamlit.xlsx", "rb") as file:
+        btn = st.download_button(
+            label="Descargar archivo modificado de Pedidos",
+            data=file,
+            file_name="archivo_modificado_Pedidos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
