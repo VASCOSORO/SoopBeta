@@ -3,26 +3,27 @@ import pandas as pd
 import re
 from io import BytesIO
 
-# Función para limpiar y convertir a entero
+# Función para limpiar y convertir a entero eliminando solo puntos
 def limpiar_id(valor):
     if pd.isnull(valor):
         return None
-    # Eliminar puntos y comas
-    valor_limpio = re.sub(r'[.,]', '', str(valor))
+    # Eliminar solo puntos
+    valor_limpio = str(valor).replace('.', '')
     try:
         return int(valor_limpio)
     except ValueError:
         return None
 
-# Interfaz para subir archivos en Streamlit
-st.title("Convertidor de CSV para Productos, Clientes y Pedidos")
-
 # Función para procesar y convertir DataFrame a Excel en memoria
 def convertir_a_excel(df):
     buffer = BytesIO()
-    df.to_excel(buffer, index=False)
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Hoja1')
     buffer.seek(0)
     return buffer
+
+# Interfaz para subir archivos en Streamlit
+st.title("Convertidor de CSV para Productos, Clientes y Pedidos")
 
 # Sección para el archivo de Productos
 st.header("Convertidor para CSV de Productos")
@@ -30,19 +31,25 @@ uploaded_file_productos = st.file_uploader("Subí tu archivo CSV de Productos", 
 
 if uploaded_file_productos is not None:
     try:
-        # Leer el archivo CSV
-        df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+        # Leer el archivo CSV con separador ';' y codificación 'ISO-8859-1'
+        df_productos = pd.read_csv(
+            uploaded_file_productos,
+            encoding='ISO-8859-1',
+            sep=';',
+            on_bad_lines='skip',
+            dtype=str  # Leer todas las columnas como cadenas para evitar problemas de tipo
+        )
         
-        # Limpiar y convertir la columna 'Id' a entero
+        # Verificar y limpiar la columna 'Id'
         if 'Id' in df_productos.columns:
             df_productos['Id'] = df_productos['Id'].apply(limpiar_id)
         else:
             st.error("La columna 'Id' no se encuentra en el archivo de Productos.")
         
-        # Renombrar las columnas que especificaste
+        # Renombrar las columnas especificadas
         columnas_a_renombrar = {
             'Costo FOB': 'Costo en U$s',  # Cambio de 'Costo FOB' a 'Costo en U$s'
-            'Precio jugueteria Face': 'Precio',  # Cambio de 'Precio Jugueteria Face' a 'Precio'
+            'Precio jugueteria Face': 'Precio',  # Cambio de 'Precio jugueteria Face' a 'Precio'
             'Precio': 'Precio x Mayor'  # Cambio de 'Precio' a 'Precio x Mayor'
         }
         df_productos = df_productos.rename(columns=columnas_a_renombrar)
@@ -51,7 +58,7 @@ if uploaded_file_productos is not None:
         columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
         df_productos = df_productos.drop(columns=columnas_a_eliminar, errors='ignore')
         
-        # Agregar nuevas columnas vacías (pueden completarse luego)
+        # Agregar nuevas columnas vacías si no existen
         nuevas_columnas = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
         for columna in nuevas_columnas:
             if columna not in df_productos.columns:
@@ -80,8 +87,14 @@ uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", ty
 
 if uploaded_file_clientes is not None:
     try:
-        # Leer el archivo CSV
-        df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+        # Leer el archivo CSV con separador ';' y codificación 'ISO-8859-1'
+        df_clientes = pd.read_csv(
+            uploaded_file_clientes,
+            encoding='ISO-8859-1',
+            sep=';',
+            on_bad_lines='skip',
+            dtype=str  # Leer todas las columnas como cadenas para evitar problemas de tipo
+        )
         
         # Limpiar y convertir las columnas 'Id' y 'Id Cliente' a entero
         columnas_id = ['Id', 'Id Cliente']
@@ -114,8 +127,14 @@ uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type
 
 if uploaded_file_pedidos is not None:
     try:
-        # Leer el archivo CSV
-        df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+        # Leer el archivo CSV con separador ';' y codificación 'ISO-8859-1'
+        df_pedidos = pd.read_csv(
+            uploaded_file_pedidos,
+            encoding='ISO-8859-1',
+            sep=';',
+            on_bad_lines='skip',
+            dtype=str  # Leer todas las columnas como cadenas para evitar problemas de tipo
+        )
         
         # Limpiar y convertir las columnas 'Id' y 'Id Cliente' a entero
         columnas_id = ['Id', 'Id Cliente']
