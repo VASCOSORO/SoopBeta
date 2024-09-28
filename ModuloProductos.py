@@ -153,6 +153,8 @@ if uploaded_file is not None:
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
 
             with col2:
+                
+                st.markdown(f"**Stock:** {producto['Stock']}")
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
                     try:
@@ -166,7 +168,7 @@ if uploaded_file is not None:
                     st.write("🔗 **No hay imagen disponible.**")
                 st.markdown(f"**Costo:** {producto['Costo']}")
                 st.markdown(f"**Costo usd:** {producto['Costo usd']}")
-                st.markdown(f"**Stock:** {producto['Stock']}")
+                
 
             # Opción para modificar el producto
             modificar = st.checkbox("🔄 Modificar Producto")
