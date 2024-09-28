@@ -13,15 +13,15 @@ st.set_page_config(
 # Título de la aplicación
 st.title("📁 Convertidor de CSV para Productos, Clientes y Pedidos")
 
-# Función para limpiar y convertir las columnas 'Id' y 'Id Cliente'
+# Función para limpiar y convertir las columnas 'Id' y 'Id Cliente' eliminando solo puntos
 def limpiar_id(valor):
     if pd.isnull(valor):
         return ""
-    # Eliminar puntos y comas
-    valor_limpio = str(valor).replace('.', '').replace(',', '')
+    # Eliminar solo puntos
+    valor_limpio = str(valor).replace('.', '')
     return valor_limpio
 
-# Función para convertir DataFrame a Excel en memoria
+# Función para convertir DataFrame a Excel en memoria usando openpyxl
 def convertir_a_excel(df):
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
@@ -48,6 +48,9 @@ def procesar_archivo(
                 on_bad_lines='skip',
                 dtype=str  # Leer todas las columnas como cadenas para evitar problemas de tipo
             )
+
+            # Limpiar nombres de columnas (eliminar espacios al inicio y final)
+            df.columns = df.columns.str.strip()
 
             # Mostrar los nombres de las columnas para depuración
             st.write(f"🔍 **Columnas encontradas en {tipo}:**")
@@ -128,11 +131,11 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     # Define las columnas específicas para Productos
     columnas_a_renombrar = {
-        'Costo FOB': 'Costo usd',                     # Cambio de 'Costo FOB' a 'Costo usd'
-        'precio': 'Precio x Mayor',                   # Cambio de 'precio' a 'Precio x Mayor'
-        'Precio Jugueterias Face': 'Precio'           # Cambio de 'Precio Jugueterias Face' a 'Precio'
+        'precio': 'Precio x Mayor',                # Cambio de 'precio' a 'Precio x Mayor'
+        'Precio Jugueterias Face': 'Precio',       # Cambio de 'Precio Jugueterias Face' a 'Precio'
+        'Costo FOB': 'Costo usd'                   # Cambio de 'Costo FOB' a 'Costo usd'
     }
-    columnas_a_eliminar = ['Precio Face + 50', 'precio 25 plus', 'precio bonus']
+    columnas_a_eliminar = ['Precio 25 plus', 'Precio face+50', 'Precio BONUS']
     columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
     columnas_id = ['Id']
 
