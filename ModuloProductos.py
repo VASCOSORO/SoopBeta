@@ -262,17 +262,6 @@ if uploaded_file is not None:
 
                             st.success("✅ Producto modificado exitosamente.")
 
-        # Botón para descargar el archivo Excel modificado
-        st.header("💾 Descargar Archivo Modificado:")
-        excel = convertir_a_excel(df_modificado)
-
-        # Obtener la fecha y hora actual en horario de Argentina
-        argentina = pytz.timezone('America/Argentina/Buenos_Aires')
-        timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
-
-        # Crear el nombre del archivo con el timestamp
-        file_name = f"productos_modificados_{timestamp}.xlsx"
-
         # Funcionalidad para agregar un nuevo producto
         st.header("➕ Agregar Nuevo Producto:")
         with st.expander("Agregar Producto"):  # Cambié para que sea un expander
@@ -352,7 +341,18 @@ if uploaded_file is not None:
                         }
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
-                
+        
+        # Botón para descargar el archivo Excel modificado
+        st.header("💾 Descargar Archivo Modificado:")
+        excel = convertir_a_excel(df_modificado)
+
+        # Obtener la fecha y hora actual en horario de Argentina
+        argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+        timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
+
+        # Crear el nombre del archivo con el timestamp
+        file_name = f"productos_modificados_{timestamp}.xlsx"
+
         st.download_button(
             label="📥 Descargar Excel Modificado",
             data=excel,
