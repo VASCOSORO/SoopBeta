@@ -96,10 +96,7 @@ if uploaded_file is not None:
             gb.configure_side_bar()
             gb.configure_default_column(
                 editable=False,
-                groupable=True,
-                resizable=True,
-                sortable=True,
-                wrapText=True,  # Envuelve el texto para columnas largas
+                sortable=True, # Envuelve el texto para columnas largas
                 autoHeight=True  # Ajusta la altura automáticamente
             )
 
@@ -147,13 +144,13 @@ if uploaded_file is not None:
                 st.markdown(f"**ID:** {producto['Id']}")
                 st.markdown(f"**Código:** {producto['Codigo']}")
                 st.markdown(f"**Nombre:** {producto['Nombre']}")
+                st.markdown(f"**Precio:** {producto['Precio']}")
                 st.markdown(f"**Precio x Mayor:** {producto['Precio x Mayor']}")
                 st.markdown(f"**Costo:** {producto['Costo']}")
                 st.markdown(f"**Stock:** {producto['Stock']}")
                 st.markdown(f"**Descripción:** {producto['Descripcion']}")
                 st.markdown(f"**Categorías:** {producto['Categorias']}")
-                st.markdown(f"**Precio:** {producto['Precio']}")
-
+                
             with col2:
                 # Mostrar la imagen del producto
                 if pd.notnull(producto['imagen']) and producto['imagen'] != '':
@@ -161,7 +158,7 @@ if uploaded_file is not None:
                         response = requests.get(producto['imagen'], timeout=5)
                         response.raise_for_status()
                         image = Image.open(BytesIO(response.content))
-                        st.image(image, width=150)
+                        st.image(image, width=170)
                     except Exception as e:
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
@@ -181,6 +178,12 @@ if uploaded_file is not None:
 
                     with editar_col1:
                         nuevo_nombre = st.text_input("Nombre", value=producto['Nombre'])
+                        nuevo_precio = st.number_input(
+                            "Precio",
+                            min_value=0.0,
+                            step=0.01,
+                            value=safe_value(float(producto['Precio']), 0.0)
+                        )
                         nuevo_precio_x_mayor = st.number_input(
                             "Precio x Mayor",
                             min_value=0.0,
@@ -201,12 +204,7 @@ if uploaded_file is not None:
                         )
                         nuevo_descripcion = st.text_area("Descripción", value=producto['Descripcion'])
                         nuevo_categorias = st.text_input("Categorías", value=producto['Categorias'])
-                        nuevo_precio = st.number_input(
-                            "Precio",
-                            min_value=0.0,
-                            step=0.01,
-                            value=safe_value(float(producto['Precio']), 0.0)
-                        )
+                        
 
                     with editar_col2:
                         # Mostrar la imagen del producto
@@ -265,6 +263,7 @@ if uploaded_file is not None:
                 nuevo_id_externo = st.text_input("Id Externo")
                 nuevo_codigo = st.text_input("Código")
                 nuevo_nombre = st.text_input("Nombre")
+                nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
                 nuevo_precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01)
                 nuevo_activo = st.selectbox("Activo", options=[0, 1])
                 nuevo_fecha_creado = st.date_input("Fecha Creado", value=datetime.now(argentina))
@@ -279,11 +278,7 @@ if uploaded_file is not None:
                 nuevo_costo = st.number_input("Costo", min_value=0.0, step=0.01)
                 nuevo_etiquetas = st.text_input("Etiquetas")
                 nuevo_stock = st.number_input("Stock", min_value=0, step=1)
-                nuevo_precio_mayorista = st.number_input("Precio Mayorista", min_value=0.0, step=0.01)
-                nuevo_precio_online = st.number_input("Precio Online", min_value=0.0, step=0.01)
                 nuevo_precio = st.number_input("Precio", min_value=0.0, step=0.01)
-                nuevo_precio_face_dolar = st.number_input("Precio face Dolar", min_value=0.0, step=0.01)
-                nuevo_precio_mayorista_usd = st.number_input("Precio Mayorista USD", min_value=0.0, step=0.01)
                 nuevo_marca = st.text_input("Marca")
                 nuevo_categorias = st.text_input("Categorias")
                 nuevo_imagen = st.text_input("Imagen URL")
