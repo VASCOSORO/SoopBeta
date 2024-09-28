@@ -54,11 +54,14 @@ def safe_value(value, min_value=0.0):
 # Función para aplicar color al stock y mostrar la cantidad
 def color_stock(stock):
     if stock > 10:
-        return f'🟢 {stock} unidades (Suficiente stock)'
+        return f'🟢 
+        {stock} unidades (Suficiente stock)'
     elif stock > 0:
-        return f'🟡 {stock} unidades (Poco stock)'
+        return f'🟡 
+        {stock} unidades (Poco stock)'
     else:
-        return f'🔴 {stock} unidades (Sin stock)'
+        return f'🔴 
+        {stock} unidades (Sin stock)'
 
 # Sidebar para cargar el archivo Excel
 st.sidebar.header("Cargar Archivo Excel de Productos")
