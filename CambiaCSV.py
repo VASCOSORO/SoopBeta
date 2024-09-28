@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+from io import BytesIO
 
 # Función para limpiar y convertir a entero
 def limpiar_id(valor):
@@ -16,103 +17,127 @@ def limpiar_id(valor):
 # Interfaz para subir archivos en Streamlit
 st.title("Convertidor de CSV para Productos, Clientes y Pedidos")
 
+# Función para procesar y convertir DataFrame a Excel en memoria
+def convertir_a_excel(df):
+    buffer = BytesIO()
+    df.to_excel(buffer, index=False)
+    buffer.seek(0)
+    return buffer
+
 # Sección para el archivo de Productos
 st.header("Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("Subí tu archivo CSV de Productos", type=["csv"], key="productos")
 
 if uploaded_file_productos is not None:
-    # Leer el archivo CSV
-    df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
-    
-    # Limpiar y convertir la columna 'Id' a entero
-    if 'Id' in df_productos.columns:
-        df_productos['Id'] = df_productos['Id'].apply(limpiar_id)
-    
-    # Renombrar las columnas que especificaste
-    df_productos = df_productos.rename(columns={
-        'Costo FOB': 'Costo en U$s',  # Cambio de 'Costo FOB' a 'Costo en U$s'
-        'Precio jugueteria Face': 'Precio',  # Cambio de 'Precio Jugueteria Face' a 'Precio'
-        'Precio': 'Precio x Mayor'  # Cambio de 'Precio' a 'Precio x Mayor'
-    })
-    
-    # Eliminar columnas que no sirven
-    df_productos = df_productos.drop(columns=['Precio Face + 50', 'Precio Bonus'], errors='ignore')
-    
-    # Agregar nuevas columnas vacías (pueden completarse luego)
-    df_productos['Proveedor'] = ''
-    df_productos['Pasillo'] = ''
-    df_productos['Estante'] = ''
-    df_productos['Fecha de Vencimiento'] = ''
-    
-    # Mostrar una tabla de datos modificada en la interfaz de Streamlit
-    st.write("Archivo de Productos modificado:")
-    st.dataframe(df_productos)
-    
-    # Guardar el archivo modificado en Excel
-    excel_productos = df_productos.to_excel(index=False)
-    
-    # Proporcionar un enlace para descargar el archivo
-    st.download_button(
-        label="Descargar archivo modificado de Productos",
-        data=excel_productos,
-        file_name="archivo_modificado_productos.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    try:
+        # Leer el archivo CSV
+        df_productos = pd.read_csv(uploaded_file_productos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+        
+        # Limpiar y convertir la columna 'Id' a entero
+        if 'Id' in df_productos.columns:
+            df_productos['Id'] = df_productos['Id'].apply(limpiar_id)
+        else:
+            st.error("La columna 'Id' no se encuentra en el archivo de Productos.")
+        
+        # Renombrar las columnas que especificaste
+        columnas_a_renombrar = {
+            'Costo FOB': 'Costo en U$s',  # Cambio de 'Costo FOB' a 'Costo en U$s'
+            'Precio jugueteria Face': 'Precio',  # Cambio de 'Precio Jugueteria Face' a 'Precio'
+            'Precio': 'Precio x Mayor'  # Cambio de 'Precio' a 'Precio x Mayor'
+        }
+        df_productos = df_productos.rename(columns=columnas_a_renombrar)
+        
+        # Eliminar columnas que no sirven
+        columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
+        df_productos = df_productos.drop(columns=columnas_a_eliminar, errors='ignore')
+        
+        # Agregar nuevas columnas vacías (pueden completarse luego)
+        nuevas_columnas = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
+        for columna in nuevas_columnas:
+            if columna not in df_productos.columns:
+                df_productos[columna] = ''
+        
+        # Mostrar una tabla de datos modificada en la interfaz de Streamlit
+        st.write("Archivo de Productos modificado:")
+        st.dataframe(df_productos)
+        
+        # Convertir el DataFrame a Excel en memoria
+        excel_productos = convertir_a_excel(df_productos)
+        
+        # Proporcionar un enlace para descargar el archivo
+        st.download_button(
+            label="Descargar archivo modificado de Productos",
+            data=excel_productos,
+            file_name="archivo_modificado_productos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        st.error(f"Ocurrió un error al procesar el archivo de Productos: {e}")
 
 # Sección para el archivo de Clientes
 st.header("Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
 if uploaded_file_clientes is not None:
-    # Leer el archivo CSV
-    df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
-    
-    # Limpiar y convertir las columnas 'Id' y 'Id Cliente' a entero
-    if 'Id' in df_clientes.columns:
-        df_clientes['Id'] = df_clientes['Id'].apply(limpiar_id)
-    if 'Id Cliente' in df_clientes.columns:
-        df_clientes['Id Cliente'] = df_clientes['Id Cliente'].apply(limpiar_id)
-    
-    # Mostrar una tabla de datos en la interfaz de Streamlit
-    st.write("Archivo de Clientes cargado:")
-    st.dataframe(df_clientes)
-    
-    # Guardar el archivo en formato Excel
-    excel_clientes = df_clientes.to_excel(index=False)
-    
-    # Proporcionar un enlace para descargar el archivo
-    st.download_button(
-        label="Descargar archivo modificado de Clientes",
-        data=excel_clientes,
-        file_name="archivo_modificado_clientes.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    try:
+        # Leer el archivo CSV
+        df_clientes = pd.read_csv(uploaded_file_clientes, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+        
+        # Limpiar y convertir las columnas 'Id' y 'Id Cliente' a entero
+        columnas_id = ['Id', 'Id Cliente']
+        for columna in columnas_id:
+            if columna in df_clientes.columns:
+                df_clientes[columna] = df_clientes[columna].apply(limpiar_id)
+            else:
+                st.warning(f"La columna '{columna}' no se encuentra en el archivo de Clientes.")
+        
+        # Mostrar una tabla de datos en la interfaz de Streamlit
+        st.write("Archivo de Clientes cargado:")
+        st.dataframe(df_clientes)
+        
+        # Convertir el DataFrame a Excel en memoria
+        excel_clientes = convertir_a_excel(df_clientes)
+        
+        # Proporcionar un enlace para descargar el archivo
+        st.download_button(
+            label="Descargar archivo modificado de Clientes",
+            data=excel_clientes,
+            file_name="archivo_modificado_clientes.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        st.error(f"Ocurrió un error al procesar el archivo de Clientes: {e}")
 
 # Sección para el archivo de Pedidos
 st.header("Convertidor para CSV de Pedidos")
 uploaded_file_pedidos = st.file_uploader("Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
 
 if uploaded_file_pedidos is not None:
-    # Leer el archivo CSV
-    df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
-    
-    # Limpiar y convertir las columnas 'Id' y 'Id Cliente' a entero
-    if 'Id' in df_pedidos.columns:
-        df_pedidos['Id'] = df_pedidos['Id'].apply(limpiar_id)
-    if 'Id Cliente' in df_pedidos.columns:
-        df_pedidos['Id Cliente'] = df_pedidos['Id Cliente'].apply(limpiar_id)
-    
-    # Mostrar una tabla de datos en la interfaz de Streamlit
-    st.write("Archivo de Pedidos cargado:")
-    st.dataframe(df_pedidos)
-    
-    # Guardar el archivo en formato Excel
-    excel_pedidos = df_pedidos.to_excel(index=False)
-    
-    # Proporcionar un enlace para descargar el archivo
-    st.download_button(
-        label="Descargar archivo modificado de Pedidos",
-        data=excel_pedidos,
-        file_name="archivo_modificado_pedidos.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    try:
+        # Leer el archivo CSV
+        df_pedidos = pd.read_csv(uploaded_file_pedidos, encoding='ISO-8859-1', sep=';', on_bad_lines='skip')
+        
+        # Limpiar y convertir las columnas 'Id' y 'Id Cliente' a entero
+        columnas_id = ['Id', 'Id Cliente']
+        for columna in columnas_id:
+            if columna in df_pedidos.columns:
+                df_pedidos[columna] = df_pedidos[columna].apply(limpiar_id)
+            else:
+                st.warning(f"La columna '{columna}' no se encuentra en el archivo de Pedidos.")
+        
+        # Mostrar una tabla de datos en la interfaz de Streamlit
+        st.write("Archivo de Pedidos cargado:")
+        st.dataframe(df_pedidos)
+        
+        # Convertir el DataFrame a Excel en memoria
+        excel_pedidos = convertir_a_excel(df_pedidos)
+        
+        # Proporcionar un enlace para descargar el archivo
+        st.download_button(
+            label="Descargar archivo modificado de Pedidos",
+            data=excel_pedidos,
+            file_name="archivo_modificado_pedidos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        st.error(f"Ocurrió un error al procesar el archivo de Pedidos: {e}")
