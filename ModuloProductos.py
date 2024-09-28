@@ -1,3 +1,60 @@
+import streamlit as st
+import pandas as pd
+from io import BytesIO
+from datetime import datetime
+import pytz
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
+import requests
+from PIL import Image
+
+# Configuración de la página
+st.set_page_config(
+    page_title="📁 Modulo Productos",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Título de la aplicación
+st.title("📁 Modulo Productos")
+
+# Función para convertir DataFrame a Excel en memoria usando openpyxl
+def convertir_a_excel(df):
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Productos')
+    excel_bytes = buffer.getvalue()
+    return excel_bytes
+
+# Función para agregar el footer
+def agregar_footer():
+    footer = """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #f1f1f1;
+        color: #555;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+    </style>
+    <div class="footer">
+        Powered by VASCO.SORO
+    </div>
+    """
+    st.markdown(footer, unsafe_allow_html=True)
+
+# Función para asegurar que el valor es al menos el mínimo permitido
+def safe_value(value, min_value=0.0):
+    return max(value, min_value)
+
+# Sidebar para cargar el archivo Excel
+st.sidebar.header("Cargar Archivo Excel de Productos")
+uploaded_file = st.sidebar.file_uploader("📤 Subir archivo Excel", type=["xlsx"])
+
 if uploaded_file is not None:
     try:
         # Leer el archivo Excel
@@ -171,7 +228,13 @@ if uploaded_file is not None:
 
                             st.success("✅ Producto modificado exitosamente.")
 
-    # Botón para descargar el archivo Excel modificado
+    except Exception as e:
+        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+else:
+    st.info("📂 Por favor, sube un archivo Excel para comenzar.")
+
+# Botón para descargar el archivo Excel modificado
+if uploaded_file is not None and not df_modificado.empty:
     st.header("💾 Descargar Archivo Modificado:")
     excel = convertir_a_excel(df_modificado)
 
@@ -268,5 +331,5 @@ if uploaded_file is not None:
                 df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                 st.success("✅ Producto agregado exitosamente.")
 
-except Exception as e:
-    st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+# Agregar el footer
+agregar_footer()
