@@ -2,14 +2,12 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# Función para limpiar y convertir a entero eliminando solo puntos
+# Función para limpiar y convertir eliminando solo puntos
 def limpiar_id(valor):
     if pd.isnull(valor):
         return ""
     # Eliminar solo puntos
     valor_limpio = str(valor).replace('.', '')
-    # Eliminar comas si las hubiera accidentalmente
-    valor_limpio = valor_limpio.replace(',', '')
     return valor_limpio
 
 # Función para procesar y convertir DataFrame a Excel en memoria
@@ -80,6 +78,9 @@ def procesar_archivo(
             # Convertir el DataFrame a Excel en memoria
             excel = convertir_a_excel(df)
 
+            # Verificar el tamaño del archivo Excel
+            st.write(f"📝 **Tamaño del archivo Excel en bytes:** {len(excel)}")
+
             # Proporcionar un enlace para descargar el archivo
             st.download_button(
                 label=f"📥 Descargar archivo modificado de {tipo}",
@@ -100,8 +101,8 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     # Define las columnas específicas para Productos
     columnas_a_renombrar = {
-        'Costo FOB': 'Costo en U$s',            # Cambio de 'Costo FOB' a 'Costo en U$s'
-        'Precio jugueterias face': 'Precio'      # Cambio de 'Precio jugueterias face' a 'Precio'
+        'Costo FOB': 'Costo en U$s',                # Cambio de 'Costo FOB' a 'Costo en U$s'
+        'Precio jugueterias face': 'Precio x Mayor'  # Cambio de 'Precio jugueterias face' a 'Precio x Mayor'
     }
     columnas_a_eliminar = ['Precio Face + 50', 'Precio Bonus']
     columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
