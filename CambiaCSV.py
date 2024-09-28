@@ -17,8 +17,9 @@ def convertir_a_excel(df):
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Hoja1')
-    buffer.seek(0)
-    return buffer
+    # Obtener los bytes del buffer
+    excel_bytes = buffer.getvalue()
+    return excel_bytes
 
 # Función general para procesar archivos
 def procesar_archivo(
