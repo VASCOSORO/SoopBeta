@@ -10,10 +10,10 @@ df_clientes = pd.read_excel(file_path_clientes)
 df_productos = pd.read_excel(file_path_productos)
 
 # Configuración de la página
-st.set_page_config(page_title="📁 Módulo de Ventas", layout="wide")
+st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 
 # Título de la aplicación
-st.title("📁 Módulo de Ventas")
+st.title("🛒 Módulo de Ventas")
 
 # Sección de cliente
 st.header("🧑‍💼 Elegí Cliente")
@@ -47,7 +47,7 @@ with col2:
         st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
 # Sección de productos
-st.header("🛒 Buscador de Productos")
+st.header("🛒 📁 Buscador de Productos")
 
 # Tres columnas: Buscador, precio, y stock con colores
 col1, col2, col3 = st.columns([2, 1, 1])
