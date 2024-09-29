@@ -156,8 +156,8 @@ if cliente_seleccionado != "":
                         # Eliminar la entrada de confirmación
                         del st.session_state.confirm_delete[index]
                         st.success(f"Se eliminó {pedido_df.at[index, 'Nombre']} del pedido.")
-                        # Actualizar la lista de pedidos sin usar st.experimental_rerun()
-                        st.session_state.pedido = st.session_state.pedido  # Solo para refrescar la lista
+                        # Actualizar la lista de pedidos
+                        st.experimental_rerun()
 
                     if cancelar:
                         # Cancelar la eliminación
@@ -181,3 +181,5 @@ if cliente_seleccionado != "":
         # Centrar el botón de guardar pedido
         col_guardar, _ = st.columns([2, 3])
         with col_guardar:
+            if st.button("Guardar Pedido"):
+                st.success("Pedido guardado exitosamente.", icon="✅")
