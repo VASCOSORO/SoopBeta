@@ -65,7 +65,7 @@ if producto_buscado:
     
     with col3:
         # Mostrar stock con colores según la cantidad
-        stock = producto_data['Stock']
+        stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
         if stock <= 0:
             color = 'red'
         elif stock < 10:
@@ -88,7 +88,7 @@ if producto_buscado:
         st.write(f"**Total por caja/venta forzada:** ${total_venta}")
     else:
         # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
-        cantidad = st.number_input("Cantidad", min_value=1, max_value=producto_data['Stock'], step=1)
+        cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
 
     # Botón para agregar el producto al pedido
     col_boton, col_cantidad = st.columns([1, 2])
