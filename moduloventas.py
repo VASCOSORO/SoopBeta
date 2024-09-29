@@ -129,12 +129,14 @@ if cliente_seleccionado != "":
             col4.write(f"${row['Precio']}")
             col5.write(f"${row['Importe']}")
 
-            # Botón para eliminar producto con confirmación
+            # Confirmación antes de eliminar el ítem
             if col6.button('🗑️', key=f"eliminar_{index}"):
-                # Mostrar confirmación de eliminación
-                if st.session_state.pedido and st.session_state.pedido[index]['Nombre'] == row['Nombre']:
-                    st.session_state.pedido.pop(index)  # Eliminar el producto seleccionado del pedido
-                    st.experimental_rerun()  # Recargar la página para actualizar la lista
+                confirmacion = st.radio(f"¿Seguro que querés eliminar {row['Nombre']} del pedido?", ("Sí", "No"), key=f"confirm_{index}")
+                if confirmacion == "Sí":
+                    # Eliminar el producto seleccionado del pedido
+                    st.session_state.pedido.pop(index)
+                    # Recargar la tabla inmediatamente
+                    st.experimental_rerun()
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
