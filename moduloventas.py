@@ -21,14 +21,13 @@ st.header("🧑‍💼 Datos del Cliente")
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # Agregar una opción vacía antes de la lista de clientes
     cliente_seleccionado = st.selectbox(
-        "Buscar cliente", [""] + df_clientes['Nombre'].unique().tolist(), 
+        "Buscar cliente",[""] + df_clientes['Nombre'].unique(), 
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
     # Solo mostramos los datos del cliente si se ha seleccionado uno
-    if cliente_seleccionado != "":
+    if cliente_seleccionado:
         cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
         # Colocar debajo de cliente "Descuento" y "Última compra"
@@ -37,7 +36,7 @@ with col1:
 
 with col2:
     # Solo mostramos el vendedor si se ha seleccionado un cliente
-    if cliente_seleccionado != "":
+    if cliente_seleccionado:
         # Vendedor asignado por defecto es el primero en la lista
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         vendedor_default = vendedores[0]
