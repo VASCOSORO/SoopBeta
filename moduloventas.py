@@ -13,10 +13,10 @@ df_productos = pd.read_excel(file_path_productos)
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 
 # Título de la aplicación
-st.title(" Módulo de Ventas 🛒")
+st.title("🐻 Módulo de Ventas 🛒")
 
 # Sección de cliente
-st.header("🧑‍💼 Elegí Cliente")
+st.header("🗃️ Elegí Cliente 🔮")
 
 # Colocamos el buscador de cliente y el vendedor asignado uno al lado del otro
 col1, col2 = st.columns([2, 1])
