@@ -14,6 +14,14 @@ st.title("🐻 Módulo de Ventas 🛒")
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
+# Ruta de los archivos Excel
+file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'    # Archivo de clientes
+
+# Nombre de las hojas en los archivos Excel
+nombre_hoja_productos = 'Hoja1'  # Hoja que contiene los datos de productos
+nombre_hoja_clientes = 'Hoja1'    # Hoja que contiene los datos de clientes
+
 # Función para listar las hojas disponibles en el archivo Excel
 def listar_hojas_excel(file_path):
     try:
@@ -23,10 +31,6 @@ def listar_hojas_excel(file_path):
         st.error(f"Error al abrir el archivo Excel: {e}")
         return []
 
-# Ruta de los archivos Excel
-file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
-file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-
 # Verificar las hojas disponibles en el archivo de productos
 hojas_productos = listar_hojas_excel(file_path_productos)
 st.write(f"Hojas disponibles en `{file_path_productos}`: {', '.join(hojas_productos)}")
@@ -34,9 +38,6 @@ st.write(f"Hojas disponibles en `{file_path_productos}`: {', '.join(hojas_produc
 # Verificar las hojas disponibles en el archivo de clientes
 hojas_clientes = listar_hojas_excel(file_path_clientes)
 st.write(f"Hojas disponibles en `{file_path_clientes}`: {', '.join(hojas_clientes)}")
-
-# Especifica el nombre correcto de la hoja de productos
-nombre_hoja_productos = 'productos'  # Asegúrate de que coincida exactamente con el nombre de tu hoja
 
 # Cargar los datos de productos
 try:
@@ -48,9 +49,6 @@ except Exception as e:
     st.error(f"Error al cargar el archivo de productos: {e}")
     st.stop()
 
-# Especifica el nombre correcto de la hoja de clientes (si es necesario)
-nombre_hoja_clientes = 'clientes'  # Cambia esto si tu hoja tiene otro nombre
-
 # Cargar los datos de clientes
 try:
     st.session_state.df_clientes = pd.read_excel(file_path_clientes, sheet_name=nombre_hoja_clientes)
@@ -61,7 +59,7 @@ except Exception as e:
     st.error(f"Error al cargar el archivo de clientes: {e}")
     st.stop()
 
-# Función para guardar el pedido en la segunda hoja del archivo de productos
+# Función para guardar el pedido en la hoja 'Pedidos' del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
     try:
         book = load_workbook(file_path)
@@ -76,7 +74,7 @@ def guardar_pedido_excel(file_path, order_data):
         if sheet.max_row == 1:
             id_pedido = 1
         else:
-            last_id = sheet['A'][sheet.max_row].value
+            last_id = sheet['A'][sheet.max_row - 1].value
             id_pedido = last_id + 1 if last_id is not None else 1
         
         # Formatear los ítems como JSON
@@ -284,7 +282,7 @@ if cliente_seleccionado != "":
                         'items': st.session_state.pedido
                     }
 
-                    # Guardar el pedido en el archivo de productos (segunda hoja)
+                    # Guardar el pedido en la hoja 'Pedidos'
                     guardar_pedido_excel(file_path_productos, order_data)
 
                     # Confirmar al usuario
