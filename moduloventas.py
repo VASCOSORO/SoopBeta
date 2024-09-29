@@ -13,7 +13,7 @@ df_productos = pd.read_excel(file_path_productos)
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 
 # Título de la aplicación
-st.title("🛒 Módulo de Ventas")
+st.title(" Módulo de Ventas 🛒")
 
 # Sección de cliente
 st.header("🧑‍💼 Elegí Cliente")
