@@ -143,8 +143,12 @@ if cliente_seleccionado != "":
         for index in list(st.session_state.confirm_delete.keys()):
             if st.session_state.confirm_delete.get(index, False):
                 with st.expander(f"¿Seguro que querés eliminar {pedido_df.at[index, 'Nombre']} del pedido?"):
-                    confirmar = st.button("Sí, eliminar", key=f"confirm_yes_{index}")
-                    cancelar = st.button("No, cancelar", key=f"confirm_no_{index}")
+                    # Alinear botones "Sí, eliminar" y "No, cancelar" en la misma fila
+                    col_confirm, col_cancel = st.columns([1, 1])
+                    with col_confirm:
+                        confirmar = st.button("Sí, eliminar", key=f"confirm_yes_{index}")
+                    with col_cancel:
+                        cancelar = st.button("No, cancelar", key=f"confirm_no_{index}")
 
                     if confirmar:
                         # Eliminar el producto seleccionado del pedido
@@ -152,8 +156,8 @@ if cliente_seleccionado != "":
                         # Eliminar la entrada de confirmación
                         del st.session_state.confirm_delete[index]
                         st.success(f"Se eliminó {pedido_df.at[index, 'Nombre']} del pedido.")
-                        # Reiniciar la aplicación para reflejar cambios
-                        st.experimental_rerun()
+                        # Actualizar la lista de pedidos sin usar st.experimental_rerun()
+                        st.session_state.pedido = st.session_state.pedido  # Solo para refrescar la lista
 
                     if cancelar:
                         # Cancelar la eliminación
@@ -177,16 +181,3 @@ if cliente_seleccionado != "":
         # Centrar el botón de guardar pedido
         col_guardar, _ = st.columns([2, 3])
         with col_guardar:
-            if st.button("Guardar Pedido"):
-                st.success("Pedido guardado exitosamente.", icon="✅")
-
-                # Generar un archivo de texto
-                pedido_txt = BytesIO()
-                pedido_txt.write(f"Detalles del Pedido\n".encode('utf-8'))
-                for _, row in pedido_df.iterrows():
-                    pedido_txt.write(f"{row['Cantidad']}x {row['Nombre']} - ${row['Importe']:.2f}\n".encode('utf-8'))
-                pedido_txt.write(f"\nTotal del pedido: ${total_monto:.2f}".encode('utf-8'))
-                pedido_txt.seek(0)
-
-                # Proporcionar opción para descargar el archivo de texto
-                st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
