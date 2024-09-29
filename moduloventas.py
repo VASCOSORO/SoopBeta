@@ -22,7 +22,7 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "Buscar cliente", [""] + df_clientes['Nombre'].unique().tolist(), 
+        "Buscar cliente",[""] + df_clientes['Nombre'].unique().tolist(), 
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
@@ -129,8 +129,12 @@ if 'pedido' in st.session_state and st.session_state.pedido:
 
     st.write(f"**Total de items:** {total_items}")
     
-    # Mostrar total del pedido destacado
-    st.markdown(f"<h2 style='text-align:center; color:blue;'>**Total del pedido: ${total_monto:,.2f}**</h2>", unsafe_allow_html=True)
+    # Mostrar total del pedido en un cuadro destacado
+    st.markdown(f"""
+        <div style="background-color:#F0F8FF;padding:10px;border-radius:5px;">
+            <h3 style='text-align:center;'>Total del pedido: ${total_monto:,.2f}</h3>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Botón para guardar el pedido
     if st.button("Guardar pedido"):
