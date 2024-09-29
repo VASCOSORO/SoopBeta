@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
-from fpdf import FPDF
-import io
+from io import BytesIO
 
 # Cargar los datos de clientes y productos desde los archivos correspondientes
 file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
@@ -42,52 +41,78 @@ with col2:
         # Vendedor asignado por defecto es el primero en la lista
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         vendedor_default = vendedores[0]
-        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)  # Mostrar por defecto el primer vendedor
+        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
         # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
         st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
-# Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
-
 # Sección de productos
 st.header("🛒 Buscador de Productos")
 
-# Buscador de productos
-producto_buscado = st.text_input("Buscar producto", placeholder="Escribí el nombre del producto...")
+# Tres columnas: Buscador, precio, y stock con colores
+col1, col2, col3 = st.columns([2, 1, 1])
 
-# Buscar coincidencias de productos
-productos_filtrados = df_productos[df_productos['Nombre'].str.contains(producto_buscado, case=False, na=False)]
-
-if not productos_filtrados.empty:
-    producto_seleccionado = st.selectbox("Selecciona el producto", productos_filtrados['Nombre'].tolist())
+with col1:
+    # Buscador de productos con espacio vacío al inicio
+    producto_buscado = st.selectbox("Buscar producto", [""] + df_productos['Nombre'].unique().tolist(), 
+                                    help="Escribí el nombre del producto o seleccioná uno de la lista.")
     
-    # Datos del producto seleccionado
-    producto_data = df_productos[df_productos['Nombre'] == producto_seleccionado].iloc[0]
-    st.write(f"**Código:** {producto_data['Codigo']}")
-    st.write(f"**Descripción:** {producto_data['Descripcion']}")
-    st.write(f"**Precio:** ${producto_data['Precio']}")
-    st.write(f"**Stock disponible:** {producto_data['Stock']}")
-    st.image(producto_data['imagen'], width=150)
-
-    # Campo para seleccionar cantidad
-    cantidad = st.number_input("Cantidad", min_value=1, max_value=producto_data['Stock'], step=1)
+if producto_buscado:
+    producto_data = df_productos[df_productos['Nombre'] == producto_buscado].iloc[0]
     
-    # Botón para agregar el producto al pedido
-    if st.button("Agregar producto"):
-        # Añadir producto al pedido con la cantidad seleccionada
-        if 'pedido' not in st.session_state:
-            st.session_state.pedido = []
+    with col2:
+        # Mostrar precio
+        st.write(f"**Precio:** ${producto_data['Precio']}")
+    
+    with col3:
+        # Mostrar stock con colores según la cantidad
+        stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
+        if stock <= 0:
+            color = 'red'
+        elif stock < 10:
+            color = 'orange'
+        else:
+            color = 'green'
         
-        # Agregar el producto con los detalles
-        producto_agregado = {
-            'Codigo': producto_data['Codigo'],
-            'Nombre': producto_data['Nombre'],
-            'Cantidad': cantidad,
-            'Precio': producto_data['Precio'],
-            'Importe': cantidad * producto_data['Precio']
-        }
-        st.session_state.pedido.append(producto_agregado)
-        st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+        st.markdown(f"<span style='color:{color}'>**Stock disponible:** {stock}</span>", unsafe_allow_html=True)
+
+    # Dividimos la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
+    col_izq, col_der = st.columns([2, 1])
+    
+    with col_izq:
+        # Mostrar código del producto
+        st.write(f"**Código del producto:** {producto_data['Codigo']}")
+        
+        # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
+        if stock > 0:
+            cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
+        else:
+            cantidad = 0
+            st.error("No hay stock disponible para este producto.")
+        
+        # Botón para agregar el producto al pedido
+        if st.button("Agregar producto"):
+            # Añadir producto al pedido con la cantidad seleccionada
+            if 'pedido' not in st.session_state:
+                st.session_state.pedido = []
+            
+            # Agregar el producto con los detalles
+            producto_agregado = {
+                'Codigo': producto_data['Codigo'],
+                'Nombre': producto_data['Nombre'],
+                'Cantidad': cantidad,
+                'Precio': producto_data['Precio'],
+                'Importe': cantidad * producto_data['Precio']
+            }
+            st.session_state.pedido.append(producto_agregado)
+            st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+    
+    with col_der:
+        # Mostrar imagen del producto en la columna aparte
+        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+            st.image(producto_data['imagen'], width=200, caption="Imagen del producto")
+        else:
+            st.write("No hay imagen disponible.")
 
 # Mostrar el pedido actual
 if 'pedido' in st.session_state and st.session_state.pedido:
@@ -102,34 +127,31 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     # Total de ítems y total del pedido
     total_items = pedido_df['Cantidad'].sum()
     total_monto = pedido_df['Importe'].sum()
+
+    # Mostrar total de ítems y total del pedido en una sola fila
+    col_items, col_total = st.columns([1, 1])
     
-    st.write(f"**Total de items:** {total_items}")
-    st.write(f"**Total del pedido:** ${total_monto}")
+    with col_items:
+        st.write(f"**Total de items:** {total_items}")
     
-    # Botón para guardar el pedido
+    with col_total:
+        # Mostrar total del pedido al lado de total de ítems
+        st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
+    
+    # Centrar el botón de guardar pedido
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     if st.button("Guardar pedido"):
         st.success("Pedido guardado exitosamente.")
+        
+        # Generar un archivo de texto en vez de PDF
+        pedido_txt = BytesIO()
+        pedido_txt.write(f"Detalles del Pedido\n".encode('utf-8'))
+        for index, row in pedido_df.iterrows():
+            pedido_txt.write(f"{row['Cantidad']}x {row['Nombre']} - ${row['Importe']:.2f}\n".encode('utf-8'))
+        pedido_txt.write(f"\nTotal del pedido: ${total_monto:.2f}".encode('utf-8'))
+        pedido_txt.seek(0)
+        
+        # Proporcionar opción para descargar el archivo de texto
+        st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
     
-        # Función para generar PDF
-        def generar_pdf():
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(200, 10, txt="Pedido Actual", ln=True, align="C")
-            
-            # Agregar contenido del pedido al PDF
-            for index, row in pedido_df.iterrows():
-                pdf.cell(200, 10, txt=f"{row['Cantidad']} x {row['Nombre']} - {row['Precio']} - Total: {row['Importe']}", ln=True)
-
-            pdf.cell(200, 10, txt=f"Total del pedido: ${total_monto}", ln=True)
-            
-            return pdf.output(dest='S').encode('latin1')
-
-        # Botón para descargar el PDF
-        pdf_data = generar_pdf()
-        st.download_button(
-            label="Descargar pedido en PDF",
-            data=pdf_data,
-            file_name="pedido.pdf",
-            mime="application/pdf"
-        )
+    st.markdown("</div>", unsafe_allow_html=True)
