@@ -14,7 +14,7 @@ st.set_page_config(page_title="📁 Módulo de Ventas", layout="wide")
 # Título de la aplicación
 st.title("📁 Módulo de Ventas")
 
-# Sección de cliente
+# Sección de cliente (previamente ajustada)
 st.header("🧑‍💼 Datos del Cliente")
 
 # Colocamos el buscador de cliente y el vendedor asignado uno al lado del otro
@@ -40,52 +40,77 @@ with col2:
         # Vendedor asignado por defecto es el primero en la lista
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         vendedor_default = vendedores[0]
-        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)  # Mostrar por defecto el primer vendedor
+        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
         # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
         st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
-# Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
-
 # Sección de productos
 st.header("🛒 Buscador de Productos")
 
-# Buscador de productos
-producto_buscado = st.text_input("Buscar producto", placeholder="Escribí el nombre del producto...")
+# Tres columnas: Buscador, precio, y stock con colores
+col1, col2, col3 = st.columns([2, 1, 1])
 
-# Buscar coincidencias de productos
-productos_filtrados = df_productos[df_productos['Nombre'].str.contains(producto_buscado, case=False, na=False)]
-
-if not productos_filtrados.empty:
-    producto_seleccionado = st.selectbox("Selecciona el producto", productos_filtrados['Nombre'].tolist())
+with col1:
+    # Buscador de productos con espacio vacío al inicio
+    producto_buscado = st.selectbox("Buscar producto", [""] + df_productos['Nombre'].unique().tolist(), 
+                                    help="Escribí el nombre del producto o seleccioná uno de la lista.")
     
-    # Datos del producto seleccionado
-    producto_data = df_productos[df_productos['Nombre'] == producto_seleccionado].iloc[0]
-    st.write(f"**Código:** {producto_data['Codigo']}")
-    st.write(f"**Descripción:** {producto_data['Descripcion']}")
-    st.write(f"**Precio:** ${producto_data['Precio']}")
-    st.write(f"**Stock disponible:** {producto_data['Stock']}")
-    st.image(producto_data['imagen'], width=150)
-
-    # Campo para seleccionar cantidad
-    cantidad = st.number_input("Cantidad", min_value=1, max_value=producto_data['Stock'], step=1)
+if producto_buscado:
+    producto_data = df_productos[df_productos['Nombre'] == producto_buscado].iloc[0]
     
-    # Botón para agregar el producto al pedido
-    if st.button("Agregar producto"):
-        # Añadir producto al pedido con la cantidad seleccionada
-        if 'pedido' not in st.session_state:
-            st.session_state.pedido = []
+    with col2:
+        # Mostrar precio
+        st.write(f"**Precio:** ${producto_data['Precio']}")
+    
+    with col3:
+        # Mostrar stock con colores según la cantidad
+        stock = producto_data['Stock']
+        if stock <= 0:
+            color = 'red'
+        elif stock < 10:
+            color = 'orange'
+        else:
+            color = 'green'
         
-        # Agregar el producto con los detalles
-        producto_agregado = {
-            'Codigo': producto_data['Codigo'],
-            'Nombre': producto_data['Nombre'],
-            'Cantidad': cantidad,
-            'Precio': producto_data['Precio'],
-            'Importe': cantidad * producto_data['Precio']
-        }
-        st.session_state.pedido.append(producto_agregado)
-        st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+        st.markdown(f"<span style='color:{color}'>**Stock disponible:** {stock}</span>", unsafe_allow_html=True)
+
+    # Mostrar código del producto debajo de las columnas
+    st.write(f"**Código del producto:** {producto_data['Codigo']}")
+
+    # Advertencia de venta forzada por múltiplos
+    forzar_multiplos = producto_data.get('Forzar Multiplos', False)
+    if forzar_multiplos:
+        cantidad_por_bulto = producto_data.get('unidad por bulto', 1)
+        st.warning(f"Venta forzada en múltiplos de {cantidad_por_bulto} unidades.")
+        cantidad = st.number_input("Cantidad", min_value=cantidad_por_bulto, step=cantidad_por_bulto, value=cantidad_por_bulto)
+        total_venta = cantidad * producto_data['Precio']
+        st.write(f"**Total por caja/venta forzada:** ${total_venta}")
+    else:
+        # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
+        cantidad = st.number_input("Cantidad", min_value=1, max_value=producto_data['Stock'], step=1)
+
+    # Botón para agregar el producto al pedido
+    col_boton, col_cantidad = st.columns([1, 2])
+    with col_cantidad:
+        st.write(f"Cantidad: {cantidad}")
+
+    with col_boton:
+        if st.button("Agregar producto"):
+            # Añadir producto al pedido con la cantidad seleccionada
+            if 'pedido' not in st.session_state:
+                st.session_state.pedido = []
+            
+            # Agregar el producto con los detalles
+            producto_agregado = {
+                'Codigo': producto_data['Codigo'],
+                'Nombre': producto_data['Nombre'],
+                'Cantidad': cantidad,
+                'Precio': producto_data['Precio'],
+                'Importe': cantidad * producto_data['Precio']
+            }
+            st.session_state.pedido.append(producto_agregado)
+            st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
 # Mostrar el pedido actual
 if 'pedido' in st.session_state and st.session_state.pedido:
