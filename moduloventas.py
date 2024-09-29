@@ -75,25 +75,20 @@ if producto_buscado:
         
         st.markdown(f"<span style='color:{color}'>**Stock disponible:** {stock}</span>", unsafe_allow_html=True)
 
-    # Mostrar código del producto debajo de las columnas
-    st.write(f"**Código del producto:** {producto_data['Codigo']}")
-
-    # Mostrar imagen del producto en la columna aparte (recuadro rosado)
-    if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
-        st.image(producto_data['imagen'], width=200, caption="Imagen del producto")
-
-    # Mostrar campo de cantidad y el botón de agregar producto
-    col_cantidad, col_boton = st.columns([3, 1])
+    # Dividimos la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
+    col_izq, col_der = st.columns([2, 1])
     
-    with col_cantidad:
+    with col_izq:
+        # Mostrar código del producto
+        st.write(f"**Código del producto:** {producto_data['Codigo']}")
+        
         # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
         if stock > 0:
             cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
         else:
             cantidad = 0
             st.error("No hay stock disponible para este producto.")
-    
-    with col_boton:
+        
         # Botón para agregar el producto al pedido
         if st.button("Agregar producto"):
             # Añadir producto al pedido con la cantidad seleccionada
@@ -110,6 +105,13 @@ if producto_buscado:
             }
             st.session_state.pedido.append(producto_agregado)
             st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+    
+    with col_der:
+        # Mostrar imagen del producto en la columna aparte
+        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+            st.image(producto_data['imagen'], width=200, caption="Imagen del producto")
+        else:
+            st.write("No hay imagen disponible.")
 
 # Mostrar el pedido actual
 if 'pedido' in st.session_state and st.session_state.pedido:
