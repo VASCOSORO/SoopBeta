@@ -132,8 +132,9 @@ if cliente_seleccionado != "":
             # Botón para eliminar producto con confirmación antes de eliminar
             eliminar = col6.button('🗑️', key=f"eliminar_{index}")
             if eliminar:
-                # Preguntar si está seguro antes de eliminar
-                if st.confirm(f"¿Seguro que querés eliminar {row['Nombre']} del pedido?"):
+                # Mostrar un mensaje de confirmación antes de eliminar
+                confirm = st.radio(f"¿Seguro que querés eliminar {row['Nombre']} del pedido?", ['Sí', 'No'], index=1, key=f"confirmar_{index}")
+                if confirm == 'Sí':
                     # Eliminar el producto seleccionado del pedido sin recargar la página
                     st.session_state.pedido.pop(index)
                     # Reescribir el pedido actual después de eliminar un elemento
