@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 from openpyxl import load_workbook
 import json
 from datetime import datetime
@@ -32,7 +31,7 @@ def guardar_pedido_excel(file_path, order_data):
         if sheet.max_row == 1:
             id_pedido = 1
         else:
-            id_pedido = sheet['A'][sheet.max_row - 1].value + 1
+            id_pedido = sheet['A'][sheet.max_row].value + 1
         
         # Formatear los ítems como JSON
         items_json = json.dumps(order_data['items'], ensure_ascii=False)
@@ -192,32 +191,36 @@ if cliente_seleccionado != "":
             col4.write(f"${row['Precio']}")
             col5.write(f"${row['Importe']}")
 
-            eliminar_key = f"eliminar_{index}"
-            confirmar_key_si = f"confirmar_si_{index}"
-            confirmar_key_no = f"confirmar_no_{index}"
+            # Definir una bandera de confirmación única para cada ítem
             confirm_flag = f"confirm_eliminar_{index}"
 
-            if st.session_state.get(confirm_flag, False):
-                # Mostrar botones de confirmación en lugar del ícono de eliminar
-                with col6:
-                    if st.button("Sí", key=confirmar_key_si):
-                        producto = st.session_state.pedido.pop(index)
-                        # Reponer el stock
-                        st.session_state.df_productos.loc[
-                            st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
-                        ] += producto['Cantidad']
-                        st.success(f"Se eliminó {producto['Nombre']} del pedido.")
-                        # Limpiar la bandera de confirmación
-                        st.session_state.pop(confirm_flag, None)
+            # Inicializar la bandera si no existe
+            if confirm_flag not in st.session_state:
+                st.session_state[confirm_flag] = False
 
-                    if st.button("No", key=confirmar_key_no):
-                        # Limpiar la bandera de confirmación
-                        st.session_state.pop(confirm_flag, None)
+            # Determinar el color del botón basado en la bandera
+            if st.session_state[confirm_flag]:
+                # Botón rojo para confirmar eliminación
+                if col6.button('🗑️ Eliminar', key=f"confirmar_eliminar_{index}"):
+                    # Eliminar el ítem del pedido
+                    producto = st.session_state.pedido.pop(index)
+                    # Reponer el stock
+                    st.session_state.df_productos.loc[
+                        st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
+                    ] += producto['Cantidad']
+                    st.success(f"Se eliminó {producto['Nombre']} del pedido.")
+                    # Resetear la bandera
+                    st.session_state[confirm_flag] = False
             else:
-                # Mostrar el botón de eliminar
-                with col6:
-                    if st.button('🗑️', key=eliminar_key):
-                        st.session_state[confirm_flag] = True  # Activar la confirmación para este ítem
+                # Botón normal de eliminación
+                if col6.button('🗑️', key=f"eliminar_{index}"):
+                    # Activar la confirmación de eliminación
+                    st.session_state[confirm_flag] = True
+
+        # Resetear todas las banderas de confirmación si no se ha hecho clic
+        for key in list(st.session_state.keys()):
+            if key.startswith("confirm_eliminar_") and not st.session_state[key]:
+                st.session_state.pop(key)
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
