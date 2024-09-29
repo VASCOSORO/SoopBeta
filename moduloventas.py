@@ -78,45 +78,38 @@ if producto_buscado:
     # Mostrar código del producto debajo de las columnas
     st.write(f"**Código del producto:** {producto_data['Codigo']}")
 
-    # Advertencia de venta forzada por múltiplos
-    forzar_multiplos = producto_data.get('Forzar Multiplos', False)
-    if forzar_multiplos:
-        cantidad_por_bulto = producto_data.get('unidad por bulto', 1)
-        st.warning(f"Venta forzada en múltiplos de {cantidad_por_bulto} unidades.")
-        cantidad = st.number_input("Cantidad", min_value=cantidad_por_bulto, step=cantidad_por_bulto, value=cantidad_por_bulto)
-        total_venta = cantidad * producto_data['Precio']
-        st.write(f"**Total por caja/venta forzada:** ${total_venta}")
-    else:
+    # Mostrar imagen del producto en la columna aparte (recuadro rosado)
+    if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+        st.image(producto_data['imagen'], width=200, caption="Imagen del producto")
+
+    # Mostrar campo de cantidad y el botón de agregar producto
+    col_cantidad, col_boton = st.columns([3, 1])
+    
+    with col_cantidad:
         # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
-        # Ajustamos para que el stock sea mínimo 1 si el stock es mayor que 0
         if stock > 0:
             cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
         else:
             cantidad = 0
             st.error("No hay stock disponible para este producto.")
-
-    # Botón para agregar el producto al pedido solo si hay stock disponible
-    if cantidad > 0:
-        col_boton, col_cantidad = st.columns([1, 2])
-        with col_cantidad:
-            st.write(f"Cantidad: {cantidad}")
-
-        with col_boton:
-            if st.button("Agregar producto"):
-                # Añadir producto al pedido con la cantidad seleccionada
-                if 'pedido' not in st.session_state:
-                    st.session_state.pedido = []
-                
-                # Agregar el producto con los detalles
-                producto_agregado = {
-                    'Codigo': producto_data['Codigo'],
-                    'Nombre': producto_data['Nombre'],
-                    'Cantidad': cantidad,
-                    'Precio': producto_data['Precio'],
-                    'Importe': cantidad * producto_data['Precio']
-                }
-                st.session_state.pedido.append(producto_agregado)
-                st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+    
+    with col_boton:
+        # Botón para agregar el producto al pedido
+        if st.button("Agregar producto"):
+            # Añadir producto al pedido con la cantidad seleccionada
+            if 'pedido' not in st.session_state:
+                st.session_state.pedido = []
+            
+            # Agregar el producto con los detalles
+            producto_agregado = {
+                'Codigo': producto_data['Codigo'],
+                'Nombre': producto_data['Nombre'],
+                'Cantidad': cantidad,
+                'Precio': producto_data['Precio'],
+                'Importe': cantidad * producto_data['Precio']
+            }
+            st.session_state.pedido.append(producto_agregado)
+            st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
 # Mostrar el pedido actual
 if 'pedido' in st.session_state and st.session_state.pedido:
@@ -131,9 +124,11 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     # Total de ítems y total del pedido
     total_items = pedido_df['Cantidad'].sum()
     total_monto = pedido_df['Importe'].sum()
-    
+
     st.write(f"**Total de items:** {total_items}")
-    st.write(f"**Total del pedido:** ${total_monto}")
+    
+    # Mostrar total del pedido destacado
+    st.markdown(f"<h2 style='text-align:center; color:blue;'>**Total del pedido: ${total_monto:,.2f}**</h2>", unsafe_allow_html=True)
     
     # Botón para guardar el pedido
     if st.button("Guardar pedido"):
