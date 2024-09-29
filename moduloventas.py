@@ -129,13 +129,15 @@ if cliente_seleccionado != "":
             col4.write(f"${row['Precio']}")
             col5.write(f"${row['Importe']}")
 
-            # Botón para eliminar producto con tamaño más pequeño y alineado mejor
+            # Botón para eliminar producto con confirmación antes de eliminar
             eliminar = col6.button('🗑️', key=f"eliminar_{index}")
             if eliminar:
-                # Eliminar el producto seleccionado del pedido sin recargar la página
-                st.session_state.pedido.pop(index)
-                # Reescribir el pedido actual después de eliminar un elemento
-                pedido_df = pd.DataFrame(st.session_state.pedido)
+                # Preguntar si está seguro antes de eliminar
+                if st.confirm(f"¿Seguro que querés eliminar {row['Nombre']} del pedido?"):
+                    # Eliminar el producto seleccionado del pedido sin recargar la página
+                    st.session_state.pedido.pop(index)
+                    # Reescribir el pedido actual después de eliminar un elemento
+                    pedido_df = pd.DataFrame(st.session_state.pedido)
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
