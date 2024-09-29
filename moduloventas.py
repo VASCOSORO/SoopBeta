@@ -45,8 +45,6 @@ with col2:
         # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
         st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
-# Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
-
 # Sección de productos
 st.header("🛒 Buscador de Productos")
 
