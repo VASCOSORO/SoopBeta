@@ -26,6 +26,10 @@ with col1:
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
+    # Colocar debajo de cliente "Descuento" y "Última compra"
+    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+    st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+
 # Obtener los datos del cliente seleccionado
 cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
@@ -35,13 +39,8 @@ with col2:
     vendedor_default = vendedores[0]
     vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
 
-# Mostrar cliente y vendedor
-st.write(f"**Cliente:** {cliente_seleccionado}")
-st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
-
-# Colocamos el descuento y la última compra uno debajo del otro
-st.write(f"**Descuento:** {cliente_data['Descuento']}%")
-st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+    # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
+    st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
 # Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
 
