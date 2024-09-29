@@ -15,15 +15,13 @@ st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 # Título de la aplicación
 st.title("🐻 Módulo de Ventas 🛒")
 
-# Sección de cliente
-st.header("🔮 Elegí Cliente 🗃️")
 
 # Colocamos el buscador de cliente y el vendedor asignado uno al lado del otro
 col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "Buscar cliente",[""] + df_clientes['Nombre'].unique(), 
+        "🔮Buscar cliente",[""] + df_clientes['Nombre'].unique(), 
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
