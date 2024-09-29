@@ -16,7 +16,7 @@ st.set_page_config(page_title="📁 Módulo de Ventas", layout="wide")
 st.title("📁 Módulo de Ventas")
 
 # Sección de cliente
-st.header("🧑‍💼 Datos del Cliente")
+st.header("🧑‍💼 Eleji Cliente")
 
 # Colocamos el buscador de cliente y el vendedor asignado uno al lado del otro
 col1, col2 = st.columns([2, 1])
