@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+from openpyxl import load_workbook
+import json
+from datetime import datetime
 
 # Inicializar el estado del pedido y el stock si no existen
 if 'pedido' not in st.session_state:
@@ -13,6 +16,41 @@ if 'df_productos' not in st.session_state:
 if 'df_clientes' not in st.session_state:
     file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
     st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+
+# Función para guardar el pedido en la segunda hoja del archivo de productos
+def guardar_pedido_excel(file_path, order_data):
+    try:
+        book = load_workbook(file_path)
+        if 'Pedidos' in book.sheetnames:
+            sheet = book['Pedidos']
+        else:
+            sheet = book.create_sheet('Pedidos')
+            # Escribir encabezados
+            sheet.append(['ID Pedido', 'Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
+        
+        # Generar ID de pedido
+        if sheet.max_row == 1:
+            id_pedido = 1
+        else:
+            id_pedido = sheet['A'][sheet.max_row - 1].value + 1
+        
+        # Formatear los ítems como JSON
+        items_json = json.dumps(order_data['items'], ensure_ascii=False)
+        
+        # Agregar nueva fila
+        sheet.append([
+            id_pedido,
+            order_data['cliente'],
+            order_data['vendedor'],
+            order_data['fecha'],
+            order_data['hora'],
+            items_json
+        ])
+        
+        # Guardar el libro
+        book.save(file_path)
+    except Exception as e:
+        st.error(f"Error al guardar el pedido: {e}")
 
 # Configuración de la página
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
@@ -209,9 +247,36 @@ if cliente_seleccionado != "":
         col_guardar, _ = st.columns([2, 3])
         with col_guardar:
             if st.button("Guardar Pedido"):
-                # Aquí puedes agregar la lógica para guardar el pedido, por ejemplo, escribir en un archivo o base de datos
-                st.success("Pedido guardado exitosamente.", icon="✅")
-                # Opcional: Limpiar el pedido después de guardarlo
-                st.session_state.pedido = []
-                # Opcional: Guardar los cambios en el stock de productos
-                # st.session_state.df_productos.to_excel('archivo_modificado_productos_actualizado.xlsx', index=False)
+                if not st.session_state.pedido:
+                    st.warning("No hay ítems en el pedido para guardar.")
+                else:
+                    # Obtener fecha y hora actuales
+                    now = datetime.now()
+                    fecha_actual = now.strftime("%Y-%m-%d")
+                    hora_actual = now.strftime("%H:%M:%S")
+
+                    # Preparar datos del pedido
+                    order_data = {
+                        'cliente': cliente_seleccionado,
+                        'vendedor': vendedor_seleccionado,
+                        'fecha': fecha_actual,
+                        'hora': hora_actual,
+                        'items': st.session_state.pedido
+                    }
+
+                    # Guardar el pedido en el archivo de productos (segunda hoja)
+                    guardar_pedido_excel(file_path_productos, order_data)
+
+                    # Confirmar al usuario
+                    st.success("Pedido guardado exitosamente.", icon="✅")
+
+                    # Opcional: Limpiar el pedido después de guardarlo
+                    st.session_state.pedido = []
+
+                    # Opcional: Guardar los cambios en el stock de productos
+                    try:
+                        with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
+                    except Exception as e:
+                        st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+
