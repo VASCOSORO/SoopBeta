@@ -24,6 +24,10 @@ if 'df_clientes' not in st.session_state:
         st.error(f"Error al cargar el archivo de clientes: {e}")
         st.stop()
 
+# Inicializar 'pending_deletions' si no existe
+if 'pending_deletions' not in st.session_state:
+    st.session_state.pending_deletions = set()
+
 # Función para guardar el pedido en la hoja 'Pedidos' del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
     try:
@@ -73,13 +77,9 @@ def confirm_delete(codigo):
     # Limpiar el indicador de eliminación
     st.session_state.delete_code = None
 
-def cancel_delete():
-    # Limpiar el indicador de eliminación
-    st.session_state.delete_code = None
-
-# Inicializar la variable para rastrear el ítem a eliminar
-if 'delete_code' not in st.session_state:
-    st.session_state.delete_code = None
+def cancel_delete(codigo):
+    # Remover el código del set de pending_deletions
+    st.session_state.pending_deletions.discard(codigo)
 
 # Configuración de la página
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
@@ -210,33 +210,47 @@ if cliente_seleccionado != "":
         st.header("📦 Pedido actual")
 
         # Mostrar la tabla del pedido con la opción de eliminar ítems
-        for index, producto in enumerate(st.session_state.pedido):
+        for producto in st.session_state.pedido.copy():  # Use copy to avoid modification during iteration
+            codigo = producto['Codigo']
+            nombre = producto['Nombre']
+            cantidad = producto['Cantidad']
+            precio = producto['Precio']
+            importe = producto['Importe']
+
+            # Crear columnas para mostrar el producto y el botón de eliminar
             col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 1, 1, 1, 1])
-            col1.write(producto['Codigo'])
-            col2.write(producto['Nombre'])
-            col3.write(producto['Cantidad'])
-            col4.write(f"${producto['Precio']}")
-            col5.write(f"${producto['Importe']}")
+            col1.write(codigo)
+            col2.write(nombre)
+            col3.write(cantidad)
+            col4.write(f"${precio}")
+            col5.write(f"${importe}")
 
-            eliminar_key = f"eliminar_{producto['Codigo']}"
-            confirmar_key_si = f"confirmar_si_{producto['Codigo']}"
-            confirmar_key_no = f"confirmar_no_{producto['Codigo']}"
-            confirm_flag = f"confirm_eliminar_{producto['Codigo']}"
-
-            # Verificar si este ítem está marcado para confirmación de eliminación
-            if st.session_state.delete_code == producto['Codigo']:
-                # Mostrar botones de confirmación
+            # Verificar si este producto está pendiente de eliminación
+            if codigo in st.session_state.pending_deletions:
+                # Mostrar botón de confirmación en rojo o con un emoji de advertencia
                 with col6:
-                    if st.button("Sí", key=confirmar_key_si):
-                        confirm_delete(producto['Codigo'])
+                    st.markdown("<span style='color: red; font-weight: bold;'>⚠️</span>", unsafe_allow_html=True)
+                    if st.button("Sí", key=f"confirmar_si_{codigo}"):
+                        # Eliminar el ítem del pedido
+                        index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
+                        if index is not None:
+                            producto_eliminado = st.session_state.pedido.pop(index)
+                            # Reponer el stock
+                            st.session_state.df_productos.loc[
+                                st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
+                            ] += producto_eliminado['Cantidad']
+                        # Remover del set de pending_deletions
+                        st.session_state.pending_deletions.remove(codigo)
 
-                    if st.button("No", key=confirmar_key_no):
-                        cancel_delete()
+                    if st.button("No", key=f"confirmar_no_{codigo}"):
+                        # Cancelar la eliminación
+                        st.session_state.pending_deletions.remove(codigo)
             else:
-                # Mostrar el botón de eliminar
+                # Mostrar el botón de eliminar normal
                 with col6:
-                    if st.button('🗑️', key=eliminar_key):
-                        st.session_state.delete_code = producto['Codigo']
+                    if st.button('🗑️', key=f"eliminar_{codigo}"):
+                        # Marcar este ítem para eliminación
+                        st.session_state.pending_deletions.add(codigo)
 
         # Calcular totales
         pedido_df = pd.DataFrame(st.session_state.pedido)
