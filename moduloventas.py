@@ -6,10 +6,6 @@ from io import BytesIO
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
-# Inicializar el estado de confirmación si no existe
-if 'confirm_delete' not in st.session_state:
-    st.session_state.confirm_delete = {}
-
 # Cargar los datos de clientes y productos desde los archivos correspondientes
 file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
 file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
@@ -97,8 +93,9 @@ if cliente_seleccionado != "":
                     cantidad = 0
                     st.error("No hay stock disponible para este producto.")
 
-            # Botón para agregar el producto al pedido
-            if st.button("Agregar producto"):
+            # Botón para agregar el producto al pedido, deshabilitado si no hay stock
+            boton_agregar_desactivado = stock <= 0  # Deshabilitar el botón si no hay stock
+            if st.button("Agregar producto", disabled=boton_agregar_desactivado):
                 # Añadir producto al pedido con la cantidad seleccionada
                 producto_agregado = {
                     'Codigo': producto_data['Codigo'],
@@ -136,31 +133,10 @@ if cliente_seleccionado != "":
             # Botón para eliminar producto con confirmación
             eliminar = col6.button('🗑️', key=f"eliminar_{index}")
             if eliminar:
-                # Establecer el estado de confirmación para este ítem
-                st.session_state.confirm_delete[index] = True
-
-        # Revisar si hay alguna confirmación pendiente
-        for index in list(st.session_state.confirm_delete.keys()):
-            if st.session_state.confirm_delete.get(index, False):
-                with st.expander(f"¿Seguro que querés eliminar {pedido_df.at[index, 'Nombre']} del pedido?"):
-                    # Alinear botones "Sí, eliminar" y "No, cancelar" en la misma fila
-                    col_confirm, col_cancel = st.columns([1, 1])
-                    with col_confirm:
-                        confirmar = st.button("Sí, eliminar", key=f"confirm_yes_{index}")
-                    with col_cancel:
-                        cancelar = st.button("No, cancelar", key=f"confirm_no_{index}")
-
-                    if confirmar:
-                        # Eliminar el producto seleccionado del pedido
-                        st.session_state.pedido.pop(index)
-                        # Eliminar la entrada de confirmación
-                        del st.session_state.confirm_delete[index]
-                        st.success(f"Se eliminó {pedido_df.at[index, 'Nombre']} del pedido.")
-
-                    if cancelar:
-                        # Cancelar la eliminación
-                        del st.session_state.confirm_delete[index]
-                        st.info("Eliminación cancelada.")
+                if st.checkbox(f"¿Seguro que querés eliminar {row['Nombre']}?", key=f"confirm_{index}"):
+                    # Eliminar el producto seleccionado del pedido
+                    st.session_state.pedido.pop(index)
+                    st.experimental_rerun()
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
