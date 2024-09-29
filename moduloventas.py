@@ -39,10 +39,10 @@ with col2:
         # Vendedor asignado por defecto es el primero en la lista
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         vendedor_default = vendedores[0]
-        vendedor_seleccionado = st.selectbox("V.Principal", vendedores, index=0)
+        vendedor_seleccionado = st.selectbox("Vendedor", vendedores, index=0)
 
         # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
-        st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
+        st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
 
 # Sección de productos
 st.header("📁Buscador de Productos🔍")
