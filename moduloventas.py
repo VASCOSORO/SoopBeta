@@ -152,10 +152,10 @@ if 'pedido' in st.session_state and st.session_state.pedido:
         st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
     
     # Centrar el botón de guardar pedido
-    col_guardar, _ = st.columns([1, 4])
+    col_guardar, _ = st.columns([2, 3])
     with col_guardar:
-        if st.button("Guardar pedido"):
-            st.success("Pedido guardado exitosamente.")
+        if st.button("Guardar Pedido"):
+            st.success("Pedido guardado exitosamente.", icon="✅")
             
             # Generar un archivo de texto en vez de PDF
             pedido_txt = BytesIO()
@@ -166,4 +166,7 @@ if 'pedido' in st.session_state and st.session_state.pedido:
             pedido_txt.seek(0)
             
             # Proporcionar opción para descargar el archivo de texto
-            st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
+            col_guardar_download = st.columns([2, 1])
+            with col_guardar_download[1]:
+                st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
+
