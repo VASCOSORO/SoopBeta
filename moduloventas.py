@@ -198,7 +198,7 @@ if cliente_seleccionado != "":
             confirm_flag = f"confirm_eliminar_{index}"
 
             if st.session_state.get(confirm_flag, False):
-                # Mostrar botones de confirmación en lugar del ícono de eliminar
+                # Mostrar botones de confirmación
                 with col6:
                     if st.button("Sí", key=confirmar_key_si):
                         producto = st.session_state.pedido.pop(index)
@@ -206,7 +206,8 @@ if cliente_seleccionado != "":
                         st.session_state.df_productos.loc[
                             st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
                         ] += producto['Cantidad']
-                        st.success(f"Se eliminó {producto['Nombre']} del pedido.")
+                        # Eliminar el mensaje de éxito
+                        # st.success(f"Se eliminó {producto['Nombre']} del pedido.")
                         # Limpiar la bandera de confirmación
                         st.session_state.pop(confirm_flag, None)
 
@@ -220,6 +221,7 @@ if cliente_seleccionado != "":
                         st.session_state[confirm_flag] = True  # Activar la confirmación para este ítem
 
         # Total de ítems y total del pedido
+        pedido_df = pd.DataFrame(st.session_state.pedido)
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
         total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
 
@@ -254,7 +256,7 @@ if cliente_seleccionado != "":
                         'items': st.session_state.pedido
                     }
 
-                    # Guardar el pedido en el archivo de productos (segunda hoja)
+                    # Guardar el pedido en la hoja 'Pedidos'
                     guardar_pedido_excel(file_path_productos, order_data)
 
                     # Confirmar al usuario
@@ -266,6 +268,6 @@ if cliente_seleccionado != "":
                     # Guardar los cambios en el stock de productos
                     try:
                         with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                            st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
+                            st.session_state.df_productos.to_excel(writer, sheet_name='Hoja1', index=False)
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
