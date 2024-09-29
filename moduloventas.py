@@ -133,13 +133,14 @@ if 'pedido' in st.session_state and st.session_state.pedido:
         # Botón para eliminar producto con tamaño más pequeño y alineado mejor
         eliminar = col6.button('🗑️', key=f"eliminar_{index}")
         if eliminar:
-            # Eliminar el producto seleccionado del pedido
+            # Eliminar el producto seleccionado del pedido sin recargar la página
             st.session_state.pedido.pop(index)
-            st.experimental_rerun()  # Recargar la página para actualizar la lista
-
+            # Reescribir el pedido actual después de eliminar un elemento
+            pedido_df = pd.DataFrame(st.session_state.pedido)
+    
     # Total de ítems y total del pedido
-    total_items = pedido_df['Cantidad'].sum()
-    total_monto = pedido_df['Importe'].sum()
+    total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
+    total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
 
     # Mostrar total de ítems y total del pedido en una sola fila
     col_items, col_total = st.columns([1, 1])
