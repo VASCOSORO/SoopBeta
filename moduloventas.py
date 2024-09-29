@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from fpdf import FPDF
 
 # Cargar los datos de clientes y productos desde los archivos correspondientes
 file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
@@ -141,4 +142,25 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     if st.button("Guardar pedido"):
         st.success("Pedido guardado exitosamente.")
+        
+        # Generar PDF al guardar el pedido
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="Detalles del Pedido", ln=True, align='C')
+        
+        # Agregar datos al PDF
+        for index, row in pedido_df.iterrows():
+            pdf.cell(200, 10, txt=f"{row['Cantidad']}x {row['Nombre']} - ${row['Importe']:.2f}", ln=True)
+        
+        pdf.cell(200, 10, txt=f"Total del pedido: ${total_monto:.2f}", ln=True, align='R')
+        
+        # Guardar el PDF
+        pdf_file = "pedido.pdf"
+        pdf.output(pdf_file)
+        
+        # Proporcionar opción para descargar el PDF
+        with open(pdf_file, "rb") as file:
+            btn = st.download_button(label="Descargar Pedido en PDF", data=file, file_name=pdf_file, mime="application/octet-stream")
+    
     st.markdown("</div>", unsafe_allow_html=True)
