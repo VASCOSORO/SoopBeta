@@ -10,25 +10,56 @@ st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 # Título de la aplicación
 st.title("🐻 Módulo de Ventas 🛒")
 
-# Inicializar el estado del pedido y el stock si no existen
+# Inicializar el estado del pedido si no existe
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
-if 'df_productos' not in st.session_state:
-    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+# Función para listar las hojas disponibles en el archivo Excel
+def listar_hojas_excel(file_path):
     try:
-        st.session_state.df_productos = pd.read_excel(file_path_productos, sheet_name='Productos')
+        book = load_workbook(file_path, read_only=True)
+        return book.sheetnames
     except Exception as e:
-        st.error(f"Error al cargar el archivo de productos: {e}")
-        st.stop()
+        st.error(f"Error al abrir el archivo Excel: {e}")
+        return []
 
-if 'df_clientes' not in st.session_state:
-    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-    try:
-        st.session_state.df_clientes = pd.read_excel(file_path_clientes)
-    except Exception as e:
-        st.error(f"Error al cargar el archivo de clientes: {e}")
-        st.stop()
+# Ruta de los archivos Excel
+file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
+
+# Verificar las hojas disponibles en el archivo de productos
+hojas_productos = listar_hojas_excel(file_path_productos)
+st.write(f"Hojas disponibles en `{file_path_productos}`: {', '.join(hojas_productos)}")
+
+# Verificar las hojas disponibles en el archivo de clientes
+hojas_clientes = listar_hojas_excel(file_path_clientes)
+st.write(f"Hojas disponibles en `{file_path_clientes}`: {', '.join(hojas_clientes)}")
+
+# Especifica el nombre correcto de la hoja de productos
+nombre_hoja_productos = 'productos'  # Asegúrate de que coincida exactamente con el nombre de tu hoja
+
+# Cargar los datos de productos
+try:
+    st.session_state.df_productos = pd.read_excel(file_path_productos, sheet_name=nombre_hoja_productos)
+except ValueError:
+    st.error(f"No se encontró la hoja '{nombre_hoja_productos}' en `{file_path_productos}`.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error al cargar el archivo de productos: {e}")
+    st.stop()
+
+# Especifica el nombre correcto de la hoja de clientes (si es necesario)
+nombre_hoja_clientes = 'clientes'  # Cambia esto si tu hoja tiene otro nombre
+
+# Cargar los datos de clientes
+try:
+    st.session_state.df_clientes = pd.read_excel(file_path_clientes, sheet_name=nombre_hoja_clientes)
+except ValueError:
+    st.error(f"No se encontró la hoja '{nombre_hoja_clientes}' en `{file_path_clientes}`.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error al cargar el archivo de clientes: {e}")
+    st.stop()
 
 # Función para guardar el pedido en la segunda hoja del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
@@ -265,6 +296,6 @@ if cliente_seleccionado != "":
                     # Guardar los cambios en el stock de productos
                     try:
                         with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                            st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
+                            st.session_state.df_productos.to_excel(writer, sheet_name=nombre_hoja_productos, index=False)
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
