@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 import json
 from datetime import datetime
+import os
 
 # Configuración de la página
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
@@ -30,16 +31,25 @@ if 'df_clientes' not in st.session_state:
         st.error(f"Error al cargar el archivo de clientes: {e}")
         st.stop()
 
-# Función para guardar el pedido en la segunda hoja del archivo de productos
-def guardar_pedido_excel(file_path, order_data):
+# Definir el archivo de pedidos
+file_path_pedidos = 'PedidosSoop.xlsx'  # Archivo de pedidos
+
+# Función para guardar el pedido en PedidosSoop.xlsx
+def guardar_pedido_excel_pedidos(order_data):
     try:
-        book = load_workbook(file_path)
-        if 'Pedidos' in book.sheetnames:
-            sheet = book['Pedidos']
-        else:
-            sheet = book.create_sheet('Pedidos')
-            # Escribir encabezados
+        if not os.path.exists(file_path_pedidos):
+            # Crear un nuevo libro y agregar la hoja 'Pedidos' con encabezados
+            book = Workbook()
+            sheet = book.active
+            sheet.title = 'Pedidos'
             sheet.append(['ID Pedido', 'Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
+        else:
+            book = load_workbook(file_path_pedidos)
+            if 'Pedidos' in book.sheetnames:
+                sheet = book['Pedidos']
+            else:
+                sheet = book.create_sheet('Pedidos')
+                sheet.append(['ID Pedido', 'Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
         
         # Generar ID de pedido
         if sheet.max_row == 1:
@@ -62,9 +72,17 @@ def guardar_pedido_excel(file_path, order_data):
         ])
         
         # Guardar el libro
-        book.save(file_path)
+        book.save(file_path_pedidos)
     except Exception as e:
-        st.error(f"Error al guardar el pedido: {e}")
+        st.error(f"Error al guardar el pedido en {file_path_pedidos}: {e}")
+
+# Función para actualizar el stock en el archivo de productos
+def actualizar_stock_productos():
+    try:
+        with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='w') as writer:
+            st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
+    except Exception as e:
+        st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 
 # Colocamos el buscador de cliente
 col1, col2 = st.columns([2, 1])
@@ -171,7 +189,7 @@ if cliente_seleccionado != "":
                         'Importe': cantidad * producto_data['Precio']
                     }
                     st.session_state.pedido.append(producto_agregado)
-                    # Descontar del stock
+                    # Descontar del stock en el DataFrame de productos
                     st.session_state.df_productos.loc[
                         st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'
                     ] -= cantidad
@@ -205,12 +223,11 @@ if cliente_seleccionado != "":
             if eliminar_clicked:
                 # Eliminar el ítem del pedido
                 producto = st.session_state.pedido.pop(index)
-                # Reponer el stock
+                # Reponer el stock en el DataFrame de productos
                 st.session_state.df_productos.loc[
                     st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
                 ] += producto['Cantidad']
-                # Opcional: Puedes comentar la línea siguiente si no deseas mostrar un mensaje de éxito
-                # st.success(f"Se eliminó {producto['Nombre']} del pedido.")
+                st.success(f"Se eliminó {producto['Nombre']} del pedido.")
 
         # Actualizar el DataFrame después de posibles cambios
         if st.session_state.pedido:
@@ -253,18 +270,15 @@ if cliente_seleccionado != "":
                         'items': st.session_state.pedido
                     }
 
-                    # Guardar el pedido en el archivo de productos (segunda hoja)
-                    guardar_pedido_excel(file_path_productos, order_data)
+                    # Guardar el pedido en PedidosSoop.xlsx
+                    guardar_pedido_excel_pedidos(order_data)
 
                     # Confirmar al usuario
-                    st.success("Pedido guardado exitosamente.", icon="✅")
+                    st.success("Pedido guardado exitosamente en PedidosSoop.xlsx.", icon="✅")
 
                     # Limpiar el pedido después de guardarlo
                     st.session_state.pedido = []
 
                     # Guardar los cambios en el stock de productos
-                    try:
-                        with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                            st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
-                    except Exception as e:
-                        st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+                    actualizar_stock_productos()
+
