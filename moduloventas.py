@@ -123,15 +123,15 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     
     # Mostrar la tabla del pedido con la opción de eliminar ítems
     for index, row in pedido_df.iterrows():
-        col1, col2, col3, col4, col5 = st.columns([1, 2, 1, 1, 1])
+        col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 1, 1, 1, 1])
         col1.write(row['Codigo'])
         col2.write(row['Nombre'])
         col3.write(row['Cantidad'])
         col4.write(f"${row['Precio']}")
         col5.write(f"${row['Importe']}")
         
-        # Botón para eliminar producto
-        eliminar = col5.button('🗑️', key=f"eliminar_{index}")
+        # Botón para eliminar producto con tamaño más pequeño y alineado mejor
+        eliminar = col6.button('🗑️', key=f"eliminar_{index}")
         if eliminar:
             # Eliminar el producto seleccionado del pedido
             st.session_state.pedido.pop(index)
@@ -152,19 +152,18 @@ if 'pedido' in st.session_state and st.session_state.pedido:
         st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
     
     # Centrar el botón de guardar pedido
-    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    if st.button("Guardar pedido"):
-        st.success("Pedido guardado exitosamente.")
-        
-        # Generar un archivo de texto en vez de PDF
-        pedido_txt = BytesIO()
-        pedido_txt.write(f"Detalles del Pedido\n".encode('utf-8'))
-        for index, row in pedido_df.iterrows():
-            pedido_txt.write(f"{row['Cantidad']}x {row['Nombre']} - ${row['Importe']:.2f}\n".encode('utf-8'))
-        pedido_txt.write(f"\nTotal del pedido: ${total_monto:.2f}".encode('utf-8'))
-        pedido_txt.seek(0)
-        
-        # Proporcionar opción para descargar el archivo de texto
-        st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+    col_guardar, _ = st.columns([1, 4])
+    with col_guardar:
+        if st.button("Guardar pedido"):
+            st.success("Pedido guardado exitosamente.")
+            
+            # Generar un archivo de texto en vez de PDF
+            pedido_txt = BytesIO()
+            pedido_txt.write(f"Detalles del Pedido\n".encode('utf-8'))
+            for index, row in pedido_df.iterrows():
+                pedido_txt.write(f"{row['Cantidad']}x {row['Nombre']} - ${row['Importe']:.2f}\n".encode('utf-8'))
+            pedido_txt.write(f"\nTotal del pedido: ${total_monto:.2f}".encode('utf-8'))
+            pedido_txt.seek(0)
+            
+            # Proporcionar opción para descargar el archivo de texto
+            st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
