@@ -88,29 +88,35 @@ if producto_buscado:
         st.write(f"**Total por caja/venta forzada:** ${total_venta}")
     else:
         # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
-        cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
+        # Ajustamos para que el stock sea mínimo 1 si el stock es mayor que 0
+        if stock > 0:
+            cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
+        else:
+            cantidad = 0
+            st.error("No hay stock disponible para este producto.")
 
-    # Botón para agregar el producto al pedido
-    col_boton, col_cantidad = st.columns([1, 2])
-    with col_cantidad:
-        st.write(f"Cantidad: {cantidad}")
+    # Botón para agregar el producto al pedido solo si hay stock disponible
+    if cantidad > 0:
+        col_boton, col_cantidad = st.columns([1, 2])
+        with col_cantidad:
+            st.write(f"Cantidad: {cantidad}")
 
-    with col_boton:
-        if st.button("Agregar producto"):
-            # Añadir producto al pedido con la cantidad seleccionada
-            if 'pedido' not in st.session_state:
-                st.session_state.pedido = []
-            
-            # Agregar el producto con los detalles
-            producto_agregado = {
-                'Codigo': producto_data['Codigo'],
-                'Nombre': producto_data['Nombre'],
-                'Cantidad': cantidad,
-                'Precio': producto_data['Precio'],
-                'Importe': cantidad * producto_data['Precio']
-            }
-            st.session_state.pedido.append(producto_agregado)
-            st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+        with col_boton:
+            if st.button("Agregar producto"):
+                # Añadir producto al pedido con la cantidad seleccionada
+                if 'pedido' not in st.session_state:
+                    st.session_state.pedido = []
+                
+                # Agregar el producto con los detalles
+                producto_agregado = {
+                    'Codigo': producto_data['Codigo'],
+                    'Nombre': producto_data['Nombre'],
+                    'Cantidad': cantidad,
+                    'Precio': producto_data['Precio'],
+                    'Importe': cantidad * producto_data['Precio']
+                }
+                st.session_state.pedido.append(producto_agregado)
+                st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
 # Mostrar el pedido actual
 if 'pedido' in st.session_state and st.session_state.pedido:
