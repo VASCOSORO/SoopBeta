@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 from openpyxl import load_workbook
 import json
 from datetime import datetime
@@ -11,11 +10,19 @@ if 'pedido' not in st.session_state:
 
 if 'df_productos' not in st.session_state:
     file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
-    st.session_state.df_productos = pd.read_excel(file_path_productos)
+    try:
+        st.session_state.df_productos = pd.read_excel(file_path_productos)
+    except Exception as e:
+        st.error(f"Error al cargar el archivo de productos: {e}")
+        st.stop()
 
 if 'df_clientes' not in st.session_state:
     file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-    st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+    try:
+        st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+    except Exception as e:
+        st.error(f"Error al cargar el archivo de clientes: {e}")
+        st.stop()
 
 # Función para guardar el pedido en la segunda hoja del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
@@ -32,7 +39,8 @@ def guardar_pedido_excel(file_path, order_data):
         if sheet.max_row == 1:
             id_pedido = 1
         else:
-            id_pedido = sheet['A'][sheet.max_row - 1].value + 1
+            last_id = sheet['A'][sheet.max_row - 1].value
+            id_pedido = last_id + 1 if last_id is not None else 1
         
         # Formatear los ítems como JSON
         items_json = json.dumps(order_data['items'], ensure_ascii=False)
@@ -75,7 +83,7 @@ if cliente_seleccionado != "":
     with col1:
         st.write(f"**Descuento:** {cliente_data['Descuento']}%")
         st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
-
+    
     # Mostrar vendedor principal
     with col2:
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
@@ -180,17 +188,14 @@ if cliente_seleccionado != "":
     if st.session_state.pedido:
         st.header("📦 Pedido actual")
 
-        # Convertir la lista de productos en un DataFrame
-        pedido_df = pd.DataFrame(st.session_state.pedido)
-
         # Mostrar la tabla del pedido con la opción de eliminar ítems
-        for index, row in pedido_df.iterrows():
+        for index, producto in enumerate(st.session_state.pedido):
             col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 1, 1, 1, 1])
-            col1.write(row['Codigo'])
-            col2.write(row['Nombre'])
-            col3.write(row['Cantidad'])
-            col4.write(f"${row['Precio']}")
-            col5.write(f"${row['Importe']}")
+            col1.write(producto['Codigo'])
+            col2.write(producto['Nombre'])
+            col3.write(producto['Cantidad'])
+            col4.write(f"${producto['Precio']}")
+            col5.write(f"${producto['Importe']}")
 
             eliminar_key = f"eliminar_{index}"
             confirmar_key_si = f"confirmar_si_{index}"
@@ -201,16 +206,16 @@ if cliente_seleccionado != "":
                 # Mostrar botones de confirmación
                 with col6:
                     if st.button("Sí", key=confirmar_key_si):
-                        producto = st.session_state.pedido.pop(index)
+                        # Eliminar el ítem del pedido
+                        producto_eliminado = st.session_state.pedido.pop(index)
                         # Reponer el stock
                         st.session_state.df_productos.loc[
-                            st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
-                        ] += producto['Cantidad']
-                        # Eliminar el mensaje de éxito
-                        # st.success(f"Se eliminó {producto['Nombre']} del pedido.")
+                            st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
+                        ] += producto_eliminado['Cantidad']
                         # Limpiar la bandera de confirmación
                         st.session_state.pop(confirm_flag, None)
-
+                        # Nota: Hemos eliminado el mensaje de éxito aquí
+                        
                     if st.button("No", key=confirmar_key_no):
                         # Limpiar la bandera de confirmación
                         st.session_state.pop(confirm_flag, None)
@@ -220,7 +225,7 @@ if cliente_seleccionado != "":
                     if st.button('🗑️', key=eliminar_key):
                         st.session_state[confirm_flag] = True  # Activar la confirmación para este ítem
 
-        # Total de ítems y total del pedido
+        # Calcular totales
         pedido_df = pd.DataFrame(st.session_state.pedido)
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
         total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
