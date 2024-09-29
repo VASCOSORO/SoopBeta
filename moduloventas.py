@@ -156,8 +156,6 @@ if cliente_seleccionado != "":
                         # Eliminar la entrada de confirmación
                         del st.session_state.confirm_delete[index]
                         st.success(f"Se eliminó {pedido_df.at[index, 'Nombre']} del pedido.")
-                        # Actualizar la lista de pedidos
-                        st.experimental_rerun()
 
                     if cancelar:
                         # Cancelar la eliminación
