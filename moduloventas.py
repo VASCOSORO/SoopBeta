@@ -25,7 +25,7 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "🔮Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
+        "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
@@ -46,15 +46,18 @@ if cliente_seleccionado != "":
         st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
 
     # Sección de productos solo aparece si hay cliente seleccionado
-    st.header("📁Buscador de Productos🔍")
+    st.header("📁 Buscador de Productos 🔍")
 
     # Tres columnas: Buscador, precio, y stock con colores
     col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
 
     with col_prod1:
         # Buscador de productos con espacio vacío al inicio
-        producto_buscado = st.selectbox("Buscar producto", [""] + st.session_state.df_productos['Nombre'].unique().tolist(),
-                                        help="Escribí el nombre del producto o seleccioná uno de la lista.")
+        producto_buscado = st.selectbox(
+            "Buscar producto",
+            [""] + st.session_state.df_productos['Nombre'].unique().tolist(),
+            help="Escribí el nombre del producto o seleccioná uno de la lista."
+        )
 
     if producto_buscado:
         producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto_buscado].iloc[0]
@@ -85,18 +88,29 @@ if cliente_seleccionado != "":
             # Verificar si la venta está forzada por múltiplos
             if pd.notna(producto_data['forzar multiplos']) and producto_data['forzar multiplos'] > 0:
                 st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar multiplos'])} unidades.")
-                cantidad = st.number_input("Cantidad", min_value=int(producto_data['forzar multiplos']), step=int(producto_data['forzar multiplos']))
+                cantidad = st.number_input(
+                    "Cantidad",
+                    min_value=int(producto_data['forzar multiplos']),
+                    step=int(producto_data['forzar multiplos']),
+                    key=f"cantidad_{producto_data['Codigo']}"
+                )
             else:
                 # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
                 if stock > 0:
-                    cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
+                    cantidad = st.number_input(
+                        "Cantidad",
+                        min_value=1,
+                        max_value=stock,
+                        step=1,
+                        key=f"cantidad_{producto_data['Codigo']}"
+                    )
                 else:
                     cantidad = 0
                     st.error("No hay stock disponible para este producto.")
 
             # Botón para agregar el producto al pedido, deshabilitado si no hay stock
             boton_agregar_desactivado = stock <= 0  # Deshabilitar el botón si no hay stock
-            if st.button("Agregar producto", disabled=boton_agregar_desactivado):
+            if st.button("Agregar producto", disabled=boton_agregar_desactivado, key=f"agregar_{producto_data['Codigo']}"):
                 # Verificar si el producto ya está en el pedido
                 existe = any(item['Codigo'] == producto_data['Codigo'] for item in st.session_state.pedido)
                 if existe:
@@ -112,7 +126,9 @@ if cliente_seleccionado != "":
                     }
                     st.session_state.pedido.append(producto_agregado)
                     # Descontar del stock
-                    st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'] -= cantidad
+                    st.session_state.df_productos.loc[
+                        st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'
+                    ] -= cantidad
                     st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
         with col_der:
@@ -144,26 +160,36 @@ if cliente_seleccionado != "":
                 st.session_state['item_a_eliminar'] = index  # Guardar el índice a eliminar
                 st.session_state['mostrar_confirmacion'] = True  # Mostrar la confirmación
 
-        # Confirmación de eliminación
+        # Confirmación de eliminación (fuera del bucle para evitar redundancias)
         if 'mostrar_confirmacion' in st.session_state and st.session_state['mostrar_confirmacion']:
+            st.markdown("---")
             st.warning("¿Estás seguro de que deseas eliminar este producto del pedido?")
             col_conf1, col_conf2 = st.columns([1, 1])
             with col_conf1:
-                if st.button("Sí"):
+                if st.button("Sí", key="confirmar_si"):
                     index = st.session_state.get('item_a_eliminar')
                     if index is not None and 0 <= index < len(st.session_state.pedido):
                         producto = st.session_state.pedido.pop(index)
                         # Reponer el stock
-                        st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'] += producto['Cantidad']
+                        st.session_state.df_productos.loc[
+                            st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
+                        ] += producto['Cantidad']
                         st.success(f"Se eliminó {producto['Nombre']} del pedido.")
                     # Limpiar las variables de confirmación
                     st.session_state['mostrar_confirmacion'] = False
                     st.session_state.pop('item_a_eliminar', None)
             with col_conf2:
-                if st.button("No"):
+                if st.button("No", key="confirmar_no"):
                     # Limpiar las variables de confirmación
                     st.session_state['mostrar_confirmacion'] = False
                     st.session_state.pop('item_a_eliminar', None)
+            st.markdown("---")
+
+        # Actualizar el DataFrame después de posibles cambios
+        if st.session_state.pedido:
+            pedido_df = pd.DataFrame(st.session_state.pedido)
+        else:
+            pedido_df = pd.DataFrame()
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
@@ -173,7 +199,7 @@ if cliente_seleccionado != "":
         col_items, col_total = st.columns([1, 1])
 
         with col_items:
-            st.write(f"**Total de items:** {total_items}")
+            st.write(f"**Total de ítems:** {total_items}")
 
         with col_total:
             # Mostrar total del pedido al lado de total de ítems
