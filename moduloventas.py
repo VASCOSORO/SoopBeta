@@ -15,7 +15,7 @@ st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 # Título de la aplicación
 st.title("🐻 Módulo de Ventas 🛒")
 
-# Colocamos el buscador de cliente y el vendedor asignado uno al lado del otro
+# Colocamos el buscador de cliente
 col1, col2 = st.columns([2, 1])
 
 with col1:
@@ -24,25 +24,23 @@ with col1:
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
-# Solo mostramos los datos si se selecciona un cliente
+# Solo mostramos los demás campos si se selecciona un cliente
 if cliente_seleccionado:
-    with col1:
-        cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+    cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Colocar debajo de cliente "Descuento" y "Última compra"
+    # Mostrar descuento y última compra
+    with col1:
         st.write(f"**Descuento:** {cliente_data['Descuento']}%")
         st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
 
+    # Mostrar vendedor principal
     with col2:
-        # Solo mostramos el vendedor si se ha seleccionado un cliente
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         vendedor_default = vendedores[0]
         vendedor_seleccionado = st.selectbox("Vendedor", vendedores, index=0)
-
-        # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
         st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
 
-    # Sección de productos
+    # Sección de productos solo aparece si hay cliente seleccionado
     st.header("📁Buscador de Productos🔍")
 
     # Tres columnas: Buscador, precio, y stock con colores
@@ -171,4 +169,3 @@ if cliente_seleccionado:
                 col_guardar_download = st.columns([2, 1])
                 with col_guardar_download[1]:
                     st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
-
