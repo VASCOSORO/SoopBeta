@@ -83,12 +83,17 @@ if producto_buscado:
         # Mostrar código del producto
         st.write(f"**Código del producto:** {producto_data['Codigo']}")
         
-        # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
-        if stock > 0:
-            cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
+        # Verificar si la venta está forzada por múltiplos
+        if pd.notna(producto_data['forzar multiplos']) and producto_data['forzar multiplos'] > 0:
+            st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar multiplos'])} unidades.")
+            cantidad = st.number_input("Cantidad", min_value=int(producto_data['forzar multiplos']), step=int(producto_data['forzar multiplos']))
         else:
-            cantidad = 0
-            st.error("No hay stock disponible para este producto.")
+            # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
+            if stock > 0:
+                cantidad = st.number_input("Cantidad", min_value=1, max_value=stock, step=1)
+            else:
+                cantidad = 0
+                st.error("No hay stock disponible para este producto.")
         
         # Botón para agregar el producto al pedido
         if st.button("Agregar producto"):
