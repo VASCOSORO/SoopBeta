@@ -198,10 +198,11 @@ if cliente_seleccionado != "":
             if confirm_flag not in st.session_state:
                 st.session_state[confirm_flag] = False
 
-            # Determinar el color del botón basado en la bandera
+            # Determinar el emoji del botón basado en la bandera
             if st.session_state[confirm_flag]:
-                # Botón rojo para confirmar eliminación
-                if col6.button('🗑️ Eliminar', key=f"confirmar_eliminar_{index}"):
+                # Botón rojo para confirmar eliminación (usamos un emoji diferente)
+                eliminar_clicked = col6.button('🗑️⚠️', key=f"confirmar_eliminar_{index}")
+                if eliminar_clicked:
                     # Eliminar el ítem del pedido
                     producto = st.session_state.pedido.pop(index)
                     # Reponer el stock
@@ -213,7 +214,8 @@ if cliente_seleccionado != "":
                     st.session_state[confirm_flag] = False
             else:
                 # Botón normal de eliminación
-                if col6.button('🗑️', key=f"eliminar_{index}"):
+                eliminar_clicked = col6.button('🗑️', key=f"eliminar_{index}")
+                if eliminar_clicked:
                     # Activar la confirmación de eliminación
                     st.session_state[confirm_flag] = True
 
