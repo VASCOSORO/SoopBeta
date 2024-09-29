@@ -11,18 +11,37 @@ st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 # Título de la aplicación
 st.title("🐻 Módulo de Ventas 🛒")
 
+# Función para listar hojas en un archivo Excel
+def listar_hojas_excel(file_path):
+    try:
+        workbook = load_workbook(filename=file_path, read_only=True)
+        return workbook.sheetnames
+    except Exception as e:
+        st.error(f"Error al abrir el archivo {file_path}: {e}")
+        return []
+
 # Inicializar el estado del pedido y el stock si no existen
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
+# Definir los nombres de las hojas
+nombre_hoja_productos = 'Hoja 1'  # Nombre correcto de la hoja de productos
+
+# Cargar DataFrame de productos
 if 'df_productos' not in st.session_state:
     file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
-    try:
-        st.session_state.df_productos = pd.read_excel(file_path_productos, sheet_name='Productos')
-    except Exception as e:
-        st.error(f"Error al cargar el archivo de productos: {e}")
+    hojas_productos = listar_hojas_excel(file_path_productos)
+    if nombre_hoja_productos in hojas_productos:
+        try:
+            st.session_state.df_productos = pd.read_excel(file_path_productos, sheet_name=nombre_hoja_productos)
+        except Exception as e:
+            st.error(f"Error al cargar la hoja '{nombre_hoja_productos}' del archivo de productos: {e}")
+            st.stop()
+    else:
+        st.error(f"La hoja '{nombre_hoja_productos}' no existe en el archivo de productos. Hojas disponibles: {hojas_productos}")
         st.stop()
 
+# Cargar DataFrame de clientes
 if 'df_clientes' not in st.session_state:
     file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
     try:
@@ -80,7 +99,7 @@ def guardar_pedido_excel_pedidos(order_data):
 def actualizar_stock_productos():
     try:
         with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='w') as writer:
-            st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
+            st.session_state.df_productos.to_excel(writer, sheet_name=nombre_hoja_productos, index=False)
     except Exception as e:
         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 
@@ -281,4 +300,3 @@ if cliente_seleccionado != "":
 
                     # Guardar los cambios en el stock de productos
                     actualizar_stock_productos()
-
