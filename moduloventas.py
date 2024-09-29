@@ -21,13 +21,12 @@ st.header("🧑‍💼 Datos del Cliente")
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # Agregar una opción vacía antes de la lista de clientes
     cliente_seleccionado = st.selectbox(
-        "Buscar cliente", [""] + df_clientes['Nombre'].unique().tolist(), 
+        "Buscar cliente", [""] + df_clientes['Nombre'].unique(), 
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
-    # Solo mostramos los datos del cliente si se ha seleccionado uno (excluyendo la opción vacía)
+    # Solo mostramos los datos del cliente si se ha seleccionado uno
     if cliente_seleccionado:
         cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
