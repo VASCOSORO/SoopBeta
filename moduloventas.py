@@ -2,16 +2,17 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# Inicializar el estado del pedido si no existe
+# Inicializar el estado del pedido y el stock si no existen
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
-# Cargar los datos de clientes y productos desde los archivos correspondientes
-file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+if 'df_productos' not in st.session_state:
+    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+    st.session_state.df_productos = pd.read_excel(file_path_productos)
 
-df_clientes = pd.read_excel(file_path_clientes)
-df_productos = pd.read_excel(file_path_productos)
+if 'df_clientes' not in st.session_state:
+    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
+    st.session_state.df_clientes = pd.read_excel(file_path_clientes)
 
 # Configuración de la página
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
@@ -24,13 +25,13 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "🔮Buscar cliente", [""] + df_clientes['Nombre'].unique().tolist(),
+        "🔮Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
 # Solo mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
 if cliente_seleccionado != "":
-    cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+    cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
     # Mostrar descuento y última compra
     with col1:
@@ -52,11 +53,11 @@ if cliente_seleccionado != "":
 
     with col_prod1:
         # Buscador de productos con espacio vacío al inicio
-        producto_buscado = st.selectbox("Buscar producto", [""] + df_productos['Nombre'].unique().tolist(),
+        producto_buscado = st.selectbox("Buscar producto", [""] + st.session_state.df_productos['Nombre'].unique().tolist(),
                                         help="Escribí el nombre del producto o seleccioná uno de la lista.")
 
     if producto_buscado:
-        producto_data = df_productos[df_productos['Nombre'] == producto_buscado].iloc[0]
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto_buscado].iloc[0]
 
         with col_prod2:
             # Mostrar precio
@@ -96,16 +97,23 @@ if cliente_seleccionado != "":
             # Botón para agregar el producto al pedido, deshabilitado si no hay stock
             boton_agregar_desactivado = stock <= 0  # Deshabilitar el botón si no hay stock
             if st.button("Agregar producto", disabled=boton_agregar_desactivado):
-                # Añadir producto al pedido con la cantidad seleccionada
-                producto_agregado = {
-                    'Codigo': producto_data['Codigo'],
-                    'Nombre': producto_data['Nombre'],
-                    'Cantidad': cantidad,
-                    'Precio': producto_data['Precio'],
-                    'Importe': cantidad * producto_data['Precio']
-                }
-                st.session_state.pedido.append(producto_agregado)
-                st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+                # Verificar si el producto ya está en el pedido
+                existe = any(item['Codigo'] == producto_data['Codigo'] for item in st.session_state.pedido)
+                if existe:
+                    st.warning("Este producto ya está en el pedido. Por favor, ajusta la cantidad si es necesario.")
+                else:
+                    # Añadir producto al pedido con la cantidad seleccionada
+                    producto_agregado = {
+                        'Codigo': producto_data['Codigo'],
+                        'Nombre': producto_data['Nombre'],
+                        'Cantidad': cantidad,
+                        'Precio': producto_data['Precio'],
+                        'Importe': cantidad * producto_data['Precio']
+                    }
+                    st.session_state.pedido.append(producto_agregado)
+                    # Descontar del stock
+                    st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'] -= cantidad
+                    st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
         with col_der:
             # Mostrar imagen del producto en la columna aparte
@@ -131,9 +139,31 @@ if cliente_seleccionado != "":
             col5.write(f"${row['Importe']}")
 
             # Botón para eliminar producto con confirmación
-            if col6.button('🗑️', key=f"eliminar_{index}"):
-                st.session_state.pedido.pop(index)  # Elimina directamente sin recargar
-                st.experimental_rerun()  # No es necesario, ya que se elimina al momento de hacer click
+            eliminar_key = f"eliminar_{index}"
+            if col6.button('🗑️', key=eliminar_key):
+                st.session_state['item_a_eliminar'] = index  # Guardar el índice a eliminar
+                st.session_state['mostrar_confirmacion'] = True  # Mostrar la confirmación
+
+        # Confirmación de eliminación
+        if 'mostrar_confirmacion' in st.session_state and st.session_state['mostrar_confirmacion']:
+            st.warning("¿Estás seguro de que deseas eliminar este producto del pedido?")
+            col_conf1, col_conf2 = st.columns([1, 1])
+            with col_conf1:
+                if st.button("Sí"):
+                    index = st.session_state.get('item_a_eliminar')
+                    if index is not None and 0 <= index < len(st.session_state.pedido):
+                        producto = st.session_state.pedido.pop(index)
+                        # Reponer el stock
+                        st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'] += producto['Cantidad']
+                        st.success(f"Se eliminó {producto['Nombre']} del pedido.")
+                    # Limpiar las variables de confirmación
+                    st.session_state['mostrar_confirmacion'] = False
+                    st.session_state.pop('item_a_eliminar', None)
+            with col_conf2:
+                if st.button("No"):
+                    # Limpiar las variables de confirmación
+                    st.session_state['mostrar_confirmacion'] = False
+                    st.session_state.pop('item_a_eliminar', None)
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
@@ -153,5 +183,9 @@ if cliente_seleccionado != "":
         col_guardar, _ = st.columns([2, 3])
         with col_guardar:
             if st.button("Guardar Pedido"):
+                # Aquí puedes agregar la lógica para guardar el pedido, por ejemplo, escribir en un archivo o base de datos
                 st.success("Pedido guardado exitosamente.", icon="✅")
-
+                # Opcional: Limpiar el pedido después de guardarlo
+                st.session_state.pedido = []
+                # Opcional: Guardar los cambios en el stock de productos
+                # st.session_state.df_productos.to_excel('archivo_modificado_productos_actualizado.xlsx', index=False)
