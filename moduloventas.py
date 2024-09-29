@@ -4,17 +4,31 @@ from openpyxl import load_workbook
 import json
 from datetime import datetime
 
+# Configuración de la página
+st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
+
+# Título de la aplicación
+st.title("🐻 Módulo de Ventas 🛒")
+
 # Inicializar el estado del pedido y el stock si no existen
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
 if 'df_productos' not in st.session_state:
     file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
-    st.session_state.df_productos = pd.read_excel(file_path_productos)
+    try:
+        st.session_state.df_productos = pd.read_excel(file_path_productos, sheet_name='Productos')
+    except Exception as e:
+        st.error(f"Error al cargar el archivo de productos: {e}")
+        st.stop()
 
 if 'df_clientes' not in st.session_state:
     file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-    st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+    try:
+        st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+    except Exception as e:
+        st.error(f"Error al cargar el archivo de clientes: {e}")
+        st.stop()
 
 # Función para guardar el pedido en la segunda hoja del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
@@ -31,7 +45,8 @@ def guardar_pedido_excel(file_path, order_data):
         if sheet.max_row == 1:
             id_pedido = 1
         else:
-            id_pedido = sheet['A'][sheet.max_row].value + 1
+            last_id = sheet['A'][sheet.max_row].value
+            id_pedido = last_id + 1 if last_id is not None else 1
         
         # Formatear los ítems como JSON
         items_json = json.dumps(order_data['items'], ensure_ascii=False)
@@ -50,12 +65,6 @@ def guardar_pedido_excel(file_path, order_data):
         book.save(file_path)
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
-
-# Configuración de la página
-st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
-
-# Título de la aplicación
-st.title("🐻 Módulo de Ventas 🛒")
 
 # Colocamos el buscador de cliente
 col1, col2 = st.columns([2, 1])
@@ -191,38 +200,23 @@ if cliente_seleccionado != "":
             col4.write(f"${row['Precio']}")
             col5.write(f"${row['Importe']}")
 
-            # Definir una bandera de confirmación única para cada ítem
-            confirm_flag = f"confirm_eliminar_{index}"
+            # Botón para eliminar el ítem
+            eliminar_clicked = col6.button('🗑️', key=f"eliminar_{index}")
+            if eliminar_clicked:
+                # Eliminar el ítem del pedido
+                producto = st.session_state.pedido.pop(index)
+                # Reponer el stock
+                st.session_state.df_productos.loc[
+                    st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
+                ] += producto['Cantidad']
+                # Opcional: Puedes comentar la línea siguiente si no deseas mostrar un mensaje de éxito
+                # st.success(f"Se eliminó {producto['Nombre']} del pedido.")
 
-            # Inicializar la bandera si no existe
-            if confirm_flag not in st.session_state:
-                st.session_state[confirm_flag] = False
-
-            # Determinar el emoji del botón basado en la bandera
-            if st.session_state[confirm_flag]:
-                # Botón rojo para confirmar eliminación (usamos un emoji diferente)
-                eliminar_clicked = col6.button('🗑️⚠️', key=f"confirmar_eliminar_{index}")
-                if eliminar_clicked:
-                    # Eliminar el ítem del pedido
-                    producto = st.session_state.pedido.pop(index)
-                    # Reponer el stock
-                    st.session_state.df_productos.loc[
-                        st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
-                    ] += producto['Cantidad']
-                    st.success(f"Se eliminó {producto['Nombre']} del pedido.")
-                    # Resetear la bandera
-                    st.session_state[confirm_flag] = False
-            else:
-                # Botón normal de eliminación
-                eliminar_clicked = col6.button('🗑️', key=f"eliminar_{index}")
-                if eliminar_clicked:
-                    # Activar la confirmación de eliminación
-                    st.session_state[confirm_flag] = True
-
-        # Resetear todas las banderas de confirmación si no se ha hecho clic
-        for key in list(st.session_state.keys()):
-            if key.startswith("confirm_eliminar_") and not st.session_state[key]:
-                st.session_state.pop(key)
+        # Actualizar el DataFrame después de posibles cambios
+        if st.session_state.pedido:
+            pedido_df = pd.DataFrame(st.session_state.pedido)
+        else:
+            pedido_df = pd.DataFrame()
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
