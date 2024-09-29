@@ -14,7 +14,7 @@ st.set_page_config(page_title="📁 Módulo de Ventas", layout="wide")
 # Título de la aplicación
 st.title("📁 Módulo de Ventas")
 
-# Sección de cliente (previamente ajustada)
+# Sección de cliente
 st.header("🧑‍💼 Datos del Cliente")
 
 # Colocamos el buscador de cliente y el vendedor asignado uno al lado del otro
@@ -22,7 +22,7 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "Buscar cliente",[""] + df_clientes['Nombre'].unique().tolist(), 
+        "Buscar cliente",[""] + df_clientes['Nombre'].unique(), 
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
@@ -127,15 +127,18 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     total_items = pedido_df['Cantidad'].sum()
     total_monto = pedido_df['Importe'].sum()
 
-    st.write(f"**Total de items:** {total_items}")
+    # Mostrar total de ítems y total del pedido en una sola fila
+    col_items, col_total = st.columns([1, 1])
     
-    # Mostrar total del pedido en un cuadro destacado
-    st.markdown(f"""
-        <div style="background-color:#F0F8FF;padding:10px;border-radius:5px;">
-            <h3 style='text-align:center;'>Total del pedido: ${total_monto:,.2f}</h3>
-        </div>
-    """, unsafe_allow_html=True)
+    with col_items:
+        st.write(f"**Total de items:** {total_items}")
     
-    # Botón para guardar el pedido
+    with col_total:
+        # Mostrar total del pedido al lado de total de ítems
+        st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
+    
+    # Centrar el botón de guardar pedido
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     if st.button("Guardar pedido"):
         st.success("Pedido guardado exitosamente.")
+    st.markdown("</div>", unsafe_allow_html=True)
