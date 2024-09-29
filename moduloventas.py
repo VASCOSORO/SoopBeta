@@ -20,12 +20,12 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "🔮Buscar cliente", [""] + df_clientes['Nombre'].unique(),
+        "🔮Buscar cliente", [""] + df_clientes['Nombre'].unique().tolist(),
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
-# Solo mostramos los demás campos si se selecciona un cliente
-if cliente_seleccionado:
+# Solo mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
+if cliente_seleccionado != "":
     cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
     # Mostrar descuento y última compra
