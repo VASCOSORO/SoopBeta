@@ -47,7 +47,7 @@ with col2:
         st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
 # Sección de productos
-st.header("🛒 📁 Buscador de Productos")
+st.header("📁 Buscador de Productos 🛒")
 
 # Tres columnas: Buscador, precio, y stock con colores
 col1, col2, col3 = st.columns([2, 1, 1])
