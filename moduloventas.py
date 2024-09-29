@@ -121,9 +121,22 @@ if 'pedido' in st.session_state and st.session_state.pedido:
     # Convertir la lista de productos en un DataFrame
     pedido_df = pd.DataFrame(st.session_state.pedido)
     
-    # Mostrar la tabla del pedido
-    st.table(pedido_df[['Codigo', 'Nombre', 'Cantidad', 'Precio', 'Importe']])
-    
+    # Mostrar la tabla del pedido con la opción de eliminar ítems
+    for index, row in pedido_df.iterrows():
+        col1, col2, col3, col4, col5 = st.columns([1, 2, 1, 1, 1])
+        col1.write(row['Codigo'])
+        col2.write(row['Nombre'])
+        col3.write(row['Cantidad'])
+        col4.write(f"${row['Precio']}")
+        col5.write(f"${row['Importe']}")
+        
+        # Botón para eliminar producto
+        eliminar = col5.button('🗑️', key=f"eliminar_{index}")
+        if eliminar:
+            # Eliminar el producto seleccionado del pedido
+            st.session_state.pedido.pop(index)
+            st.experimental_rerun()  # Recargar la página para actualizar la lista
+
     # Total de ítems y total del pedido
     total_items = pedido_df['Cantidad'].sum()
     total_monto = pedido_df['Importe'].sum()
