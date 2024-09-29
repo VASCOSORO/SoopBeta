@@ -131,18 +131,13 @@ if cliente_seleccionado != "":
             col5.write(f"${row['Importe']}")
 
             # Confirmación para eliminar el producto
-            if f"confirm_delete_{index}" not in st.session_state:
-                st.session_state[f"confirm_delete_{index}"] = False
-
-            if st.session_state[f"confirm_delete_{index}"]:
-                if st.button(f"Confirmar eliminación de {row['Nombre']}", key=f"confirmar_eliminar_{index}"):
-                    st.session_state.pedido.pop(index)
-                    del st.session_state[f"confirm_delete_{index}"]
-                    st.experimental_rerun()
-            else:
-                eliminar = col6.button('🗑️', key=f"eliminar_{index}")
-                if eliminar:
-                    st.session_state[f"confirm_delete_{index}"] = True
+            eliminar = col6.button('🗑️', key=f"eliminar_{index}")
+            if eliminar:
+                confirmar = st.radio(f"¿Seguro que querés eliminar {row['Nombre']} del pedido?", ["Sí, eliminar", "No, cancelar"], index=1)
+                if confirmar == "Sí, eliminar":
+                    st.session_state.pedido.pop(index)  # Eliminar el producto seleccionado del pedido
+                    st.success(f"Se eliminó {row['Nombre']} del pedido.")
+                    break  # Romper el bucle para que se refresque la tabla sin errores
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
