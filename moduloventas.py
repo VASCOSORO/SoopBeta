@@ -37,10 +37,10 @@ with col1:
 with col2:
     # Solo mostramos el vendedor si se ha seleccionado un cliente
     if cliente_seleccionado:
-        # Vendedor asignado
+        # Vendedor asignado por defecto es el primero en la lista
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         vendedor_default = vendedores[0]
-        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
+        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)  # Mostrar por defecto el primer vendedor
 
         # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
         st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
