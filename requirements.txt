@@ -5,3 +5,4 @@ pillow==10.4.0
 pytz==2023.3
 streamlit-aggrid==1.0.5
 requests==2.31.0
+fpdf==1.7.2  # Para la generación de PDF
