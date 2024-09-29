@@ -192,42 +192,32 @@ if cliente_seleccionado != "":
             col4.write(f"${row['Precio']}")
             col5.write(f"${row['Importe']}")
 
-            # Botón para eliminar producto con confirmación
             eliminar_key = f"eliminar_{index}"
-            if col6.button('🗑️', key=eliminar_key):
-                st.session_state['item_a_eliminar'] = index  # Guardar el índice a eliminar
-                st.session_state['mostrar_confirmacion'] = True  # Mostrar la confirmación
+            confirmar_key_si = f"confirmar_si_{index}"
+            confirmar_key_no = f"confirmar_no_{index}"
+            confirm_flag = f"confirm_eliminar_{index}"
 
-        # Confirmación de eliminación (fuera del bucle para evitar redundancias)
-        if 'mostrar_confirmacion' in st.session_state and st.session_state['mostrar_confirmacion']:
-            st.markdown("---")
-            st.warning("¿Estás seguro de que deseas eliminar este producto del pedido?")
-            col_conf1, col_conf2 = st.columns([1, 1])
-            with col_conf1:
-                if st.button("Sí", key="confirmar_si"):
-                    index = st.session_state.get('item_a_eliminar')
-                    if index is not None and 0 <= index < len(st.session_state.pedido):
+            if st.session_state.get(confirm_flag, False):
+                # Mostrar botones de confirmación en lugar del ícono de eliminar
+                with col6:
+                    if st.button("Sí", key=confirmar_key_si):
                         producto = st.session_state.pedido.pop(index)
                         # Reponer el stock
                         st.session_state.df_productos.loc[
                             st.session_state.df_productos['Codigo'] == producto['Codigo'], 'Stock'
                         ] += producto['Cantidad']
                         st.success(f"Se eliminó {producto['Nombre']} del pedido.")
-                    # Limpiar las variables de confirmación
-                    st.session_state['mostrar_confirmacion'] = False
-                    st.session_state.pop('item_a_eliminar', None)
-            with col_conf2:
-                if st.button("No", key="confirmar_no"):
-                    # Limpiar las variables de confirmación
-                    st.session_state['mostrar_confirmacion'] = False
-                    st.session_state.pop('item_a_eliminar', None)
-            st.markdown("---")
+                        # Limpiar la bandera de confirmación
+                        st.session_state.pop(confirm_flag, None)
 
-        # Actualizar el DataFrame después de posibles cambios
-        if st.session_state.pedido:
-            pedido_df = pd.DataFrame(st.session_state.pedido)
-        else:
-            pedido_df = pd.DataFrame()
+                    if st.button("No", key=confirmar_key_no):
+                        # Limpiar la bandera de confirmación
+                        st.session_state.pop(confirm_flag, None)
+            else:
+                # Mostrar el botón de eliminar
+                with col6:
+                    if st.button('🗑️', key=eliminar_key):
+                        st.session_state[confirm_flag] = True  # Activar la confirmación para este ítem
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
@@ -270,13 +260,12 @@ if cliente_seleccionado != "":
                     # Confirmar al usuario
                     st.success("Pedido guardado exitosamente.", icon="✅")
 
-                    # Opcional: Limpiar el pedido después de guardarlo
+                    # Limpiar el pedido después de guardarlo
                     st.session_state.pedido = []
 
-                    # Opcional: Guardar los cambios en el stock de productos
+                    # Guardar los cambios en el stock de productos
                     try:
                         with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             st.session_state.df_productos.to_excel(writer, sheet_name='Productos', index=False)
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-
