@@ -2,6 +2,14 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
+# Inicializar el estado del pedido si no existe
+if 'pedido' not in st.session_state:
+    st.session_state.pedido = []
+
+# Inicializar el estado de confirmación si no existe
+if 'confirm_delete' not in st.session_state:
+    st.session_state.confirm_delete = {}
+
 # Cargar los datos de clientes y productos desde los archivos correspondientes
 file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
 file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
@@ -44,9 +52,9 @@ if cliente_seleccionado != "":
     st.header("📁Buscador de Productos🔍")
 
     # Tres columnas: Buscador, precio, y stock con colores
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
 
-    with col1:
+    with col_prod1:
         # Buscador de productos con espacio vacío al inicio
         producto_buscado = st.selectbox("Buscar producto", [""] + df_productos['Nombre'].unique().tolist(),
                                         help="Escribí el nombre del producto o seleccioná uno de la lista.")
@@ -54,11 +62,11 @@ if cliente_seleccionado != "":
     if producto_buscado:
         producto_data = df_productos[df_productos['Nombre'] == producto_buscado].iloc[0]
 
-        with col2:
+        with col_prod2:
             # Mostrar precio
             st.write(f"**Precio:** ${producto_data['Precio']}")
 
-        with col3:
+        with col_prod3:
             # Mostrar stock con colores según la cantidad
             stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
             if stock <= 0:
@@ -92,10 +100,6 @@ if cliente_seleccionado != "":
             # Botón para agregar el producto al pedido
             if st.button("Agregar producto"):
                 # Añadir producto al pedido con la cantidad seleccionada
-                if 'pedido' not in st.session_state:
-                    st.session_state.pedido = []
-
-                # Agregar el producto con los detalles
                 producto_agregado = {
                     'Codigo': producto_data['Codigo'],
                     'Nombre': producto_data['Nombre'],
@@ -114,7 +118,7 @@ if cliente_seleccionado != "":
                 st.write("No hay imagen disponible.")
 
     # Mostrar el pedido actual
-    if 'pedido' in st.session_state and st.session_state.pedido:
+    if st.session_state.pedido:
         st.header("📦 Pedido actual")
 
         # Convertir la lista de productos en un DataFrame
@@ -129,14 +133,32 @@ if cliente_seleccionado != "":
             col4.write(f"${row['Precio']}")
             col5.write(f"${row['Importe']}")
 
-            # Confirmación antes de eliminar el ítem
-            if col6.button('🗑️', key=f"eliminar_{index}"):
-                confirmacion = st.radio(f"¿Seguro que querés eliminar {row['Nombre']} del pedido?", ("Sí", "No"), key=f"confirm_{index}")
-                if confirmacion == "Sí":
-                    # Eliminar el producto seleccionado del pedido
-                    st.session_state.pedido.pop(index)
-                    # Recargar la tabla inmediatamente
-                    st.experimental_rerun()
+            # Botón para eliminar producto con confirmación
+            eliminar = col6.button('🗑️', key=f"eliminar_{index}")
+            if eliminar:
+                # Establecer el estado de confirmación para este ítem
+                st.session_state.confirm_delete[index] = True
+
+        # Revisar si hay alguna confirmación pendiente
+        for index in list(st.session_state.confirm_delete.keys()):
+            if st.session_state.confirm_delete.get(index, False):
+                with st.expander(f"¿Seguro que querés eliminar {pedido_df.at[index, 'Nombre']} del pedido?"):
+                    confirmar = st.button("Sí, eliminar", key=f"confirm_yes_{index}")
+                    cancelar = st.button("No, cancelar", key=f"confirm_no_{index}")
+
+                    if confirmar:
+                        # Eliminar el producto seleccionado del pedido
+                        st.session_state.pedido.pop(index)
+                        # Eliminar la entrada de confirmación
+                        del st.session_state.confirm_delete[index]
+                        st.success(f"Se eliminó {pedido_df.at[index, 'Nombre']} del pedido.")
+                        # Reiniciar la aplicación para reflejar cambios
+                        st.experimental_rerun()
+
+                    if cancelar:
+                        # Cancelar la eliminación
+                        del st.session_state.confirm_delete[index]
+                        st.info("Eliminación cancelada.")
 
         # Total de ítems y total del pedido
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
@@ -158,15 +180,13 @@ if cliente_seleccionado != "":
             if st.button("Guardar Pedido"):
                 st.success("Pedido guardado exitosamente.", icon="✅")
 
-                # Generar un archivo de texto en vez de PDF
+                # Generar un archivo de texto
                 pedido_txt = BytesIO()
                 pedido_txt.write(f"Detalles del Pedido\n".encode('utf-8'))
-                for index, row in pedido_df.iterrows():
+                for _, row in pedido_df.iterrows():
                     pedido_txt.write(f"{row['Cantidad']}x {row['Nombre']} - ${row['Importe']:.2f}\n".encode('utf-8'))
                 pedido_txt.write(f"\nTotal del pedido: ${total_monto:.2f}".encode('utf-8'))
                 pedido_txt.seek(0)
 
                 # Proporcionar opción para descargar el archivo de texto
-                col_guardar_download = st.columns([2, 1])
-                with col_guardar_download[1]:
-                    st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
+                st.download_button(label="Descargar Pedido en TXT", data=pedido_txt, file_name="pedido.txt", mime="text/plain")
