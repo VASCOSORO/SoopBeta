@@ -22,25 +22,28 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "Buscar cliente", df_clientes['Nombre'].unique(), 
+        "Buscar cliente", [""] + df_clientes['Nombre'].unique().tolist(), 
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
-    # Colocar debajo de cliente "Descuento" y "Última compra"
-    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
-    st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+    # Solo mostramos los datos del cliente si se ha seleccionado uno
+    if cliente_seleccionado:
+        cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-# Obtener los datos del cliente seleccionado
-cliente_data = df_clientes[df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+        # Colocar debajo de cliente "Descuento" y "Última compra"
+        st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+        st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
 
 with col2:
-    # Vendedor asignado
-    vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-    vendedor_default = vendedores[0]
-    vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
+    # Solo mostramos el vendedor si se ha seleccionado un cliente
+    if cliente_seleccionado:
+        # Vendedor asignado
+        vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+        vendedor_default = vendedores[0]
+        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores)
 
-    # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
-    st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
+        # Colocar debajo la aclaración "Vendedor asignado" en la segunda columna
+        st.write(f"**Vendedor asignado:** {vendedor_seleccionado}")
 
 # Mantengo las demás secciones del código como el buscador de productos y la tabla del pedido
 
