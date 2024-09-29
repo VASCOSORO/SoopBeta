@@ -4,40 +4,31 @@ from openpyxl import load_workbook
 import json
 from datetime import datetime
 
-# --------------------------------------------
-# Inicialización de Session State
-# --------------------------------------------
-
-# Inicializar el estado del pedido si no existe
+# Inicializar el estado del pedido y el stock si no existen
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
-# Inicializar el DataFrame de productos si no existe
 if 'df_productos' not in st.session_state:
-    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Ruta del archivo de productos
+    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
     try:
         st.session_state.df_productos = pd.read_excel(file_path_productos)
     except Exception as e:
         st.error(f"Error al cargar el archivo de productos: {e}")
         st.stop()
 
-# Inicializar el DataFrame de clientes si no existe
 if 'df_clientes' not in st.session_state:
-    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Ruta del archivo de clientes
+    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
     try:
         st.session_state.df_clientes = pd.read_excel(file_path_clientes)
     except Exception as e:
         st.error(f"Error al cargar el archivo de clientes: {e}")
         st.stop()
 
-# Inicializar las banderas de eliminación pendientes si no existen
-if 'pending_deletions' not in st.session_state:
-    st.session_state.pending_deletions = set()
+# Inicializar 'delete_confirm' como un diccionario si no existe
+if 'delete_confirm' not in st.session_state:
+    st.session_state.delete_confirm = {}
 
-# --------------------------------------------
-# Función para guardar el pedido en Excel
-# --------------------------------------------
-
+# Función para guardar el pedido en la hoja 'Pedidos' del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
     try:
         book = load_workbook(file_path)
@@ -73,52 +64,22 @@ def guardar_pedido_excel(file_path, order_data):
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
 
-# --------------------------------------------
-# Funciones para manejar la eliminación de ítems
-# --------------------------------------------
-
-def confirmar_eliminacion(codigo):
-    """
-    Elimina el ítem con el código especificado del pedido y actualiza el stock.
-    """
-    # Encontrar el índice del producto con el Código específico
-    index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
-    if index is not None:
-        producto_eliminado = st.session_state.pedido.pop(index)
-        # Reponer el stock
-        st.session_state.df_productos.loc[
-            st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
-        ] += producto_eliminado['Cantidad']
-    # Remover el código del set de eliminaciones pendientes
-    st.session_state.pending_deletions.discard(codigo)
-
-def cancelar_eliminacion(codigo):
-    """
-    Cancela la eliminación del ítem con el código especificado.
-    """
-    st.session_state.pending_deletions.discard(codigo)
-
-# --------------------------------------------
-# Configuración de la página y Título
-# --------------------------------------------
-
+# Configuración de la página
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
+
+# Título de la aplicación
 st.title("🐻 Módulo de Ventas 🛒")
 
-# --------------------------------------------
-# Buscador de Cliente
-# --------------------------------------------
-
+# Colocamos el buscador de cliente
 col1, col2 = st.columns([2, 1])
 
 with col1:
     cliente_seleccionado = st.selectbox(
-        "🔮 Buscar cliente",
-        [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
+        "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
         help="Escribí el nombre del cliente o seleccioná uno de la lista."
     )
 
-# Solo mostrar los campos adicionales si se ha seleccionado un cliente
+# Solo mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
 if cliente_seleccionado != "":
     cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
@@ -134,10 +95,7 @@ if cliente_seleccionado != "":
         vendedor_seleccionado = st.selectbox("Vendedor", vendedores, index=0)
         st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
 
-    # --------------------------------------------
-    # Buscador de Productos
-    # --------------------------------------------
-
+    # Sección de productos solo aparece si hay cliente seleccionado
     st.header("📁 Buscador de Productos 🔍")
 
     # Tres columnas: Buscador, precio, y stock con colores
@@ -160,7 +118,7 @@ if cliente_seleccionado != "":
 
         with col_prod3:
             # Mostrar stock con colores según la cantidad
-            stock = max(0, producto_data['Stock'])  # Asegurarse de que el stock no sea negativo
+            stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
             if stock <= 0:
                 color = 'red'
             elif stock < 10:
@@ -170,7 +128,7 @@ if cliente_seleccionado != "":
 
             st.markdown(f"<span style='color:{color}'>**Stock disponible:** {stock}</span>", unsafe_allow_html=True)
 
-        # Dividir la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
+        # Dividimos la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
         col_izq, col_der = st.columns([2, 1])
 
         with col_izq:
@@ -230,15 +188,12 @@ if cliente_seleccionado != "":
             else:
                 st.write("No hay imagen disponible.")
 
-    # --------------------------------------------
-    # Mostrar el Pedido Actual
-    # --------------------------------------------
-
+    # Mostrar el pedido actual
     if st.session_state.pedido:
         st.header("📦 Pedido actual")
 
         # Mostrar la tabla del pedido con la opción de eliminar ítems
-        for producto in st.session_state.pedido.copy():  # Usar una copia para evitar modificación durante la iteración
+        for producto in st.session_state.pedido.copy():  # Use copy to avoid modification during iteration
             codigo = producto['Codigo']
             nombre = producto['Nombre']
             cantidad = producto['Cantidad']
@@ -253,32 +208,35 @@ if cliente_seleccionado != "":
             col4.write(f"${precio}")
             col5.write(f"${importe}")
 
-            # Crear una bandera única para este ítem
-            deletion_flag = f"deleting_{codigo}"
-
-            # Inicializar la bandera si no existe
-            if deletion_flag not in st.session_state:
-                st.session_state[deletion_flag] = False
-
-            with col6:
-                if not st.session_state[deletion_flag]:
-                    # Mostrar el botón de eliminar (🗑️)
-                    if st.button('🗑️', key=f"eliminar_{codigo}"):
-                        st.session_state[deletion_flag] = True  # Activar la confirmación de eliminación
-                else:
-                    # Mostrar los botones de confirmación "Sí" y "No"
-                    st.markdown("<span style='color: red;'>⚠️</span>", unsafe_allow_html=True)
+            # Verificar si este producto está pendiente de eliminación
+            if codigo in st.session_state.delete_confirm:
+                # Mostrar botón de "Sí" y "No" en rojo
+                with col6:
+                    # Botón "Sí" para confirmar eliminación
                     if st.button("Sí", key=f"confirmar_si_{codigo}"):
-                        # Eliminar el ítem del pedido y reponer el stock
-                        confirmar_eliminacion(codigo)
+                        # Eliminar el ítem del pedido
+                        index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
+                        if index is not None:
+                            producto_eliminado = st.session_state.pedido.pop(index)
+                            # Reponer el stock
+                            st.session_state.df_productos.loc[
+                                st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
+                            ] += producto_eliminado['Cantidad']
+                        # Remover del diccionario de confirmaciones
+                        del st.session_state.delete_confirm[codigo]
+
+                    # Botón "No" para cancelar eliminación
                     if st.button("No", key=f"confirmar_no_{codigo}"):
                         # Cancelar la eliminación
-                        cancelar_eliminacion(codigo)
+                        del st.session_state.delete_confirm[codigo]
+            else:
+                # Mostrar el botón de eliminar normal
+                with col6:
+                    if st.button('🗑️', key=f"eliminar_{codigo}"):
+                        # Marcar este ítem para eliminación
+                        st.session_state.delete_confirm[codigo] = True
 
-        # --------------------------------------------
-        # Calcular y Mostrar Totales
-        # --------------------------------------------
-
+        # Calcular totales
         pedido_df = pd.DataFrame(st.session_state.pedido)
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
         total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
@@ -293,10 +251,7 @@ if cliente_seleccionado != "":
             # Mostrar total del pedido al lado de total de ítems
             st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
 
-        # --------------------------------------------
-        # Botón para Guardar Pedido
-        # --------------------------------------------
-
+        # Centrar el botón de guardar pedido
         col_guardar, _ = st.columns([2, 3])
         with col_guardar:
             if st.button("Guardar Pedido"):
@@ -325,11 +280,7 @@ if cliente_seleccionado != "":
 
                     # Limpiar el pedido después de guardarlo
                     st.session_state.pedido = []
-
-                    # Limpiar todas las banderas de eliminación pendientes
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("deleting_"):
-                            st.session_state[key] = False
+                    st.session_state.delete_confirm = {}
 
                     # Guardar los cambios en el stock de productos
                     try:
