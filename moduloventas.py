@@ -60,6 +60,11 @@ with col1:
 if producto_buscado:
     producto_data = df_productos[df_productos['Nombre'] == producto_buscado].iloc[0]
     
+    # Mostrar datos importantes del producto seleccionado
+    st.write(f"**Producto seleccionado:** {producto_buscado}")
+    st.write(f"**Venta Forzada:** {producto_data.get('Venta Forzada', 'No disponible')}")
+    st.write(f"**Múltiplo de Venta Forzada:** {producto_data.get('Múltiplo', 'No disponible')}")
+
     with col2:
         # Mostrar precio
         st.write(f"**Precio:** ${producto_data['Precio']}")
@@ -87,7 +92,7 @@ if producto_buscado:
         venta_forzada = producto_data.get('Venta Forzada', 0)
         if venta_forzada == 1:
             # Múltiplo forzado
-            multiple_venta = producto_data['Múltiplo'] if 'Múltiplo' in producto_data else 1
+            multiple_venta = producto_data.get('Múltiplo', 1)  # Nos aseguramos de que el múltiplo sea 1 si no existe
             st.warning(f"Este producto está forzado a venderse en múltiplos de {multiple_venta}.")
             cantidad = st.number_input("Cantidad", min_value=multiple_venta, step=multiple_venta)
         else:
