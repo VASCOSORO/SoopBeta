@@ -24,7 +24,7 @@ if 'df_clientes' not in st.session_state:
         st.error(f"Error al cargar el archivo de clientes: {e}")
         st.stop()
 
-# Función para guardar el pedido en la segunda hoja del archivo de productos
+# Función para guardar el pedido en la hoja 'Pedidos' del archivo de productos
 def guardar_pedido_excel(file_path, order_data):
     try:
         book = load_workbook(file_path)
@@ -60,6 +60,27 @@ def guardar_pedido_excel(file_path, order_data):
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
 
+# Funciones para manejar la eliminación de ítems
+def confirm_delete(codigo):
+    # Encontrar el índice del producto con el Código específico
+    index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
+    if index is not None:
+        producto_eliminado = st.session_state.pedido.pop(index)
+        # Reponer el stock
+        st.session_state.df_productos.loc[
+            st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
+        ] += producto_eliminado['Cantidad']
+    # Limpiar el indicador de eliminación
+    st.session_state.delete_code = None
+
+def cancel_delete():
+    # Limpiar el indicador de eliminación
+    st.session_state.delete_code = None
+
+# Inicializar la variable para rastrear el ítem a eliminar
+if 'delete_code' not in st.session_state:
+    st.session_state.delete_code = None
+
 # Configuración de la página
 st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 
@@ -83,7 +104,7 @@ if cliente_seleccionado != "":
     with col1:
         st.write(f"**Descuento:** {cliente_data['Descuento']}%")
         st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
-    
+
     # Mostrar vendedor principal
     with col2:
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
@@ -197,33 +218,25 @@ if cliente_seleccionado != "":
             col4.write(f"${producto['Precio']}")
             col5.write(f"${producto['Importe']}")
 
-            eliminar_key = f"eliminar_{index}"
-            confirmar_key_si = f"confirmar_si_{index}"
-            confirmar_key_no = f"confirmar_no_{index}"
-            confirm_flag = f"confirm_eliminar_{index}"
+            eliminar_key = f"eliminar_{producto['Codigo']}"
+            confirmar_key_si = f"confirmar_si_{producto['Codigo']}"
+            confirmar_key_no = f"confirmar_no_{producto['Codigo']}"
+            confirm_flag = f"confirm_eliminar_{producto['Codigo']}"
 
-            if st.session_state.get(confirm_flag, False):
+            # Verificar si este ítem está marcado para confirmación de eliminación
+            if st.session_state.delete_code == producto['Codigo']:
                 # Mostrar botones de confirmación
                 with col6:
                     if st.button("Sí", key=confirmar_key_si):
-                        # Eliminar el ítem del pedido
-                        producto_eliminado = st.session_state.pedido.pop(index)
-                        # Reponer el stock
-                        st.session_state.df_productos.loc[
-                            st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
-                        ] += producto_eliminado['Cantidad']
-                        # Limpiar la bandera de confirmación
-                        st.session_state.pop(confirm_flag, None)
-                        # Nota: Hemos eliminado el mensaje de éxito aquí
-                        
+                        confirm_delete(producto['Codigo'])
+
                     if st.button("No", key=confirmar_key_no):
-                        # Limpiar la bandera de confirmación
-                        st.session_state.pop(confirm_flag, None)
+                        cancel_delete()
             else:
                 # Mostrar el botón de eliminar
                 with col6:
                     if st.button('🗑️', key=eliminar_key):
-                        st.session_state[confirm_flag] = True  # Activar la confirmación para este ítem
+                        st.session_state.delete_code = producto['Codigo']
 
         # Calcular totales
         pedido_df = pd.DataFrame(st.session_state.pedido)
