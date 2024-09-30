@@ -689,10 +689,6 @@ def modulo_administracion():
                         st.success("Stock de productos actualizado exitosamente.")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock de productos: {e}")
-
-# ===============================
-# Módulo Estadísticas
-# ===============================
 # ===============================
 # Módulo Estadísticas
 # ===============================
@@ -700,84 +696,80 @@ def modulo_administracion():
 def modulo_estadistica():
     st.header("📈 Estadísticas para la toma de decisiones")
 
-    # Mostrar estadísticas clave en tarjetas
+    # Datos ficticios
+    data_ficticia_ventas = {
+        'Fecha': pd.date_range(start='2024-09-01', periods=10, freq='D'),
+        'Monto': [1000, 1500, 1200, 1800, 2000, 1600, 1900, 1700, 1300, 2100]
+    }
+    df_ventas_ficticio = pd.DataFrame(data_ficticia_ventas)
+
+    # Datos ficticios para productos
+    productos_ficticios = {
+        'Nombre': ['Peluche Oso', 'Juguete Robot', 'Auto a Control', 'Muñeca', 'Peluche León'],
+        'Cantidad': [20, 15, 30, 12, 25],
+        'Importe': [2000, 3000, 4500, 1800, 3000]
+    }
+    df_productos_ficticios = pd.DataFrame(productos_ficticios)
+
+    # Datos ficticios para stock
+    stock_ficticio = {
+        'Nombre': ['Peluche Oso', 'Juguete Robot', 'Muñeca'],
+        'Stock': [8, 5, 3]
+    }
+    df_stock_ficticio = pd.DataFrame(stock_ficticio)
+
+    # Datos ficticios para vendedores
+    vendedores_ficticios = {
+        'Nombre': ['Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco'],
+        'Monto': [10000, 8500, 7000, 6500, 6200]
+    }
+    df_vendedores_ficticio = pd.DataFrame(vendedores_ficticios)
+
+    # Tarjetas Resumidas
     col1, col2, col3 = st.columns(3)
 
-    # Total de Ventas del Día
-    ventas_dia = st.session_state.df_administracion[
-        (st.session_state.df_administracion['Tipo'] == 'Ingreso') & 
-        (st.session_state.df_administracion['Fecha'] == datetime.now().strftime("%Y-%m-%d"))
-    ]['Monto'].sum()
-    
+    # Ventas del Día (dato ficticio)
+    ventas_dia_ficticia = 1800
     with col1:
-        st.metric(label="Ventas del Día", value=f"${ventas_dia:,.2f}")
+        st.metric(label="Ventas del Día", value=f"${ventas_dia_ficticia:,.2f}")
 
-    # Total de Ingresos
-    total_ingresos = st.session_state.df_administracion[
-        st.session_state.df_administracion['Tipo'] == 'Ingreso'
-    ]['Monto'].sum()
-    
+    # Total de Ingresos (ficticio)
+    total_ingresos_ficticio = df_ventas_ficticio['Monto'].sum()
     with col2:
-        st.metric(label="Total de Ingresos", value=f"${total_ingresos:,.2f}")
+        st.metric(label="Total de Ingresos", value=f"${total_ingresos_ficticio:,.2f}")
 
-    # Total de Egresos
-    total_egresos = st.session_state.df_administracion[
-        st.session_state.df_administracion['Tipo'] == 'Egreso'
-    ]['Monto'].sum()
-    
+    # Total de Egresos (ficticio)
+    total_egresos_ficticio = 4500  # Un dato arbitrario para mostrar
     with col3:
-        st.metric(label="Total de Egresos", value=f"${total_egresos:,.2f}")
+        st.metric(label="Total de Egresos", value=f"${total_egresos_ficticio:,.2f}")
 
     st.markdown("---")
 
-    # Gráfico de ventas por día de la semana
+    # Gráfico de ventas por día de la semana (ficticio)
     st.subheader("📅 Ventas por Día de la Semana")
-    ventas_por_dia = st.session_state.df_administracion[
-        st.session_state.df_administracion['Tipo'] == 'Ingreso'
-    ].groupby(st.session_state.df_administracion['Fecha']).sum().reset_index()
-
-    if not ventas_por_dia.empty:
-        ventas_por_dia['Fecha'] = pd.to_datetime(ventas_por_dia['Fecha'])
-        ventas_por_dia['Día'] = ventas_por_dia['Fecha'].dt.day_name()
-        ventas_resumen = ventas_por_dia.groupby('Día')['Monto'].sum().reindex(
-            ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        )
-        st.bar_chart(ventas_resumen)
-    else:
-        st.info("No hay datos de ventas para mostrar.")
+    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.day_name()
+    ventas_resumen_ficticio = df_ventas_ficticio.groupby('Día')['Monto'].sum().reindex(
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    )
+    st.bar_chart(ventas_resumen_ficticio)
 
     st.markdown("---")
 
-    # Productos más vendidos
+    # Productos más vendidos (ficticio)
     st.subheader("🎯 Productos más Vendidos")
-    ventas_por_producto = pd.DataFrame(st.session_state.pedido).groupby('Nombre').sum().sort_values('Cantidad', ascending=False).head(5)
-    if not ventas_por_producto.empty:
-        st.table(ventas_por_producto[['Cantidad', 'Importe']])
-    else:
-        st.info("No hay datos de productos vendidos para mostrar.")
+    st.table(df_productos_ficticios[['Nombre', 'Cantidad', 'Importe']])
 
     st.markdown("---")
 
-    # Stock crítico
+    # Stock crítico (ficticio)
     st.subheader("⚠️ Productos con Stock Crítico")
-    stock_critico = st.session_state.df_productos[st.session_state.df_productos['Stock'] < 10]
-    if not stock_critico.empty:
-        st.table(stock_critico[['Nombre', 'Stock']])
-    else:
-        st.info("No hay productos con stock crítico.")
+    st.table(df_stock_ficticio[['Nombre', 'Stock']])
 
     st.markdown("---")
 
-    # Productividad del equipo
+    # Productividad del equipo (ficticio)
     st.subheader("👥 Productividad del Equipo")
-    ventas_por_vendedor = st.session_state.df_administracion[
-        st.session_state.df_administracion['Tipo'] == 'Ingreso'
-    ].groupby('Nombre').sum().sort_values('Monto', ascending=False).head(5)
-
-    if not ventas_por_vendedor.empty:
-        st.table(ventas_por_vendedor[['Monto']])
-    else:
-        st.info("No hay datos de productividad de vendedores para mostrar.")
+    st.table(df_vendedores_ficticio[['Nombre', 'Monto']])
 
 # ===============================
 # Módulo Marketing
