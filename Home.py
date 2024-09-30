@@ -586,37 +586,6 @@ def modulo_ventas():
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 
-### **Pasos Detallados para Copiar el Código Correctamente**
-
-1. **Selecciona Solo el Código Interno:**
-   - **No copies** las líneas que contienen solo tres acentos graves (```).
-   - **Copia desde la línea** `# ===============================` hasta el final del código proporcionado.
-
-2. **Pega el Código en Tu Archivo Python (`Home.py`):**
-   - Abre tu archivo `Home.py`.
-   - Pega el código copiado en la ubicación correspondiente, reemplazando cualquier versión anterior del módulo de ventas si es necesario.
-
-3. **Asegúrate de que los DataFrames Estén Correctamente Cargados:**
-   - Antes de llamar a `modulo_ventas()`, asegúrate de que `st.session_state.df_clientes` y `st.session_state.df_productos` estén correctamente cargados y contengan las columnas necesarias.
-
-   ```python
-   import streamlit as st
-   import pandas as pd
-
-   # Carga de datos de clientes y productos
-   if 'df_clientes' not in st.session_state:
-       st.session_state.df_clientes = pd.read_excel('clientes.xlsx')  # Ajusta la ruta y el archivo según corresponda
-
-   if 'df_productos' not in st.session_state:
-       st.session_state.df_productos = pd.read_excel('productos.xlsx')  # Ajusta la ruta y el archivo según corresponda
-
-   # Inicializar session_state para eliminar confirmaciones
-   if 'delete_confirm' not in st.session_state:
-       st.session_state.delete_confirm = {}
-
-   # Ejecutar el módulo de ventas
-   modulo_ventas()
-
 # ===============================
 # Módulo Administración
 # ===============================
