@@ -813,33 +813,16 @@ def modulo_administracion():
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
 
-    # Crear un estado para mostrar/ocultar la caja
-    if 'mostrar_caja' not in st.session_state:
-        st.session_state.mostrar_caja = True
+    # Layout de caja total con el "ojito" para ocultar/mostrar
+    mostrar_caja = st.checkbox("Mostrar Caja Actual", value=True)
 
-    # Función para alternar el estado de mostrar/ocultar caja
-    def toggle_mostrar_caja():
-        st.session_state.mostrar_caja = not st.session_state.mostrar_caja
-
-    # Usar un botón tipo "ojito" para alternar la visibilidad
-    icono_ojito = "👁️" if st.session_state.mostrar_caja else "🙈"
-    html(f"""
-        <button onclick="toggleMostrar()" style="border:none;background:none;cursor:pointer;font-size:20px">{icono_ojito}</button>
-        <script>
-            function toggleMostrar() {{
-                window.parent.postMessage({{ type: 'toggle_mostrar' }}, '*');
-            }}
-        </script>
-    """, unsafe_allow_html=True)
-
-    # Mostrar u ocultar la caja según el estado
     col_admin, col_caja = st.columns([2, 1])
 
     with col_admin:
         st.subheader("💰 Administración")
 
     with col_caja:
-        if st.session_state.mostrar_caja:
+        if mostrar_caja:
             # Mostrar caja en verde o rojo si es negativa
             color_caja = "red" if caja_actual < 0 else "green"
             st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
@@ -849,7 +832,8 @@ def modulo_administracion():
         st.write(f"**Último Egreso:** ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}")
 
     st.markdown("---")
-        # Registrar Ingreso (diseño con secciones desplegables)
+
+    # Registrar Ingreso (diseño con secciones desplegables)
     with st.expander("📥 Registrar Ingreso"):
         with st.form("form_registrar_ingreso"):
             col1, col2, col3 = st.columns(3)
@@ -955,8 +939,11 @@ def modulo_administracion():
                                     if codigo in st.session_state.df_productos['Codigo'].values:
                                         st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
                                     else:
-                                        st.warning
-
+                                        st.warning(f"Producto con código '{codigo}' no encontrado.")
+                            st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                            st.success("Stock de productos actualizado exitosamente.")
+                        except Exception as e:
+                            st.error(f"Error al actualizar el stock de productos: {e}")
 # ===============================
 # Módulo Estadísticas
 # ===============================
