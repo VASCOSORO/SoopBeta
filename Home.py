@@ -987,13 +987,8 @@ def modulo_ventas():
     # ----------------------------
     if cliente_seleccionado:
         try:
-            # Verificar si el archivo existe
-            if os.path.exists('AdministracionSoop.xlsx'):
-                # Cargar los pedidos desde el archivo Excel
-                df_pedidos = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Pedidos')
-            else:
-                st.error("El archivo 'AdministracionSoop.xlsx' no existe.")
-                df_pedidos = pd.DataFrame()
+            # Cargar los pedidos desde el archivo Excel
+            df_pedidos = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Pedidos', engine='openpyxl')
 
             # Filtrar los pedidos por el cliente seleccionado
             df_client_pedidos = df_pedidos[df_pedidos['Cliente'] == cliente_seleccionado]
@@ -1014,19 +1009,21 @@ def modulo_ventas():
 
                 # Crear opciones para el desplegable
                 opciones = ultimos_pedidos.apply(
-                    lambda row: f"Pedido #{row.name + 1} - Fecha: {row['Fecha'].strftime('%Y-%m-%d')} {row['Hora'].strftime('%H:%M:%S')}",
+                    lambda row: f"Pedido realizado el {row['Fecha'].strftime('%Y-%m-%d')} a las {row['Hora'].strftime('%H:%M:%S')}",
                     axis=1
                 ).tolist()
 
                 # Mostrar el desplegable con las opciones
-                st.subheader("📄 Últimos Pedidos del Cliente")
-                seleccion_pedido = st.selectbox("Selecciona un pedido", opciones)
+                st.subheader("📄 Último Pedido Realizado")
+                seleccion_pedido = st.selectbox("Selecciona el último pedido", opciones)
 
                 # Mostrar detalles del pedido seleccionado
                 if seleccion_pedido:
                     # Encontrar el pedido correspondiente
-                    pedido_index = opciones.index(seleccion_pedido)
-                    pedido_seleccionado = ultimos_pedidos.iloc[pedido_index]
+                    pedido_seleccionado = ultimos_pedidos[ultimos_pedidos.apply(
+                        lambda row: f"Pedido realizado el {row['Fecha'].strftime('%Y-%m-%d')} a las {row['Hora'].strftime('%H:%M:%S')}",
+                        axis=1
+                    ) == seleccion_pedido].iloc[0]
 
                     # Mostrar detalles del pedido
                     st.write(f"**Cliente:** {pedido_seleccionado['Cliente']}")
