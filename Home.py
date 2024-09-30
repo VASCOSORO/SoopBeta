@@ -287,10 +287,9 @@ def modulo_ventas():
         )
         
     with col2:
-        if cliente_seleccionado != "":
+        if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_default = vendedores[0]
             vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
     # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
@@ -322,25 +321,25 @@ def modulo_ventas():
                 ["CC", "Contado", "Depósito/Transferencia"],
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
-        
-        # Rubros del cliente como desplegable y lógica de filtrado
-        rubros_cliente = cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
-        rubro_seleccionado = st.selectbox("🏷️ Filtrar por Rubro del Cliente", [""] + rubros_cliente, help="Seleccioná un rubro para filtrar productos")
 
-        # Filtrar productos por el rubro seleccionado
-        if rubro_seleccionado:
-            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].str.contains(rubro_seleccionado, na=False)]
-            productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
-            cantidad_filtrados = len(productos_filtrados)
-            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por el rubro '{rubro_seleccionado}'")
-        else:
-            productos_filtrados = st.session_state.df_productos
-            st.info("Mostrando todos los productos disponibles")
-
-        # Desplegable para las notas del cliente
+        # Desplegable para las notas del cliente, movido arriba para estar más cerca del dato del cliente
         st.write("---")
         with st.expander("🔖 Notas del Cliente"):
             st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
+
+        # Rubros del cliente: Ficticios en un desplegable con la opción de seleccionar y destildar, ahora más cerca del buscador
+        rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]  # Rubros ficticios
+        rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
+
+        # Lógica para filtrar productos por rubro
+        if rubros_seleccionados:
+            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))]
+            productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
+            cantidad_filtrados = len(productos_filtrados)
+            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por los rubros seleccionados")
+        else:
+            productos_filtrados = st.session_state.df_productos
+            st.info("Mostrando todos los productos disponibles")
 
         # Sección de productos solo aparece si hay cliente seleccionado
         st.header("🔍 Buscador de Productos 🕶️")
@@ -384,62 +383,8 @@ def modulo_ventas():
     
                 # Verificar si la venta está forzada por múltiplos
                 if pd.notna(producto_data['forzar multiplos']) and producto_data['forzar multiplos'] > 0:
-                    st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar multiplos'])} unidades.")
-                    cantidad = st.number_input(
-                        "Cantidad",
-                        min_value=int(producto_data['forzar multiplos']),
-                        step=int(producto_data['forzar multiplos']),
-                        key=f"cantidad_{producto_data['Codigo']}"
-                    )
-                else:
-                    # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
-                    if stock > 0:
-                        cantidad = st.number_input(
-                            "Cantidad",
-                            min_value=1,
-                            max_value=stock,
-                            step=1,
-                            key=f"cantidad_{producto_data['Codigo']}"
-                        )
-                    else:
-                        cantidad = 0
-                        st.error("No hay stock disponible para este producto.")
-    
-                # Botón para agregar el producto al pedido, deshabilitado si no hay stock
-                boton_agregar_desactivado = stock <= 0  # Deshabilitar el botón si no hay stock
-                if st.button("Agregar producto", disabled=boton_agregar_desactivado, key=f"agregar_{producto_data['Codigo']}"):
-                    # Verificar si el producto ya está en el pedido
-                    existe = any(item['Codigo'] == producto_data['Codigo'] for item in st.session_state.pedido)
-                    if existe:
-                        st.warning("Este producto ya está en el pedido. Por favor, ajusta la cantidad si es necesario.")
-                    else:
-                        # Añadir producto al pedido con la cantidad seleccionada
-                        producto_agregado = {
-                            'Codigo': producto_data['Codigo'],
-                            'Nombre': producto_data['Nombre'],
-                            'Cantidad': cantidad,
-                            'Precio': producto_data['Precio'],
-                            'Importe': cantidad * producto_data['Precio']
-                        }
-                        st.session_state.pedido.append(producto_agregado)
-                        # Descontar del stock
-                        st.session_state.df_productos.loc[
-                            st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'
-                        ] -= cantidad
-                        st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
-    
-            with col_der:
-                # Mostrar imagen del producto en la columna aparte
-                if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
-                    try:
-                        response = requests.get(producto_data['imagen'], timeout=5)
-                        response.raise_for_status()
-                        image = Image.open(BytesIO(response.content))
-                        st.image(image, width=200, caption="Imagen del producto")
-                    except Exception as e:
-                        st.write("🔗 **Imagen no disponible o URL inválida.**")
-                else:
-                    st.write("🔗 **No hay imagen disponible.**")
+                    st.warning(f"Este producto tiene venta forzada por {int(producto_data
+
 # ===============================
 # Módulo Equipo
 # ===============================
