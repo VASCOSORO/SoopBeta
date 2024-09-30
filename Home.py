@@ -150,6 +150,22 @@ def login():
         st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
 
 # ===============================
+# Función para verificar nivel de acceso (función faltante)
+# ===============================
+def verificar_acceso(nivel_requerido):
+    niveles = {
+        'Bajo': 1,
+        'Medio': 2,
+        'Alto': 3,
+        'Super Admin': 4
+    }
+    if st.session_state.usuario:
+        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
+        if niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0):
+            return True
+    return False
+
+# ===============================
 # Función para convertir DataFrame a Excel en memoria usando openpyxl
 # ===============================
 
