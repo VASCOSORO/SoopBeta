@@ -16,101 +16,47 @@ from fpdf import FPDF  # Para la generación de PDF
 # Inicialización del Estado de Sesión
 # ===============================
 
-# Inicializar el estado del pedido y el stock si no existen
+# Inicializar 'pedido' si no existe
 if 'pedido' not in st.session_state:
     st.session_state.pedido = []
 
-# Inicializar 'df_productos' si no existe
-if 'df_productos' not in st.session_state:
-    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
-    if os.path.exists(file_path_productos):
-        try:
-            st.session_state.df_productos = pd.read_excel(file_path_productos)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de productos: {e}")
-            st.stop()
-    else:
-        st.warning(f"⚠️ El archivo {file_path_productos} no existe. Por favor, súbelo desde el módulo Productos.")
-        st.session_state.df_productos = pd.DataFrame()  # DataFrame vacío
-
-# Inicializar 'df_clientes' si no existe
-if 'df_clientes' not in st.session_state:
-    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-    if os.path.exists(file_path_clientes):
-        try:
-            st.session_state.df_clientes = pd.read_excel(file_path_clientes)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de clientes: {e}")
-            st.stop()
-    else:
-        st.warning(f"⚠️ El archivo {file_path_clientes} no existe. Por favor, súbelo desde el módulo Convertidor de CSV.")
-        st.session_state.df_clientes = pd.DataFrame()  # DataFrame vacío
-
-# Inicializar 'df_equipo' si no existe
-if 'df_equipo' not in st.session_state:
-    file_path_equipo = 'equipo.xlsx'
-    if os.path.exists(file_path_equipo):
-        try:
-            st.session_state.df_equipo = pd.read_excel(file_path_equipo)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de equipo: {e}")
-            st.stop()
-    else:
-        # Definir los miembros del equipo
-        data_equipo = {
-            'Nombre': [
-                'Joni', 'Eduardo', 'Johan', 'Martin',
-                'Marian', 'Sofi', 'Valen', 'Emily',
-                'Maria-Jose', 'Vasco'
-            ],
-            'Rol': [
-                'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                'Vendedora', 'Vendedora', 'Vendedora', 'Vendedora',
-                'Fotógrafa y Catalogador', 'Super Admin'
-            ],
-            'Departamento': [
-                'Dirección', 'Dirección', 'Depósito', 'Depósito',
-                'Ventas', 'Ventas', 'Ventas', 'Ventas',
-                'Marketing', 'Dirección'
-            ],
-            'Nivel de Acceso': [
-                'Alto', 'Alto', 'Medio', 'Medio',
-                'Bajo', 'Bajo', 'Bajo', 'Bajo',
-                'Medio', 'Super Admin'
-            ]
-        }
-        st.session_state.df_equipo = pd.DataFrame(data_equipo)
-        # Guardar el DataFrame inicial en Excel
-        try:
-            st.session_state.df_equipo.to_excel(file_path_equipo, index=False)
-        except Exception as e:
-            st.error(f"Error al guardar el archivo de equipo: {e}")
+# Inicializar 'delete_confirm' como un diccionario si no existe
+if 'delete_confirm' not in st.session_state:
+    st.session_state.delete_confirm = {}
 
 # Inicializar 'usuario' en sesión si no existe
 if 'usuario' not in st.session_state:
     st.session_state.usuario = None
 
-# Inicializar 'df_administracion' si no existe
-if 'df_administracion' not in st.session_state:
-    file_path_administracion = 'AdministracionSoop.xlsx'
-    if os.path.exists(file_path_administracion):
-        try:
-            st.session_state.df_administracion = pd.read_excel(file_path_administracion)
-            # Verificar si las columnas necesarias existen
-            columnas_necesarias = ['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora']
-            for col in columnas_necesarias:
-                if col not in st.session_state.df_administracion.columns:
-                    st.session_state.df_administracion[col] = None
-            st.session_state.df_administracion = st.session_state.df_administracion[columnas_necesarias]
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de administración: {e}")
-            st.stop()
-    else:
-        st.session_state.df_administracion = pd.DataFrame(columns=['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora'])
+# Función para inicializar DataFrame desde Excel o crear uno nuevo
+def inicializar_dataframe(nombre_df, columnas, archivo):
+    if nombre_df not in st.session_state:
+        if os.path.exists(archivo):
+            try:
+                df = pd.read_excel(archivo)
+                # Verificar si las columnas necesarias existen
+                for col in columnas:
+                    if col not in df.columns:
+                        df[col] = None
+                df = df[columnas]
+                st.session_state[nombre_df] = df
+            except Exception as e:
+                st.error(f"Error al cargar el archivo {archivo}: {e}")
+                st.stop()
+        else:
+            st.warning(f"⚠️ El archivo {archivo} no existe. Creándolo automáticamente.")
+            st.session_state[nombre_df] = pd.DataFrame(columns=columnas)
+            try:
+                st.session_state[nombre_df].to_excel(archivo, index=False)
+            except Exception as e:
+                st.error(f"Error al crear el archivo {archivo}: {e}")
+                st.stop()
 
-# Inicializar 'delete_confirm' como un diccionario si no existe
-if 'delete_confirm' not in st.session_state:
-    st.session_state.delete_confirm = {}
+# Inicializar DataFrames necesarios
+inicializar_dataframe('df_productos', ['Codigo', 'Nombre', 'Precio', 'Stock', 'forzar multiplos', 'imagen'], 'archivo_modificado_productos_20240928_201237.xlsx')
+inicializar_dataframe('df_clientes', ['Nombre', 'Descuento', 'Fecha Modificado', 'Vendedores'], 'archivo_modificado_clientes_20240928_200050.xlsx')
+inicializar_dataframe('df_equipo', ['Nombre', 'Rol', 'Departamento', 'Nivel de Acceso'], 'equipo.xlsx')
+inicializar_dataframe('df_administracion', ['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora'], 'AdministracionSoop.xlsx')
 
 # ===============================
 # Funciones de Utilidad
@@ -159,10 +105,7 @@ def verificar_acceso(nivel_requerido):
             return True
     return False
 
-# ===============================
-# Función para Guardar Pedido en Excel
-# ===============================
-
+# Función para guardar el pedido en Excel
 def guardar_pedido_excel(file_path, order_data):
     try:
         if os.path.exists(file_path):
@@ -204,10 +147,55 @@ def guardar_pedido_excel(file_path, order_data):
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
 
+# Función para generar factura en PDF
+def generar_factura(order_data):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    pdf.cell(200, 10, txt="Factura de Pedido", ln=True, align='C')
+    pdf.cell(200, 10, txt=f"Cliente: {order_data['cliente']}", ln=True)
+    pdf.cell(200, 10, txt=f"Vendedor: {order_data['vendedor']}", ln=True)
+    pdf.cell(200, 10, txt=f"Fecha: {order_data['fecha']}", ln=True)
+    pdf.cell(200, 10, txt=f"Hora: {order_data['hora']}", ln=True)
+    
+    pdf.ln(10)  # Salto de línea
+    
+    # Tabla de ítems
+    pdf.cell(40, 10, "Código", 1)
+    pdf.cell(80, 10, "Nombre", 1)
+    pdf.cell(30, 10, "Cantidad", 1)
+    pdf.cell(40, 10, "Importe", 1)
+    pdf.ln()
+    
+    for item in order_data['items']:
+        pdf.cell(40, 10, item['Codigo'], 1)
+        pdf.cell(80, 10, item['Nombre'], 1)
+        pdf.cell(30, 10, str(item['Cantidad']), 1)
+        pdf.cell(40, 10, f"${item['Importe']:.2f}", 1)
+        pdf.ln()
+    
+    # Guardar el PDF
+    pdf_output = "factura_pedido.pdf"
+    pdf.output(pdf_output)
+    
+    # Permitir descarga
+    with open(pdf_output, "rb") as f:
+        st.download_button(
+            label="Descargar Factura",
+            data=f,
+            file_name=f"Factura_Pedido_{order_data['fecha']}.pdf",
+            mime="application/octet-stream"
+        )
+    
+    # Eliminar el archivo temporal
+    os.remove(pdf_output)
+
 # ===============================
-# Módulo Ventas
+# Funciones de Cada Módulo
 # ===============================
 
+# Ventas Module
 def modulo_ventas():
     st.header("📁 Ventas")
     
@@ -340,7 +328,7 @@ def modulo_ventas():
             st.header("📦 Pedido actual")
     
             # Mostrar la tabla del pedido con la opción de eliminar ítems
-            for producto in st.session_state.pedido.copy():  # Use copy to avoid modification during iteration
+            for idx, producto in enumerate(st.session_state.pedido.copy()):
                 codigo = producto['Codigo']
                 nombre = producto['Nombre']
                 cantidad = producto['Cantidad']
@@ -359,21 +347,23 @@ def modulo_ventas():
                 if codigo in st.session_state.delete_confirm:
                     # Mostrar botones "Sí" y "No"
                     with col6:
-                        if st.button("Sí", key=f"confirmar_si_{codigo}"):
-                            # Eliminar el ítem del pedido
-                            index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
-                            if index is not None:
-                                producto_eliminado = st.session_state.pedido.pop(index)
+                        col6.write("¿Eliminar?")
+                        col_si, col_no = st.columns([1,1])
+                        with col_si:
+                            if st.button("Sí", key=f"confirmar_si_{codigo}"):
+                                # Eliminar el ítem del pedido
+                                st.session_state.pedido.pop(idx)
                                 # Reponer el stock
                                 st.session_state.df_productos.loc[
-                                    st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
-                                ] += producto_eliminado['Cantidad']
-                            # Remover del diccionario de confirmaciones
-                            del st.session_state.delete_confirm[codigo]
-    
-                        if st.button("No", key=f"confirmar_no_{codigo}"):
-                            # Cancelar la eliminación
-                            del st.session_state.delete_confirm[codigo]
+                                    st.session_state.df_productos['Codigo'] == codigo, 'Stock'
+                                ] += cantidad
+                                # Remover del diccionario de confirmaciones
+                                del st.session_state.delete_confirm[codigo]
+                                st.experimental_rerun()
+                        with col_no:
+                            if st.button("No", key=f"confirmar_no_{codigo}"):
+                                # Cancelar la eliminación
+                                del st.session_state.delete_confirm[codigo]
                 else:
                     # Mostrar el botón de eliminar normal
                     with col6:
@@ -420,6 +410,9 @@ def modulo_ventas():
                         # Guardar el pedido en la hoja 'Pedidos' de 'AdministracionSoop.xlsx'
                         guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
     
+                        # Generar y permitir la descarga de la factura en PDF
+                        generar_factura(order_data)
+    
                         # Confirmar al usuario
                         st.success("Pedido guardado exitosamente.", icon="✅")
     
@@ -433,10 +426,7 @@ def modulo_ventas():
                         except Exception as e:
                             st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 
-# ===============================
-# Módulo Equipo
-# ===============================
-
+# Equipo Module
 def modulo_equipo():
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
     if not verificar_acceso('Medio'):
@@ -510,10 +500,7 @@ def modulo_equipo():
                     else:
                         st.error("El nombre seleccionado no existe.")
 
-# ===============================
-# Módulo Administración
-# ===============================
-
+# Administración Module
 def modulo_administracion():
     st.header("⚙️ Administración")
 
@@ -574,7 +561,7 @@ def modulo_administracion():
         tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
         if tipo_egreso == "Proveedor":
             proveedor = st.text_input("Nombre del Proveedor")
-            detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
+            detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item, formato 'Codigo:Cantidad')")
         else:
             proveedor = st.text_input("Destino del Gasto")
             detalle_boleta = st.text_area("Detalle del Gasto")
@@ -606,7 +593,7 @@ def modulo_administracion():
                 
                 # Si el egreso es a un proveedor, actualizar el stock de productos
                 if tipo_egreso == "Proveedor":
-                    # Asumiendo que el detalle_boleta tiene productos separados por comas en el formato "Codigo:Cantidad"
+                    # Asumiendo que el detalle_boleta tiene productos separados por líneas en el formato "Codigo:Cantidad"
                     try:
                         items = detalle_boleta.strip().split('\n')
                         for item in items:
@@ -624,45 +611,47 @@ def modulo_administracion():
                     except Exception as e:
                         st.error(f"Error al actualizar el stock de productos: {e}")
 
-# ===============================
-# Módulo Estadísticas
-# ===============================
+    # Mostrar registros de ingresos y egresos
+    st.markdown("---")
+    st.subheader("📊 Registros de Caja")
+    try:
+        AgGrid(
+            st.session_state.df_administracion,
+            enable_enterprise_modules=True,
+            update_mode=GridUpdateMode.NO_UPDATE,
+            data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+            fit_columns_on_grid_load=True,
+            theme='light',
+            height=300,
+            reload_data=False
+        )
+    except Exception as e:
+        st.error(f"Error al mostrar los registros de caja: {e}")
 
+# Estadísticas Module
 def modulo_estadistica():
     st.header("📈 Estadísticas")
     st.write("Aquí puedes agregar funcionalidades de estadísticas.")
     # Placeholder: Puedes expandir esta sección con funcionalidades específicas de estadísticas.
 
-# ===============================
-# Módulo Marketing
-# ===============================
-
+# Marketing Module
 def modulo_marketing():
     st.header("📢 Marketing")
     st.write("Aquí puedes agregar funcionalidades de marketing.")
     # Placeholder: Puedes expandir esta sección con funcionalidades específicas de marketing.
 
-# ===============================
-# Módulo Logística
-# ===============================
-
+# Logística Module
 def modulo_logistica():
     st.header("🚚 Logística")
     st.write("Aquí puedes agregar funcionalidades de logística.")
     # Placeholder: Puedes expandir esta sección con funcionalidades específicas de logística.
 
-# ===============================
 # Productos Module (External Link)
-# ===============================
-
 def modulo_productos():
     st.header("🔗 Acceder al Módulo de Productos")
     st.markdown("[Abrir Módulo de Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)", unsafe_allow_html=True)
 
-# ===============================
 # Convertidor de CSV Module (External Link)
-# ===============================
-
 def modulo_convertidor_csv():
     st.header("🔗 Acceder al Convertidor de CSV")
     st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
@@ -670,7 +659,6 @@ def modulo_convertidor_csv():
 # ===============================
 # Función de Autenticación con Autocompletado
 # ===============================
-
 def login():
     st.sidebar.title("🔒 Iniciar Sesión")
     
@@ -700,18 +688,30 @@ def login():
         help="Selecciona tu nombre de la lista."
     )
     
-    # Si se selecciona un nombre, autenticar al usuario
-    if nombre_seleccionado:
-        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
-        st.session_state.usuario = {
-            'Nombre': usuario_data['Nombre'],
-            'Rol': usuario_data['Rol'],
-            'Departamento': usuario_data['Departamento'],
-            'Nivel de Acceso': usuario_data['Nivel de Acceso']
-        }
-        st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
-    else:
-        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
+    # Campo de texto para ingresar la contraseña (por ahora sin validar)
+    contraseña = st.sidebar.text_input("Contraseña", type="password", key="contraseña_ingresada")
+    
+    # Botón para autenticar
+    if st.sidebar.button("Iniciar Sesión"):
+        if nombre_seleccionado == "":
+            st.sidebar.error("Por favor, selecciona tu nombre.")
+        elif contraseña == "":
+            st.sidebar.error("Por favor, ingresa tu contraseña.")
+        else:
+            # Aquí se puede agregar la validación de la contraseña en el futuro
+            usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado]
+            if not usuario_data.empty:
+                usuario_data = usuario_data.iloc[0]
+                st.session_state.usuario = {
+                    'Nombre': usuario_data['Nombre'],
+                    'Rol': usuario_data['Rol'],
+                    'Departamento': usuario_data['Departamento'],
+                    'Nivel de Acceso': usuario_data['Nivel de Acceso']
+                    # 'Contraseña': contraseña  # A implementar en el futuro
+                }
+                st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+            else:
+                st.sidebar.error("Nombre de usuario no encontrado.")
 
 # ===============================
 # Configuración de la Página
@@ -723,10 +723,8 @@ st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
 st.title("🐻 Módulo de Ventas 🛒")
 
 # Sidebar para Inicio de Sesión
-login()
-
-# Si el usuario no está autenticado, detener la ejecución
 if not st.session_state.usuario:
+    login()
     st.stop()
 
 # Mostrar información del usuario en la parte superior
