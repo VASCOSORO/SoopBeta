@@ -958,12 +958,24 @@ def generar_pdf(productos):
     
     for i, producto in enumerate(productos, 1):
         producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
-        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
-        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
-        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
-        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
-        pdf.cell(200, 10, txt="---", ln=True)
-    
+
+        # Descargar la imagen del producto
+        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+            try:
+                response = requests.get(producto_data['imagen'], timeout=5)
+                response.raise_for_status()
+                img = Image.open(BytesIO(response.content))
+                img.save(f"producto_{i}.png")  # Guardar la imagen temporalmente
+                pdf.image(f"producto_{i}.png", x=10, y=pdf.get_y(), w=30, h=30)
+            except Exception:
+                pdf.cell(30, 30, txt="No image", border=1)
+
+        pdf.cell(100, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
+        pdf.cell(100, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
+        pdf.cell(100, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
+        pdf.cell(100, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
+        pdf.ln(20)
+
     # Guardar el PDF
     pdf_output = BytesIO()
     pdf.output(pdf_output)
@@ -979,11 +991,21 @@ def generar_imagen_png(productos):
     for i, producto in enumerate(productos, 1):
         producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
         
+        # Descargar y mostrar imagen del producto
+        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+            try:
+                response = requests.get(producto_data['imagen'], timeout=5)
+                response.raise_for_status()
+                product_img = Image.open(BytesIO(response.content)).resize((100, 100))
+                img.paste(product_img, (20, y_offset))
+            except Exception:
+                draw.text((20, y_offset), "No image", font=font, fill=(0, 0, 0))
+
         # Escribir el nombre, código y proveedor
-        draw.text((20, y_offset), f"Producto {i}: {producto_data['Nombre']}", font=font, fill=(0, 0, 0))
-        draw.text((20, y_offset + 20), f"Código: {producto_data['Codigo']}", font=font, fill=(0, 0, 0))
-        draw.text((20, y_offset + 40), f"Proveedor: {producto_data['Proveedor']}", font=font, fill=(0, 0, 0))
-        y_offset += 100
+        draw.text((140, y_offset), f"Producto {i}: {producto_data['Nombre']}", font=font, fill=(0, 0, 0))
+        draw.text((140, y_offset + 20), f"Código: {producto_data['Codigo']}", font=font, fill=(0, 0, 0))
+        draw.text((140, y_offset + 40), f"Proveedor: {producto_data['Proveedor']}", font=font, fill=(0, 0, 0))
+        y_offset += 120
 
     # Guardar la imagen en memoria
     img_output = BytesIO()
@@ -1009,7 +1031,6 @@ def generar_pdf_flayer(productos):
 def generar_imagen_flayer(productos):
     st.write("🖼️ Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
     generar_imagen_png(productos)
-   
 # ===============================
 # Módulo Logística
 # ===============================
