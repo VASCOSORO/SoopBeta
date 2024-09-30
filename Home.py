@@ -523,7 +523,7 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedor Fijo", vendedores, index=0)
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
     # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
     if cliente_seleccionado != "":
@@ -546,7 +546,7 @@ def modulo_ventas():
             }
             credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')  # Asumiendo que 'Estado Credito' existe
             color_credito = opciones_credito.get(credito_cliente, '🟡')  # Valor por defecto si no coincide
-            st.write(f"**.** {color_credito} {credito_cliente}")
+            st.write(f"**"👨‍🦼"** {color_credito} {credito_cliente}")
 
         with col3:
             forma_pago = st.selectbox(
