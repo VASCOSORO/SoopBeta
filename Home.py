@@ -514,34 +514,37 @@ def modulo_equipo():
         st.stop()
     
     st.header("👥 Equipo de Trabajo")
-    
-    # Simulación de avatar (en un sistema real, esto puede ser un campo en el DataFrame)
-    avatars = {
-        'Joni': 'https://via.placeholder.com/150',  # Reemplazá esto con URLs de imágenes reales
-        'Eduardo': 'https://via.placeholder.com/150',
-        'Vasco': 'https://via.placeholder.com/150',
-    }
 
-    # Fichas de miembros estilo carnet
-    for index, row in st.session_state.df_equipo.iterrows():
+    # Añadir una columna de 'Avatar' si no existe
+    if 'Avatar' not in st.session_state.df_equipo.columns:
+        st.session_state.df_equipo['Avatar'] = 'https://via.placeholder.com/150'
+    
+    # Buscar un miembro del equipo para mostrar su ficha
+    miembro_seleccionado = st.selectbox(
+        "Seleccionar Miembro del Equipo", 
+        [""] + st.session_state.df_equipo['Nombre'].unique().tolist()
+    )
+
+    if miembro_seleccionado:
+        # Mostrar la ficha del miembro seleccionado
+        miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_seleccionado].iloc[0]
+        
         col1, col2 = st.columns([1, 4])
         
         with col1:
             # Mostrar avatar
-            avatar_url = avatars.get(row['Nombre'], 'https://via.placeholder.com/150')
+            avatar_url = miembro_data['Avatar']
             st.image(avatar_url, width=100)
         
         with col2:
-            st.subheader(row['Nombre'])
-            st.write(f"**Rol:** {row['Rol']}")
-            st.write(f"**Departamento:** {row['Departamento']}")
-            st.write(f"**Nivel de Acceso:** {row['Nivel de Acceso']}")
-            estado = "Activo" if row.get('Estado', 'Activo') == 'Activo' else "Inactivo"
+            st.subheader(miembro_data['Nombre'])
+            st.write(f"**Rol:** {miembro_data['Rol']}")
+            st.write(f"**Departamento:** {miembro_data['Departamento']}")
+            st.write(f"**Nivel de Acceso:** {miembro_data['Nivel de Acceso']}")
+            estado = "Activo" if miembro_data['Estado'] == 'Activo' else "Inactivo"
             st.write(f"**Estado:** {estado}")
 
         st.markdown("---")
-    
-    st.markdown("---")
     
     # Opciones de gestión solo para Super Admin
     if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
@@ -674,6 +677,7 @@ def modulo_equipo():
                             st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
                     else:
                         st.error("El nombre seleccionado no existe.")
+
 # ===============================
 # Módulo Administración
 # ===============================
