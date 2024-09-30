@@ -380,8 +380,8 @@ def modulo_ventas():
                 # Mostrar código del producto
                 st.write(f"**Código del producto:** {producto_data['Codigo']}")
     
-                # Verificar si la venta está forzada por múltiplos
-                if pd.notna(producto_data['forzar_multiplos']) and producto_data['forzar_multiplos'] > 0:
+                # Verificar si el campo 'forzar_multiplos' existe y es válido
+                if 'forzar_multiplos' in producto_data and pd.notna(producto_data['forzar_multiplos']) and producto_data['forzar_multiplos'] > 0:
                     st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar_multiplos'])} unidades.")
                     cantidad = st.number_input(
                         "Cantidad",
@@ -438,6 +438,7 @@ def modulo_ventas():
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
                     st.write("🔗 **No hay imagen disponible.**")
+
 # ===============================
 # Módulo Equipo
 # ===============================
