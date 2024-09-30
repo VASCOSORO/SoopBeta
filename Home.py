@@ -330,15 +330,18 @@ def modulo_ventas():
         rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]  # Rubros ficticios
         rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
 
-        # Lógica para filtrar productos por rubro
-        if rubros_seleccionados:
-            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))]
-            productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
-            cantidad_filtrados = len(productos_filtrados)
-            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por los rubros seleccionados")
+        # Lógica para filtrar productos por rubro (aseguramos que la columna 'Rubros' exista en df_productos)
+        if 'Rubros' in st.session_state.df_productos.columns:
+            if rubros_seleccionados:
+                productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))]
+                productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
+                cantidad_filtrados = len(productos_filtrados)
+                st.info(f"Mostrando {cantidad_filtrados} productos filtrados por los rubros seleccionados")
+            else:
+                productos_filtrados = st.session_state.df_productos
+                st.info("Mostrando todos los productos disponibles")
         else:
-            productos_filtrados = st.session_state.df_productos
-            st.info("Mostrando todos los productos disponibles")
+            st.error("La columna 'Rubros' no existe en la base de datos de productos.")
 
         # Sección de productos solo aparece si hay cliente seleccionado
         st.header("🔍 Buscador de Productos 🕶️")
