@@ -188,11 +188,14 @@ login()
 if not st.session_state.usuario:
     st.stop()
 
-# Mostrar información del usuario en la parte superior
-st.markdown(f"### Usuario: **{st.session_state.usuario['Nombre']}**")
-st.markdown(f"### Rol: **{st.session_state.usuario['Rol']}**")
-st.markdown("---")
+# Crear dos columnas con proporciones iguales
+col1, col2 = st.columns(2)
 
+with col1:
+    st.write(f"**Usuario:** {st.session_state.usuario['Nombre']}")
+
+with col2:
+    st.write(f"**Rol:** {st.session_state.usuario['Rol']}")
 # ===============================
 # Funciones de Utilidad
 # ===============================
