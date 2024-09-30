@@ -287,9 +287,10 @@ def modulo_ventas():
         )
         
     with col2:
-        if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
+        if cliente_seleccionado != "":
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+            vendedor_default = vendedores[0]
             vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
     # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
@@ -322,23 +323,24 @@ def modulo_ventas():
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
         
-        # Desplegable para las notas del cliente
-        with st.expander("🔖 Notas del Cliente"):
-            st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
+        # Rubros del cliente como desplegable y lógica de filtrado
+        rubros_cliente = cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
+        rubro_seleccionado = st.selectbox("🏷️ Filtrar por Rubro del Cliente", [""] + rubros_cliente, help="Seleccioná un rubro para filtrar productos")
 
-        # Filtrar por categorías (en lugar de rubros)
-        categorias_disponibles = st.session_state.df_productos['Categorías'].unique().tolist()
-        categorias_seleccionadas = st.multiselect("🏷️ Filtrar por Categoría", categorias_disponibles, help="Seleccioná categorías para filtrar productos")
-
-        # Lógica para filtrar productos por categoría
-        if categorias_seleccionadas:
-            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Categorías'].isin(categorias_seleccionadas)]
+        # Filtrar productos por el rubro seleccionado
+        if rubro_seleccionado:
+            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].str.contains(rubro_seleccionado, na=False)]
             productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
             cantidad_filtrados = len(productos_filtrados)
-            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por las categorías seleccionadas")
+            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por el rubro '{rubro_seleccionado}'")
         else:
             productos_filtrados = st.session_state.df_productos
             st.info("Mostrando todos los productos disponibles")
+
+        # Desplegable para las notas del cliente
+        st.write("---")
+        with st.expander("🔖 Notas del Cliente"):
+            st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
 
         # Sección de productos solo aparece si hay cliente seleccionado
         st.header("🔍 Buscador de Productos 🕶️")
@@ -347,7 +349,7 @@ def modulo_ventas():
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
     
         with col_prod1:
-            # Buscador de productos con el filtro de categorías aplicado si existe
+            # Buscador de productos con el rubro seleccionado aplicado si existe
             producto_buscado = st.selectbox(
                 "Buscar producto",
                 [""] + productos_filtrados['Nombre'].unique().tolist(),
@@ -360,7 +362,7 @@ def modulo_ventas():
             with col_prod2:
                 # Mostrar precio
                 st.write(f"**Precio:** ${producto_data['Precio']}")
-
+    
             with col_prod3:
                 # Mostrar stock con colores según la cantidad
                 stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
@@ -381,12 +383,12 @@ def modulo_ventas():
                 st.write(f"**Código del producto:** {producto_data['Codigo']}")
     
                 # Verificar si la venta está forzada por múltiplos
-                if pd.notna(producto_data['forzar_multiplos']) and producto_data['forzar_multiplos'] > 0:
-                    st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar_multiplos'])} unidades.")
+                if pd.notna(producto_data['forzar multiplos']) and producto_data['forzar multiplos'] > 0:
+                    st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar multiplos'])} unidades.")
                     cantidad = st.number_input(
                         "Cantidad",
-                        min_value=int(producto_data['forzar_multiplos']),
-                        step=int(producto_data['forzar_multiplos']),
+                        min_value=int(producto_data['forzar multiplos']),
+                        step=int(producto_data['forzar multiplos']),
                         key=f"cantidad_{producto_data['Codigo']}"
                     )
                 else:
@@ -438,7 +440,6 @@ def modulo_ventas():
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
                     st.write("🔗 **No hay imagen disponible.**")
-
 
 # ===============================
 # Módulo Equipo
