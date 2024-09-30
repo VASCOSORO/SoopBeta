@@ -487,7 +487,7 @@ def modulo_ventas():
                         guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
     
                         # Confirmar al usuario
-                        st.success("Pedido guardado exitosamente.", icon="✅")
+                        st.success("Pedido guardado exitosamente.", icon="✅📈")
     
                         # Limpiar el pedido después de guardarlo
                         st.session_state.pedido = []
@@ -691,7 +691,7 @@ def modulo_equipo():
 # ===============================
 
 def modulo_administracion():
-    st.header("⚙️ Administración")
+    st.header("🗃️ Administración")
 
     # Mostrar la caja actual en la parte superior, destacada y con último ingreso/egreso
     try:
@@ -850,7 +850,7 @@ def modulo_administracion():
 # ===============================
 
 def modulo_estadistica():
-    st.header("📈 Estadísticas para la toma de decisiones")
+    st.header("📈Modulo Estadistics📊")
 
     # Datos ficticios (incluyendo los vendedores)
     data_ficticia_ventas = {
@@ -951,7 +951,7 @@ def modulo_estadistica():
     st.markdown("---")
 
     # Productividad del equipo (ficticio)
-    st.subheader("👥 Productividad del Equipo")
+    st.subheader("👥Productividad del Equipo📈")
     st.table(df_vendedores_ficticio[['Nombre', 'Monto']])
 # ===============================
 # Importaciones necesarias
@@ -966,7 +966,7 @@ from fpdf import FPDF  # Para la generación de PDF
 # ===============================
 
 def modulo_marketing():
-    st.header("📢 Marketing y Gestión de Productos")
+    st.header("📢Marketing y Gestión de Productos📸")
 
     # Parte 1: Visualizar productos
     st.subheader("🔍 Buscar y Ver Productos")
@@ -1062,14 +1062,14 @@ def modulo_marketing():
     st.markdown("---")
 
     # Parte 3: Ver últimos productos agregados
-    st.subheader("🆕 Últimos Productos Agregados")
+    st.subheader("🆕Últimos Productos Agregados🔥")
     ultimos_productos = st.session_state.df_productos.tail(5)
     st.table(ultimos_productos[['Codigo', 'Nombre', 'Proveedor', 'Stock']])
 
     st.markdown("---")
     
     # Parte 4: Crear PDF o Imágenes
-    st.subheader("📄 Crear PDF o Imagen con Productos Seleccionados")
+    st.subheader("🧙🏻‍♂️Crear PDF o Imagen con Productos Seleccionados📄")
     
     productos_seleccionados = st.multiselect("Seleccionar productos para el PDF/Imagen", 
                                              st.session_state.df_productos['Nombre'].unique())
@@ -1086,7 +1086,7 @@ def modulo_marketing():
     st.markdown("---")
 
     # Parte 5: Creador de Flayer
-    st.subheader("🎨 Creador de Flayer")
+    st.subheader("🎨Creador de Flayer👻")
     
     with st.expander("Generar Flayer de Productos"):
         productos_flayer = st.multiselect("Seleccionar productos para el Flayer", 
@@ -1197,15 +1197,15 @@ def generar_imagen_png(productos):
 # ===============================
 
 def generar_flayer_preview(productos):
-    st.write("🖼️ Aquí se generará una vista previa del flayer con los productos seleccionados.")
+    st.write("🎞️Aquí se generará una vista previa del flayer con los productos seleccionados.")
     generar_imagen_png(productos)
 
 def generar_pdf_flayer(productos):
-    st.write("📄 Aquí se generará un PDF con los productos seleccionados en formato de flayer.")
+    st.write("📄Aquí se generará un PDF con los productos seleccionados en formato de flayer.")
     generar_pdf(productos)
 
 def generar_imagen_flayer(productos):
-    st.write("🖼️ Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
+    st.write("👨‍🦼Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
     generar_imagen_png(productos)
 
 # ===============================
@@ -1219,7 +1219,7 @@ def modulo_logistica():
     st.header("🚚 Gestión de Logística")
 
     # Parte 1: Tabla de Pedidos Ingresados
-    st.subheader("📋 Pedidos Ingresados")
+    st.subheader("🧩Pedidos Ingresados")
     
     # Simulación de datos de pedidos ingresados
     pedidos_data = {
@@ -1266,7 +1266,7 @@ def modulo_logistica():
     st.markdown("---")
     
     # Parte 2: Ingresar Boletas de Proveedores
-    st.subheader("📄 Ingreso de Boletas de Proveedores")
+    st.subheader("🚚Ingreso de Boletas de Proveedores")
     
     with st.expander("Ingresar Nueva Boleta", expanded=False):
         with st.form("form_boleta"):
@@ -1348,7 +1348,7 @@ def modulo_convertidor_csv():
 # Navegación entre Módulos
 # ===============================
 
-st.sidebar.title("📚 Navegación")
+st.sidebar.title("📚Modulos🧬")
 
 # Internal navigation
 seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
@@ -1356,8 +1356,8 @@ seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Esta
 # External links
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Módulos Externos:**")
-st.sidebar.markdown("[📁 Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)")
-st.sidebar.markdown("[📁 Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)")
+st.sidebar.markdown("[🧞‍♂️Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)")
+st.sidebar.markdown("[🧫Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)")
 
 # ===============================
 # Implementación de Módulos
