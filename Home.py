@@ -280,23 +280,56 @@ import pandas as pd
 import requests
 from PIL import Image
 from io import BytesIO
+from datetime import datetime
+
+def guardar_pedido_excel(archivo, order_data):
+    """
+    Función para guardar el pedido en un archivo Excel.
+    Ajusta esta función según la estructura de tu archivo Excel y tus necesidades.
+    """
+    try:
+        # Cargar el archivo existente o crear uno nuevo si no existe
+        try:
+            df_pedidos = pd.read_excel(archivo, sheet_name='Pedidos')
+        except FileNotFoundError:
+            df_pedidos = pd.DataFrame(columns=['Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
+
+        # Preparar los datos del pedido
+        nuevo_pedido = {
+            'Cliente': order_data['cliente'],
+            'Vendedor': order_data['vendedor'],
+            'Fecha': order_data['fecha'],
+            'Hora': order_data['hora'],
+            'Items': [str(item) for item in order_data['items']]  # Convertir los ítems a string para almacenarlos
+        }
+
+        # Añadir el nuevo pedido al DataFrame existente
+        df_pedidos = df_pedidos.append(nuevo_pedido, ignore_index=True)
+
+        # Guardar de vuelta en el archivo Excel
+        with pd.ExcelWriter(archivo, engine='openpyxl', mode='w') as writer:
+            df_pedidos.to_excel(writer, sheet_name='Pedidos', index=False)
+    except Exception as e:
+        st.error(f"Error al guardar el pedido: {e}")
 
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
-    
-    # Inicializar el pedido en session_state si no existe
+
+    # Inicializar el pedido y delete_confirm en session_state si no existen
     if 'pedido' not in st.session_state:
         st.session_state.pedido = []
-    
+    if 'delete_confirm' not in st.session_state:
+        st.session_state.delete_confirm = {}
+
     # Colocamos el buscador de cliente y vendedor asignado en la misma fila
     col1, col2 = st.columns([2, 1])
-    
+
     with col1:
         cliente_seleccionado = st.selectbox(
             "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
             help="Escribí el nombre del cliente o seleccioná uno de la lista."
         )
-        
+
     with col2:
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
@@ -315,7 +348,7 @@ def modulo_ventas():
 
         with col1:
             st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
-        
+
         with col2:
             opciones_credito = {
                 'Buen pagador': '🟢',
@@ -332,7 +365,7 @@ def modulo_ventas():
                 ["CC", "Contado", "Depósito/Transferencia"],
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
-        
+
         # Desplegable para las notas del cliente
         with st.expander("🔖 Notas del Cliente"):
             st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
@@ -343,7 +376,9 @@ def modulo_ventas():
 
         # Lógica para filtrar productos por la columna 'Categorías' en lugar de 'Rubros'
         if rubros_seleccionados:
-            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Categorías'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))]
+            productos_filtrados = st.session_state.df_productos[
+                st.session_state.df_productos['Categorías'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))
+            ]
             productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
             cantidad_filtrados = len(productos_filtrados)
             st.info(f"Mostrando {cantidad_filtrados} productos filtrados por los rubros seleccionados")
@@ -353,10 +388,10 @@ def modulo_ventas():
 
         # Sección de productos solo aparece si hay cliente seleccionado
         st.header("🔍 Buscador de Productos 🕶️")
-    
+
         # Tres columnas: Buscador, precio, y stock con colores
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
-    
+
         with col_prod1:
             # Buscador de productos con el rubro seleccionado aplicado si existe
             producto_buscado = st.selectbox(
@@ -364,14 +399,14 @@ def modulo_ventas():
                 [""] + productos_filtrados['Nombre'].unique().tolist(),
                 help="Escribí el nombre del producto o seleccioná uno de la lista."
             )
-    
+
         if producto_buscado:
             producto_data = productos_filtrados[productos_filtrados['Nombre'] == producto_buscado].iloc[0]
-    
+
             with col_prod2:
                 # Mostrar precio
                 st.write(f"**Precio:** ${producto_data['Precio']}")
-    
+
             with col_prod3:
                 # Mostrar stock con colores según la cantidad
                 stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
@@ -381,16 +416,16 @@ def modulo_ventas():
                     color = 'orange'
                 else:
                     color = 'green'
-    
+
                 st.markdown(f"<span style='color:{color}'>**Stock disponible:** {stock}</span>", unsafe_allow_html=True)
-    
+
             # Dividimos la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
             col_izq, col_der = st.columns([2, 1])
-    
+
             with col_izq:
                 # Mostrar código del producto
                 st.write(f"**Código del producto:** {producto_data['Codigo']}")
-    
+
                 # Verificar si el campo 'forzar_multiplos' existe y es válido
                 if 'forzar_multiplos' in producto_data and pd.notna(producto_data['forzar_multiplos']) and producto_data['forzar_multiplos'] > 0:
                     st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar_multiplos'])} unidades.")
@@ -413,7 +448,7 @@ def modulo_ventas():
                     else:
                         cantidad = 0
                         st.error("No hay stock disponible para este producto.")
-    
+
                 # Botón para agregar el producto al pedido, deshabilitado si no hay stock
                 boton_agregar_desactivado = stock <= 0  # Deshabilitar el botón si no hay stock
                 if st.button("Agregar producto", disabled=boton_agregar_desactivado, key=f"agregar_{producto_data['Codigo']}"):
@@ -424,7 +459,7 @@ def modulo_ventas():
                     else:
                         # Añadir producto al pedido con la cantidad seleccionada
                         producto_agregado = {
-                            'Código': producto_data['Codigo'],
+                            'Codigo': producto_data['Codigo'],
                             'Nombre': producto_data['Nombre'],
                             'Cantidad': cantidad,
                             'Precio Unitario': producto_data['Precio'],
@@ -436,7 +471,7 @@ def modulo_ventas():
                             st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'
                         ] -= cantidad
                         st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
-    
+
             with col_der:
                 # Mostrar imagen del producto en la columna aparte
                 if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
@@ -447,216 +482,110 @@ def modulo_ventas():
                         st.image(image, width=200, caption="Imagen del producto")
                     except Exception as e:
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
-    
+
     # ----------------------------
     # Sección para mostrar el pedido actual
     # ----------------------------
-    st.header("🛒 Pedido Actual")
-    
+    st.header("📦 Pedido Actual")
+
     if st.session_state.pedido:
-        df_pedido = pd.DataFrame(st.session_state.pedido)
-        df_pedido['Importe'] = df_pedido['Cantidad'] * df_pedido['Precio Unitario']
-        st.table(df_pedido[['Código', 'Nombre', 'Cantidad', 'Precio Unitario', 'Importe']])
+        # Mostrar la tabla del pedido con la opción de eliminar ítems
+        for producto in st.session_state.pedido.copy():  # Use copy to avoid modification during iteration
+            codigo = producto['Codigo']
+            nombre = producto['Nombre']
+            cantidad = producto['Cantidad']
+            precio_unitario = producto['Precio Unitario']
+            importe = producto['Importe']
 
-        # Mostrar total del pedido
-        total = sum(item['Importe'] for item in st.session_state.pedido)
-        st.markdown(f"**Total Pedido:** ${total:.2f}")
+            # Crear columnas para mostrar el producto y el botón de eliminar
+            col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 1, 1, 1, 1])
+            col1.write(codigo)
+            col2.write(nombre)
+            col3.write(cantidad)
+            col4.write(f"${precio_unitario}")
+            col5.write(f"${importe}")
 
-        # Botón para limpiar el pedido
-        if st.button("🗑️ Limpiar Pedido"):
-            st.session_state.pedido = []
-            st.success("Pedido limpiado exitosamente.")
-    else:
-        st.info("No hay productos en el pedido actualmente.")
+            # Verificar si este producto está pendiente de eliminación
+            if codigo in st.session_state.delete_confirm:
+                # Mostrar botones "Sí" y "No"
+                with col6:
+                    confirmar_col = st.container()
+                    col_si, col_no = confirmar_col.columns(2)
+                    if col_si.button("Sí", key=f"confirmar_si_{codigo}"):
+                        # Eliminar el ítem del pedido
+                        index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
+                        if index is not None:
+                            producto_eliminado = st.session_state.pedido.pop(index)
+                            # Reponer el stock
+                            st.session_state.df_productos.loc[
+                                st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
+                            ] += producto_eliminado['Cantidad']
+                        # Remover del diccionario de confirmaciones
+                        del st.session_state.delete_confirm[codigo]
 
-# ===============================
-# Módulo Equipo
-# ===============================
-
-import streamlit as st
-import pandas as pd
-from PIL import Image
-
-def modulo_equipo():
-    # Verificar el nivel de acceso necesario para ver el módulo de equipo
-    if not verificar_acceso('Medio'):
-        st.error("No tienes permisos para acceder a esta sección.")
-        st.stop()
-    
-    st.header("👥 Equipo de Trabajo")
-
-    # Añadir columnas de acceso y otras si no existen
-    columnas_necesarias = ['Avatar', 'Estado', 'Acceso Ventas', 'Acceso Logística', 'Acceso Administración', 'Acceso Marketing']
-    
-    for columna in columnas_necesarias:
-        if columna not in st.session_state.df_equipo.columns:
-            if columna == 'Avatar':
-                st.session_state.df_equipo['Avatar'] = 'https://via.placeholder.com/150'
-            elif columna == 'Estado':
-                st.session_state.df_equipo['Estado'] = 'Activo'
+                    if col_no.button("No", key=f"confirmar_no_{codigo}"):
+                        # Cancelar la eliminación
+                        del st.session_state.delete_confirm[codigo]
             else:
-                st.session_state.df_equipo[columna] = False  # Valores predeterminados para accesos a módulos
+                # Mostrar el botón de eliminar normal
+                with col6:
+                    if st.button('🗑️', key=f"eliminar_{codigo}"):
+                        # Marcar este ítem para eliminación
+                        st.session_state.delete_confirm[codigo] = True
 
-    # Buscar un miembro del equipo para mostrar su ficha
-    miembro_seleccionado = st.selectbox(
-        "Seleccionar Miembro del Equipo", 
-        [""] + st.session_state.df_equipo['Nombre'].unique().tolist()
-    )
+        # Calcular totales
+        pedido_df = pd.DataFrame(st.session_state.pedido)
+        total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
+        total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
 
-    if miembro_seleccionado:
-        # Mostrar la ficha del miembro seleccionado
-        miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_seleccionado].iloc[0]
-        
-        col1, col2 = st.columns([1, 4])
-        
-        with col1:
-            # Mostrar avatar
-            avatar_url = miembro_data['Avatar']
-            st.image(avatar_url, width=100)
-        
-        with col2:
-            st.subheader(miembro_data['Nombre'])
-            st.write(f"**Rol:** {miembro_data['Rol']}")
-            st.write(f"**Departamento:** {miembro_data['Departamento']}")
-            st.write(f"**Nivel de Acceso:** {miembro_data['Nivel de Acceso']}")
-            estado = "Activo" if miembro_data['Estado'] == 'Activo' else "Inactivo"
-            st.write(f"**Estado:** {estado}")
+        # Mostrar total de ítems y total del pedido en una sola fila
+        col_items, col_total = st.columns([1, 1])
 
-        st.markdown("---")
-    
-    # Opciones de gestión solo para Super Admin
-    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
-        st.subheader("🔧 Gestionar Equipo")
-        
-        # Formulario para agregar un nuevo miembro al equipo
-        with st.expander("Agregar Nuevo Miembro"):
-            with st.form("form_agregar"):
-                col_form1, col_form2 = st.columns(2)
-                
-                with col_form1:
-                    nombre = st.text_input("Nombre")
-                    rol = st.selectbox("Rol", [
-                        'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                        'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
-                    ])
-                    departamento = st.selectbox("Departamento", [
-                        'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
-                    ])
-                    nivel_acceso = st.selectbox("Nivel de Acceso", [
-                        'Bajo', 'Medio', 'Alto', 'Super Admin'
-                    ])
-                    avatar_url = st.text_input("URL del Avatar (opcional)")
-                
-                with col_form2:
-                    estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0)
-                    # Asignación de accesos a módulos
-                    acceso_ventas = st.checkbox("Acceso a Ventas")
-                    acceso_logistica = st.checkbox("Acceso a Logística")
-                    acceso_administracion = st.checkbox("Acceso a Administración")
-                    acceso_marketing = st.checkbox("Acceso a Marketing")
+        with col_items:
+            st.write(f"**Total de ítems:** {total_items}")
 
-                submit = st.form_submit_button("Agregar")
-                
-                if submit:
-                    if nombre.strip() == "":
-                        st.error("El nombre no puede estar vacío.")
-                    elif nombre.strip() in st.session_state.df_equipo['Nombre'].values:
-                        st.error("El nombre ya existe en el equipo.")
-                    else:
-                        nuevo_miembro = {
-                            'Nombre': nombre.strip(),
-                            'Rol': rol,
-                            'Departamento': departamento,
-                            'Nivel de Acceso': nivel_acceso,
-                            'Estado': estado,
-                            'Acceso Ventas': acceso_ventas,
-                            'Acceso Logística': acceso_logistica,
-                            'Acceso Administración': acceso_administracion,
-                            'Acceso Marketing': acceso_marketing,
-                            'Avatar': avatar_url if avatar_url else 'https://via.placeholder.com/150'
-                        }
-                        st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
-                        st.success(f"Miembro {nombre} agregado exitosamente.")
-                        # Guardar los cambios en Excel
-                        st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-    
-        st.markdown("---")
-        
-        # Formulario para modificar un miembro del equipo
-        with st.expander("Modificar Miembro"):
-            with st.form("form_modificar"):
-                miembro_modificar = st.selectbox(
-                    "Selecciona el nombre a modificar",
-                    st.session_state.df_equipo['Nombre'].unique().tolist()
-                )
-                miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_modificar].iloc[0]
-                
-                col_form1, col_form2 = st.columns(2)
-                
-                with col_form1:
-                    nombre = st.text_input("Nombre", value=miembro_data['Nombre'])
-                    rol = st.selectbox("Rol", [
-                        'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                        'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
-                    ], index=['Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                              'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'].index(miembro_data['Rol']))
-                    departamento = st.selectbox("Departamento", [
-                        'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
-                    ], index=['Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'].index(miembro_data['Departamento']))
-                    nivel_acceso = st.selectbox("Nivel de Acceso", [
-                        'Bajo', 'Medio', 'Alto', 'Super Admin'
-                    ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']))
-                    avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'])
+        with col_total:
+            # Mostrar total del pedido al lado de total de ítems
+            st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
 
-                with col_form2:
-                    estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
-                    # Modificar accesos a módulos
-                    acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
-                    acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
-                    acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
-                    acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
+        # Centrar el botón de guardar pedido
+        col_guardar, _ = st.columns([2, 3])
+        with col_guardar:
+            if st.button("Guardar Pedido"):
+                if not st.session_state.pedido:
+                    st.warning("No hay ítems en el pedido para guardar.")
+                else:
+                    # Obtener fecha y hora actuales
+                    now = datetime.now()
+                    fecha_actual = now.strftime("%Y-%m-%d")
+                    hora_actual = now.strftime("%H:%M:%S")
 
-                submit_modificar = st.form_submit_button("Modificar")
-                
-                if submit_modificar:
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'] = nombre
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Rol'] = rol
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Departamento'] = departamento
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nivel de Acceso'] = nivel_acceso
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Estado'] = estado
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Ventas'] = acceso_ventas
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Logística'] = acceso_logistica
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Administración'] = acceso_administracion
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Marketing'] = acceso_marketing
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
-                    st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
-                    # Guardar los cambios en Excel
-                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-    
-        st.markdown("---")
-        
-        # Formulario para eliminar un miembro del equipo
-        with st.expander("Eliminar Miembro"):
-            with st.form("form_eliminar"):
-                nombre_eliminar = st.selectbox(
-                    "Selecciona el nombre a eliminar",
-                    st.session_state.df_equipo['Nombre'].unique().tolist()
-                )
-                submit_eliminar = st.form_submit_button("Eliminar")
-                
-                if submit_eliminar:
-                    if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
-                        if nombre_eliminar == st.session_state.usuario['Nombre']:
-                            st.error("No puedes eliminarte a ti mismo.")
-                        else:
-                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
-                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
-                            # Guardar los cambios en Excel
-                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-                    else:
-                        st.error("El nombre seleccionado no existe.")
+                    # Preparar datos del pedido
+                    order_data = {
+                        'cliente': cliente_seleccionado,
+                        'vendedor': vendedor_seleccionado,
+                        'fecha': fecha_actual,
+                        'hora': hora_actual,
+                        'items': st.session_state.pedido
+                    }
 
-# ===============================
+                    # Guardar el pedido en la hoja 'Pedidos' de 'AdministracionSoop.xlsx'
+                    guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
+
+                    # Confirmar al usuario
+                    st.success("Pedido guardado exitosamente.", icon="✅")
+
+                    # Limpiar el pedido después de guardarlo
+                    st.session_state.pedido = []
+                    st.session_state.delete_confirm = {}
+
+                    # Guardar los cambios en el stock de productos
+                    try:
+                        st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                        st.success("Stock de productos actualizado correctamente.", icon="✅")
+                    except Exception as e:
+                        st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+    ```# ===============================
 # Módulo Administración
 # ===============================
 
