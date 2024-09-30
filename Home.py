@@ -952,13 +952,20 @@ def modulo_marketing():
 # ===============================
 
 def generar_pdf(productos):
-    pdf = FPDF()
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
     
-    for i, producto in enumerate(productos, 1):
+    # Definir dimensiones y posiciones para una cuadrícula de 2x3 en A4
+    img_width = 90
+    img_height = 90
+    x_positions = [10, 110]  # 2 columnas
+    y_positions = [20, 120, 220]  # 3 filas
+    
+    pdf.set_font("Arial", size=10)
+    
+    for i, producto in enumerate(productos):
         producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
-
+        
         # Descargar la imagen del producto
         if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
             try:
@@ -966,46 +973,60 @@ def generar_pdf(productos):
                 response.raise_for_status()
                 img = Image.open(BytesIO(response.content))
                 img.save(f"producto_{i}.png")  # Guardar la imagen temporalmente
-                pdf.image(f"producto_{i}.png", x=10, y=pdf.get_y(), w=30, h=30)
+                
+                # Calcular la posición en la cuadrícula
+                x = x_positions[i % 2]  # Alterna entre las dos columnas
+                y = y_positions[i // 2]  # Alterna entre las tres filas
+                
+                # Agregar imagen y texto en el PDF
+                pdf.image(f"producto_{i}.png", x=x, y=y, w=img_width, h=img_height)
+                pdf.set_xy(x, y + img_height + 5)  # Posicionar el texto debajo de la imagen
+                pdf.cell(img_width, 10, f"Producto: {producto_data['Nombre']}", ln=True)
+                pdf.cell(img_width, 10, f"Código: {producto_data['Codigo']}", ln=True)
+                pdf.cell(img_width, 10, f"Proveedor: {producto_data['Proveedor']}", ln=True)
             except Exception:
-                pdf.cell(30, 30, txt="No image", border=1)
+                pdf.cell(img_width, 10, "No image available", ln=True)
 
-        pdf.cell(100, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
-        pdf.cell(100, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
-        pdf.cell(100, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
-        pdf.cell(100, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
-        pdf.ln(20)
-
-    # Guardar el PDF
+    # Guardar el PDF en memoria
     pdf_output = BytesIO()
     pdf.output(pdf_output)
+    pdf_output.seek(0)
     st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
 
 def generar_imagen_png(productos):
-    width, height = 800, 1200  # Tamaño de la imagen
-    img = Image.new('RGB', (width, height), color = (255, 255, 255))
+    # Crear una imagen de 2 columnas y 3 filas
+    width, height = 800, 1200  # Tamaño A4 aproximado
+    img = Image.new('RGB', (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    y_offset = 20
-    for i, producto in enumerate(productos, 1):
+    # Definir posiciones
+    img_width = 300
+    img_height = 300
+    x_positions = [50, 450]  # 2 columnas
+    y_positions = [50, 450, 850]  # 3 filas
+    
+    for i, producto in enumerate(productos):
         producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
         
-        # Descargar y mostrar imagen del producto
+        # Descargar la imagen del producto
         if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
             try:
                 response = requests.get(producto_data['imagen'], timeout=5)
                 response.raise_for_status()
-                product_img = Image.open(BytesIO(response.content)).resize((100, 100))
-                img.paste(product_img, (20, y_offset))
+                product_img = Image.open(BytesIO(response.content)).resize((img_width, img_height))
+                
+                # Calcular la posición en la cuadrícula
+                x = x_positions[i % 2]
+                y = y_positions[i // 2]
+                
+                # Pegar imagen y agregar texto
+                img.paste(product_img, (x, y))
+                draw.text((x, y + img_height + 10), f"Producto: {producto_data['Nombre']}", font=font, fill=(0, 0, 0))
+                draw.text((x, y + img_height + 30), f"Código: {producto_data['Codigo']}", font=font, fill=(0, 0, 0))
+                draw.text((x, y + img_height + 50), f"Proveedor: {producto_data['Proveedor']}", font=font, fill=(0, 0, 0))
             except Exception:
-                draw.text((20, y_offset), "No image", font=font, fill=(0, 0, 0))
-
-        # Escribir el nombre, código y proveedor
-        draw.text((140, y_offset), f"Producto {i}: {producto_data['Nombre']}", font=font, fill=(0, 0, 0))
-        draw.text((140, y_offset + 20), f"Código: {producto_data['Codigo']}", font=font, fill=(0, 0, 0))
-        draw.text((140, y_offset + 40), f"Proveedor: {producto_data['Proveedor']}", font=font, fill=(0, 0, 0))
-        y_offset += 120
+                draw.text((x, y), "No image available", font=font, fill=(0, 0, 0))
 
     # Guardar la imagen en memoria
     img_output = BytesIO()
@@ -1031,6 +1052,7 @@ def generar_pdf_flayer(productos):
 def generar_imagen_flayer(productos):
     st.write("🖼️ Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
     generar_imagen_png(productos)
+
 # ===============================
 # Módulo Logística
 # ===============================
