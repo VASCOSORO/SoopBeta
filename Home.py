@@ -695,10 +695,86 @@ def modulo_administracion():
 # ===============================
 
 def modulo_estadistica():
-    st.header("📈 Estadísticas")
-    st.write("Aquí puedes agregar funcionalidades de estadísticas.")
-    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de estadísticas.
+    st.header("📈 Estadísticas para la toma de decisiones")
 
+    # Mostrar estadísticas clave en tarjetas
+    col1, col2, col3 = st.columns(3)
+
+    # Total de Ventas del Día
+    ventas_dia = st.session_state.df_administracion[
+        (st.session_state.df_administracion['Tipo'] == 'Ingreso') & 
+        (st.session_state.df_administracion['Fecha'] == datetime.now().strftime("%Y-%m-%d"))
+    ]['Monto'].sum()
+    
+    with col1:
+        st.metric(label="Ventas del Día", value=f"${ventas_dia:,.2f}")
+
+    # Total de Ingresos
+    total_ingresos = st.session_state.df_administracion[
+        st.session_state.df_administracion['Tipo'] == 'Ingreso'
+    ]['Monto'].sum()
+    
+    with col2:
+        st.metric(label="Total de Ingresos", value=f"${total_ingresos:,.2f}")
+
+    # Total de Egresos
+    total_egresos = st.session_state.df_administracion[
+        st.session_state.df_administracion['Tipo'] == 'Egreso'
+    ]['Monto'].sum()
+    
+    with col3:
+        st.metric(label="Total de Egresos", value=f"${total_egresos:,.2f}")
+
+    st.markdown("---")
+
+    # Gráfico de ventas por día de la semana
+    st.subheader("📅 Ventas por Día de la Semana")
+    ventas_por_dia = st.session_state.df_administracion[
+        st.session_state.df_administracion['Tipo'] == 'Ingreso'
+    ].groupby(st.session_state.df_administracion['Fecha']).sum().reset_index()
+
+    if not ventas_por_dia.empty:
+        ventas_por_dia['Fecha'] = pd.to_datetime(ventas_por_dia['Fecha'])
+        ventas_por_dia['Día'] = ventas_por_dia['Fecha'].dt.day_name()
+        ventas_resumen = ventas_por_dia.groupby('Día')['Monto'].sum().reindex(
+            ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        )
+        st.bar_chart(ventas_resumen)
+    else:
+        st.info("No hay datos de ventas para mostrar.")
+
+    st.markdown("---")
+
+    # Productos más vendidos
+    st.subheader("🎯 Productos más Vendidos")
+    ventas_por_producto = pd.DataFrame(st.session_state.pedido).groupby('Nombre').sum().sort_values('Cantidad', ascending=False).head(5)
+    if not ventas_por_producto.empty:
+        st.table(ventas_por_producto[['Cantidad', 'Importe']])
+    else:
+        st.info("No hay datos de productos vendidos para mostrar.")
+
+    st.markdown("---")
+
+    # Stock crítico
+    st.subheader("⚠️ Productos con Stock Crítico")
+    stock_critico = st.session_state.df_productos[st.session_state.df_productos['Stock'] < 10]
+    if not stock_critico.empty:
+        st.table(stock_critico[['Nombre', 'Stock']])
+    else:
+        st.info("No hay productos con stock crítico.")
+
+    st.markdown("---")
+
+    # Productividad del equipo
+    st.subheader("👥 Productividad del Equipo")
+    ventas_por_vendedor = st.session_state.df_administracion[
+        st.session_state.df_administracion['Tipo'] == 'Ingreso'
+    ].groupby('Nombre').sum().sort_values('Monto', ascending=False).head(5)
+
+    if not ventas_por_vendedor.empty:
+        st.table(ventas_por_vendedor[['Monto']])
+    else:
+        st.info("No hay datos de productividad de vendedores para mostrar.")
 # ===============================
 # Módulo Marketing
 # ===============================
