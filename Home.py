@@ -292,12 +292,12 @@ def modulo_ventas():
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
             vendedor_default = vendedores[0]
             vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
-    
+
     # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Colocamos el descuento arriba del vendedor
+        # Mostrar descuento debajo del nombre del cliente pero arriba del vendedor asignado
         st.write(f"**Descuento:** {cliente_data['Descuento']}%")
 
         # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
@@ -323,10 +323,16 @@ def modulo_ventas():
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
         
-        # Rubros del cliente: Mostrados como etiquetas una al lado de la otra
+        # Rubros del cliente como desplegable
         rubros_cliente = cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
-        rubro_tags = " ".join([f"🏷️ {rubro}" for rubro in rubros_cliente])
-        st.write(f"**Rubros del cliente:** {rubro_tags}")
+        rubro_seleccionado = st.selectbox("🏷️ Filtrar por Rubro del Cliente", [""] + rubros_cliente)
+        
+        # Filtrar productos por el rubro seleccionado
+        if rubro_seleccionado:
+            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].str.contains(rubro_seleccionado, na=False)]
+            productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
+        else:
+            productos_filtrados = st.session_state.df_productos
 
         # Desplegable para las notas del cliente
         st.write("---")
@@ -340,15 +346,15 @@ def modulo_ventas():
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
     
         with col_prod1:
-            # Buscador de productos con espacio vacío al inicio
+            # Buscador de productos con el rubro seleccionado aplicado si existe
             producto_buscado = st.selectbox(
                 "Buscar producto",
-                [""] + st.session_state.df_productos['Nombre'].unique().tolist(),
+                [""] + productos_filtrados['Nombre'].unique().tolist(),
                 help="Escribí el nombre del producto o seleccioná uno de la lista."
             )
     
         if producto_buscado:
-            producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto_buscado].iloc[0]
+            producto_data = productos_filtrados[productos_filtrados['Nombre'] == producto_buscado].iloc[0]
     
             with col_prod2:
                 # Mostrar precio
@@ -529,7 +535,6 @@ def modulo_ventas():
                             st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
                         except Exception as e:
                             st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-
 # ===============================
 # Módulo Equipo
 # ===============================
