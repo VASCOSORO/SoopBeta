@@ -460,47 +460,253 @@ def modulo_equipo():
                     else:
                         st.error("El nombre seleccionado no existe.")
 
-# ===============================
-# Módulo Ventas
-# ===============================
-
 import streamlit as st
 import pandas as pd
 import requests
+from openpyxl import load_workbook, Workbook
 from PIL import Image
 from io import BytesIO
 from datetime import datetime
-import json  # Asegúrate de importar json
+import json
+import os
+
+# ===============================
+# Configuración de la Página (ESTO DEBE IR AL PRINCIPIO)
+# ===============================
+st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
+
+# ===============================
+# Inicialización del Estado de Sesión
+# ===============================
+
+# Inicializar el estado del pedido y el stock si no existen
+if 'pedido' not in st.session_state:
+    st.session_state.pedido = []
+
+# Inicializar 'df_productos' si no existe
+if 'df_productos' not in st.session_state:
+    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+    if os.path.exists(file_path_productos):
+        try:
+            st.session_state.df_productos = pd.read_excel(file_path_productos)
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de productos: {e}")
+            st.stop()
+    else:
+        st.warning(f"⚠️ El archivo {file_path_productos} no existe. Por favor, súbelo desde el módulo Productos.")
+        st.session_state.df_productos = pd.DataFrame()  # DataFrame vacío
+
+# Inicializar 'df_clientes' si no existe
+if 'df_clientes' not in st.session_state:
+    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
+    if os.path.exists(file_path_clientes):
+        try:
+            st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de clientes: {e}")
+            st.stop()
+    else:
+        st.warning(f"⚠️ El archivo {file_path_clientes} no existe. Por favor, súbelo desde el módulo Convertidor de CSV.")
+        st.session_state.df_clientes = pd.DataFrame()  # DataFrame vacío
+
+# Inicializar 'df_equipo' si no existe
+if 'df_equipo' not in st.session_state:
+    file_path_equipo = 'equipo.xlsx'
+    if os.path.exists(file_path_equipo):
+        try:
+            st.session_state.df_equipo = pd.read_excel(file_path_equipo)
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de equipo: {e}")
+            st.stop()
+    else:
+        # Definir los miembros del equipo
+        data_equipo = {
+            'Nombre': [
+                'Joni', 'Eduardo', 'Johan', 'Martin',
+                'Marian', 'Sofi', 'Valen', 'Emily',
+                'Maria-Jose', 'Vasco'
+            ],
+            'Rol': [
+                'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                'Vendedora', 'Vendedora', 'Vendedora', 'Vendedora',
+                'Fotógrafa y Catalogador', 'Super Admin'
+            ],
+            'Departamento': [
+                'Dirección', 'Dirección', 'Depósito', 'Depósito',
+                'Ventas', 'Ventas', 'Ventas', 'Ventas',
+                'Marketing', 'Dirección'
+            ],
+            'Nivel de Acceso': [
+                'Alto', 'Alto', 'Medio', 'Medio',
+                'Bajo', 'Bajo', 'Bajo', 'Bajo',
+                'Medio', 'Super Admin'
+            ]
+        }
+        st.session_state.df_equipo = pd.DataFrame(data_equipo)
+        # Guardar el DataFrame inicial en Excel
+        try:
+            st.session_state.df_equipo.to_excel(file_path_equipo, index=False)
+        except Exception as e:
+            st.error(f"Error al guardar el archivo de equipo: {e}")
+
+# Inicializar 'usuario' en sesión si no existe
+if 'usuario' not in st.session_state:
+    st.session_state.usuario = None
+
+# Inicializar 'df_administracion' si no existe
+if 'df_administracion' not in st.session_state:
+    file_path_administracion = 'AdministracionSoop.xlsx'
+    if os.path.exists(file_path_administracion):
+        try:
+            st.session_state.df_administracion = pd.read_excel(file_path_administracion)
+            # Verificar si las columnas necesarias existen
+            columnas_necesarias = ['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora']
+            for col in columnas_necesarias:
+                if col not in st.session_state.df_administracion.columns:
+                    st.session_state.df_administracion[col] = None
+            st.session_state.df_administracion = st.session_state.df_administracion[columnas_necesarias]
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de administración: {e}")
+            st.stop()
+    else:
+        st.session_state.df_administracion = pd.DataFrame(columns=['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora'])
+
+# Inicializar 'delete_confirm' como un diccionario si no existe
+if 'delete_confirm' not in st.session_state:
+    st.session_state.delete_confirm = {}
+
+# ===============================
+# Función de Autenticación con Autocompletado
+# ===============================
+
+def login():
+    st.sidebar.title("🔒 Iniciar Sesión")
+
+    # Selectbox con las opciones de nombres disponibles
+    nombre_seleccionado = st.sidebar.selectbox(
+        "Selecciona tu nombre",
+        [""] + st.session_state.df_equipo['Nombre'].tolist(),
+        key="nombre_seleccionado",
+        help="Selecciona tu nombre de la lista."
+    )
+
+    # Solo mostrar el campo de contraseña y el botón si se selecciona un nombre
+    if nombre_seleccionado:
+        # Campo de contraseña (ahora opcional)
+        st.sidebar.text_input("Contraseña", type="password", key="password")
+        
+        # Botón para iniciar sesión
+        if st.sidebar.button("Iniciar Sesión"):
+            usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
+            st.session_state.usuario = {
+                'Nombre': usuario_data['Nombre'],
+                'Rol': usuario_data['Rol'],
+                'Nivel de Acceso': usuario_data['Nivel de Acceso']
+            }
+            st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+    else:
+        st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
+
+# ===============================
+# Función para verificar nivel de acceso (función faltante)
+# ===============================
+def verificar_acceso(nivel_requerido):
+    niveles = {
+        'Bajo': 1,
+        'Medio': 2,
+        'Alto': 3,
+        'Super Admin': 4
+    }
+    if st.session_state.usuario:
+        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
+        if niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0):
+            return True
+    return False
+
+# ===============================
+# Función para convertir DataFrame a Excel en memoria usando openpyxl
+# ===============================
+
+def convertir_a_excel(df):
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Hoja1')
+    return buffer.getvalue()
+
+# ===============================
+# Función para agregar el footer
+# ===============================
+
+def agregar_footer():
+    footer = """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #f1f1f1;
+        color: #555;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+    </style>
+    <div class="footer">
+        Powered by VASCO.SORO
+    </div>
+    """
+    st.markdown(footer, unsafe_allow_html=True)
+
+# ===============================
+# Función para Guardar Pedido en Excel
+# ===============================
 
 def guardar_pedido_excel(archivo, order_data):
     """
     Función para guardar el pedido en un archivo Excel.
-    Ajusta esta función según la estructura de tu archivo Excel y tus necesidades.
+    Crea la hoja 'Pedidos' si no existe.
     """
     try:
-        # Cargar el archivo existente o crear uno nuevo si no existe
-        try:
-            df_pedidos = pd.read_excel(archivo, sheet_name='Pedidos')
-        except FileNotFoundError:
+        # Cargar el libro existente o crear uno nuevo si no existe
+        if os.path.exists(archivo):
+            book = load_workbook(archivo)
+            if 'Pedidos' in book.sheetnames:
+                sheet = book['Pedidos']
+                df_pedidos = pd.read_excel(archivo, sheet_name='Pedidos')
+            else:
+                sheet = book.create_sheet('Pedidos')
+                df_pedidos = pd.DataFrame(columns=['Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
+        else:
+            book = Workbook()
+            sheet = book.active
+            sheet.title = 'Pedidos'
             df_pedidos = pd.DataFrame(columns=['Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
-
+        
         # Preparar los datos del pedido
         nuevo_pedido = {
             'Cliente': order_data['cliente'],
             'Vendedor': order_data['vendedor'],
             'Fecha': order_data['fecha'],
             'Hora': order_data['hora'],
-            'Items': json.dumps(order_data['items'])  # Convertir los ítems a JSON para almacenarlos
+            'Items': json.dumps(order_data['items'])  # Convertir a JSON
         }
-
+        
         # Añadir el nuevo pedido al DataFrame existente
         df_pedidos = df_pedidos.append(nuevo_pedido, ignore_index=True)
-
-        # Guardar de vuelta en el archivo Excel
-        with pd.ExcelWriter(archivo, engine='openpyxl', mode='w') as writer:
+        
+        # Guardar el DataFrame actualizado en la hoja 'Pedidos'
+        with pd.ExcelWriter(archivo, engine='openpyxl') as writer:
+            writer.book = book
+            writer.sheets = {ws.title: ws for ws in book.worksheets}
             df_pedidos.to_excel(writer, sheet_name='Pedidos', index=False)
+            writer.save()
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
+
+# ===============================
+# Módulo Ventas
+# ===============================
 
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
@@ -781,8 +987,13 @@ def modulo_ventas():
     # ----------------------------
     if cliente_seleccionado:
         try:
-            # Cargar los pedidos desde el archivo Excel
-            df_pedidos = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Pedidos')
+            # Verificar si el archivo existe
+            if os.path.exists('AdministracionSoop.xlsx'):
+                # Cargar los pedidos desde el archivo Excel
+                df_pedidos = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Pedidos')
+            else:
+                st.error("El archivo 'AdministracionSoop.xlsx' no existe.")
+                df_pedidos = pd.DataFrame()
 
             # Filtrar los pedidos por el cliente seleccionado
             df_client_pedidos = df_pedidos[df_pedidos['Cliente'] == cliente_seleccionado]
@@ -839,6 +1050,7 @@ def modulo_ventas():
             st.error("El archivo 'AdministracionSoop.xlsx' no existe.")
         except Exception as e:
             st.error(f"Error al cargar los pedidos: {e}")
+
 # ===============================
 # Módulo Administración
 # ===============================
