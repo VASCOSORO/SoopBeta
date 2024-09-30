@@ -799,6 +799,14 @@ def modulo_estadistica():
     st.subheader("👥 Productividad del Equipo")
     st.table(df_vendedores_ficticio[['Nombre', 'Monto']])
 # ===============================
+# Importaciones necesarias
+# ===============================
+from PIL import Image, ImageDraw, ImageFont  # Para la generación de imágenes
+import requests
+from io import BytesIO
+from fpdf import FPDF  # Para la generación de PDF
+
+# ===============================
 # Módulo Marketing
 # ===============================
 
@@ -962,8 +970,29 @@ def generar_pdf(productos):
     st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
 
 def generar_imagen_png(productos):
-    # Placeholder: Aquí podrías usar Pillow para generar una imagen con los datos
-    st.warning("Función de generación de imágenes aún no implementada.")
+    width, height = 800, 1200  # Tamaño de la imagen
+    img = Image.new('RGB', (width, height), color = (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+
+    y_offset = 20
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        
+        # Escribir el nombre, código y proveedor
+        draw.text((20, y_offset), f"Producto {i}: {producto_data['Nombre']}", font=font, fill=(0, 0, 0))
+        draw.text((20, y_offset + 20), f"Código: {producto_data['Codigo']}", font=font, fill=(0, 0, 0))
+        draw.text((20, y_offset + 40), f"Proveedor: {producto_data['Proveedor']}", font=font, fill=(0, 0, 0))
+        y_offset += 100
+
+    # Guardar la imagen en memoria
+    img_output = BytesIO()
+    img.save(img_output, format="PNG")
+    img_output.seek(0)
+    
+    # Mostrar la imagen y permitir su descarga
+    st.image(img, caption="Vista previa del flayer")
+    st.download_button(label="Descargar Imagen PNG", data=img_output, file_name="productos_flayer.png", mime="image/png")
 
 # ===============================
 # Funciones para generar Flayer
@@ -971,41 +1000,16 @@ def generar_imagen_png(productos):
 
 def generar_flayer_preview(productos):
     st.write("🖼️ Aquí se generará una vista previa del flayer con los productos seleccionados.")
-    # Funcionalidad de vista previa usando imágenes y datos de productos
+    generar_imagen_png(productos)
 
 def generar_pdf_flayer(productos):
     st.write("📄 Aquí se generará un PDF con los productos seleccionados en formato de flayer.")
-    # Funcionalidad de generación de PDF de flayer
+    generar_pdf(productos)
 
 def generar_imagen_flayer(productos):
     st.write("🖼️ Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
-    # Funcionalidad de generación de imagen PNG del flayer
-# ===============================
-# Funciones para generar PDF e Imagen
-# ===============================
-
-def generar_pdf(productos):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    
-    for i, producto in enumerate(productos, 1):
-        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
-        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
-        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
-        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
-        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
-        pdf.cell(200, 10, txt="---", ln=True)
-    
-    # Guardar el PDF
-    pdf_output = BytesIO()
-    pdf.output(pdf_output)
-    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
-
-def generar_imagen_png(productos):
-    # Placeholder: Aquí podrías usar Pillow para generar una imagen con los datos
-    st.warning("Función de generación de imágenes aún no implementada.")
-    
+    generar_imagen_png(productos)
+   
 # ===============================
 # Módulo Logística
 # ===============================
