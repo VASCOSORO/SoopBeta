@@ -377,7 +377,7 @@ def modulo_ventas():
         # Lógica para filtrar productos por la columna 'Categorías' en lugar de 'Rubros'
         if rubros_seleccionados:
             productos_filtrados = st.session_state.df_productos[
-                st.session_state.df_productos['Categorías'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))
+                st.session_state.df_productos['Categorias'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))
             ]
             productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
             cantidad_filtrados = len(productos_filtrados)
@@ -486,7 +486,7 @@ def modulo_ventas():
     # ----------------------------
     # Sección para mostrar el pedido actual
     # ----------------------------
-    st.header("📦 Pedido Actual")
+    st.header("🛒 Pedido Actual")
 
     if st.session_state.pedido:
         # Mostrar la tabla del pedido con la opción de eliminar ítems
@@ -585,17 +585,63 @@ def modulo_ventas():
                         st.success("Stock de productos actualizado correctamente.", icon="✅")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+    ```
 
-### **Explicación de las Modificaciones Realizadas:**
+### **Instrucciones Detalladas para Copiar el Código Correctamente**
 
-1. **Consistencia en los Nombres de las Claves:**
-   - **Uso de `'Codigo'` sin acento:** He reemplazado todas las instancias de `'Código'` con `'Codigo'` para mantener la consistencia con la columna `'Codigo'` en `df_productos`.
-   - **Uso de `'Precio'`:** Mantengo `'Precio'` como la clave para el precio, evitando `'Precio Unitario'`.
+1. **Selecciona Solo el Código Interno:**
+   - No incluyas las líneas que contienen solo tres acentos graves (```). Por ejemplo, **no copies** las siguientes líneas:
+     ```
+     ```
+     ```
+     Estas líneas son solo para formatear el código en Markdown y no deben estar en tu script de Python.
 
-2. **Inicialización de `delete_confirm`:**
-   ```python
-   if 'delete_confirm' not in st.session_state:
-       st.session_state.delete_confirm = {}
+2. **Copia Desde `# ===============================` Hasta el Final del Código:**
+   - Asegúrate de copiar todo el contenido dentro del bloque de código proporcionado, excluyendo las líneas con ```.
+
+3. **Pega el Código en Tu Archivo Python (`Home.py`):**
+   - Abre tu archivo `Home.py` y pega el código copiado en la ubicación correspondiente, reemplazando cualquier versión anterior del módulo de ventas si es necesario.
+
+### **Verifica la Consistencia de las Claves**
+
+Para evitar errores de tipo `KeyError`, asegúrate de que:
+
+- **Claves en el Diccionario `pedido`:**
+  - Al agregar productos al pedido, utiliza las mismas claves que usas al visualizarlo. En el código corregido, las claves son:
+    - `'Codigo'`
+    - `'Nombre'`
+    - `'Cantidad'`
+    - `'Precio'`
+    - `'Importe'`
+
+- **Acceso a Columnas en el DataFrame `pedido_df`:**
+  - Asegúrate de que las columnas en `pedido_df` coincidan con las claves utilizadas en los diccionarios. Por ejemplo:
+    ```python
+    df_pedido['Importe'] = df_pedido['Cantidad'] * df_pedido['Precio']
+    ```
+
+### **Asegura que los DataFrames Estén Correctamente Cargados**
+
+Antes de llamar a `modulo_ventas()`, asegúrate de que `st.session_state.df_clientes` y `st.session_state.df_productos` estén correctamente cargados y contengan las columnas necesarias. Por ejemplo:
+
+```python
+import streamlit as st
+import pandas as pd
+
+# Carga de datos de clientes y productos
+if 'df_clientes' not in st.session_state:
+    st.session_state.df_clientes = pd.read_excel('clientes.xlsx')  # Ajusta la ruta y el archivo según corresponda
+
+if 'df_productos' not in st.session_state:
+    st.session_state.df_productos = pd.read_excel('productos.xlsx')  # Ajusta la ruta y el archivo según corresponda
+
+# Inicializar session_state para eliminar confirmaciones
+if 'delete_confirm' not in st.session_state:
+    st.session_state.delete_confirm = {}
+    
+# Ejecutar el módulo de ventas
+modulo_ventas()
+
 # ===============================
 # Módulo Administración
 # ===============================
