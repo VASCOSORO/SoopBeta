@@ -328,7 +328,7 @@ def modulo_ventas():
         with st.expander("🔖 Notas del Cliente"):
             st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
 
-        # Filtro por categorías en lugar de rubros
+        # Filtro por categorías (provisional para simular rubros)
         categorias_disponibles = st.session_state.df_productos['Categorías'].unique().tolist()
         categoria_seleccionada = st.selectbox("🏷️ Filtrar por Categoría", [""] + categorias_disponibles, help="Seleccioná una categoría para filtrar productos")
 
@@ -440,6 +440,7 @@ def modulo_ventas():
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
                     st.write("🔗 **No hay imagen disponible.**")
+
 # ===============================
 # Módulo Equipo
 # ===============================
