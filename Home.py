@@ -280,6 +280,34 @@ def guardar_pedido_excel(file_path, order_data):
 import streamlit as st
 import pandas as pd
 from PIL import Image
+import os
+
+def verificar_acceso(nivel_requerido):
+    """
+    Función para verificar el nivel de acceso del usuario.
+    """
+    niveles = ['Bajo', 'Medio', 'Alto', 'Super Admin']
+    try:
+        nivel_usuario = st.session_state.usuario.get('Nivel de Acceso', 'Bajo')
+        return niveles.index(nivel_usuario) >= niveles.index(nivel_requerido)
+    except KeyError:
+        return False
+
+def cargar_equipo():
+    """
+    Función para cargar los datos del equipo desde el archivo Excel.
+    """
+    archivo_excel = 'equipo de trabajo.xlsx'
+    if 'df_equipo' not in st.session_state:
+        if os.path.exists(archivo_excel):
+            try:
+                st.session_state.df_equipo = pd.read_excel(archivo_excel)
+            except Exception as e:
+                st.error(f"Error al cargar el archivo '{archivo_excel}': {e}")
+                st.stop()
+        else:
+            st.error(f"El archivo '{archivo_excel}' no existe.")
+            st.stop()
 
 def modulo_equipo():
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
@@ -295,9 +323,9 @@ def modulo_equipo():
     for columna in columnas_necesarias:
         if columna not in st.session_state.df_equipo.columns:
             if columna == 'Avatar':
-                st.session_state.df_equipo['Avatar'] = 'https://via.placeholder.com/150'
+                st.session_state.df_equipo[columna] = 'https://via.placeholder.com/150'
             elif columna == 'Estado':
-                st.session_state.df_equipo['Estado'] = 'Activo'
+                st.session_state.df_equipo[columna] = 'Activo'
             else:
                 st.session_state.df_equipo[columna] = False  # Valores predeterminados para accesos a módulos
 
@@ -329,7 +357,7 @@ def modulo_equipo():
         st.markdown("---")
     
     # Opciones de gestión solo para Super Admin
-    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
+    if st.session_state.usuario.get('Nivel de Acceso', '') == 'Super Admin':
         st.subheader("🔧 Gestionar Equipo")
         
         # Formulario para agregar un nuevo miembro al equipo
@@ -379,11 +407,13 @@ def modulo_equipo():
                             'Acceso Marketing': acceso_marketing,
                             'Avatar': avatar_url if avatar_url else 'https://via.placeholder.com/150'
                         }
-                        st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
+                        # Nota: pd.DataFrame.append() está deprecado, usar pd.concat()
+                        nuevo_miembro_df = pd.DataFrame([nuevo_miembro])
+                        st.session_state.df_equipo = pd.concat([st.session_state.df_equipo, nuevo_miembro_df], ignore_index=True)
                         st.success(f"Miembro {nombre} agregado exitosamente.")
                         # Guardar los cambios en Excel
-                        st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-    
+                        st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
+
         st.markdown("---")
         
         # Formulario para modificar un miembro del equipo
@@ -393,36 +423,38 @@ def modulo_equipo():
                     "Selecciona el nombre a modificar",
                     st.session_state.df_equipo['Nombre'].unique().tolist()
                 )
-                miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_modificar].iloc[0]
+                if miembro_modificar:
+                    miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_modificar].iloc[0]
                 
-                col_form1, col_form2 = st.columns(2)
-                
-                with col_form1:
-                    nombre = st.text_input("Nombre", value=miembro_data['Nombre'])
-                    rol = st.selectbox("Rol", [
-                        'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                        'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
-                    ], index=['Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                              'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'].index(miembro_data['Rol']))
-                    departamento = st.selectbox("Departamento", [
-                        'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
-                    ], index=['Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'].index(miembro_data['Departamento']))
-                    nivel_acceso = st.selectbox("Nivel de Acceso", [
-                        'Bajo', 'Medio', 'Alto', 'Super Admin'
-                    ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']))
-                    avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'])
+                    col_form1, col_form2 = st.columns(2)
+                    
+                    with col_form1:
+                        nombre = st.text_input("Nombre", value=miembro_data['Nombre'])
+                        rol = st.selectbox("Rol", [
+                            'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                            'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
+                        ], index=['Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                                  'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'].index(miembro_data['Rol']))
+                        departamento = st.selectbox("Departamento", [
+                            'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
+                        ], index=['Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'].index(miembro_data['Departamento']))
+                        nivel_acceso = st.selectbox("Nivel de Acceso", [
+                            'Bajo', 'Medio', 'Alto', 'Super Admin'
+                        ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']))
+                        avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'])
 
                 with col_form2:
                     estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
                     # Modificar accesos a módulos
                     acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
-                    acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
+                    acceso_logistica = st.checkbox("Acceso Logística", value=miembro_data['Acceso Logística'])
                     acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
                     acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
 
                 submit_modificar = st.form_submit_button("Modificar")
                 
-                if submit_modificar:
+                if submit_modificar and miembro_modificar:
+                    # Actualizar los datos del miembro
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'] = nombre
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Rol'] = rol
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Departamento'] = departamento
@@ -435,30 +467,18 @@ def modulo_equipo():
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
                     st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
                     # Guardar los cambios en Excel
-                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                    st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
+
+    # Llamar a la función de carga al inicio del script
+    cargar_equipo()
+
+    # Opcional: Navegación entre módulos (si tienes otros módulos)
+    # seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
+
+    # if seccion == "Equipo":
+    #     modulo_equipo()
     
-        st.markdown("---")
-        
-        # Formulario para eliminar un miembro del equipo
-        with st.expander("Eliminar Miembro"):
-            with st.form("form_eliminar"):
-                nombre_eliminar = st.selectbox(
-                    "Selecciona el nombre a eliminar",
-                    st.session_state.df_equipo['Nombre'].unique().tolist()
-                )
-                submit_eliminar = st.form_submit_button("Eliminar")
-                
-                if submit_eliminar:
-                    if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
-                        if nombre_eliminar == st.session_state.usuario['Nombre']:
-                            st.error("No puedes eliminarte a ti mismo.")
-                        else:
-                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
-                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
-                            # Guardar los cambios en Excel
-                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-                    else:
-                        st.error("El nombre seleccionado no existe.")
+    # Otras secciones...
 
 # ===============================
 # Módulo Ventas
@@ -523,7 +543,7 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+            vendedor_seleccionado = st.selectbox("Vendedor Fijo", vendedores, index=0)
 
     # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
     if cliente_seleccionado != "":
@@ -546,7 +566,7 @@ def modulo_ventas():
             }
             credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')  # Asumiendo que 'Estado Credito' existe
             color_credito = opciones_credito.get(credito_cliente, '🟡')  # Valor por defecto si no coincide
-            st.write(f"**Estado de crédito:** {color_credito} {credito_cliente}")
+            st.write(f"**.** {color_credito} {credito_cliente}")
 
         with col3:
             forma_pago = st.selectbox(
@@ -951,13 +971,14 @@ def modulo_administracion():
 def modulo_estadistica():
     st.header("📈Modulo Estadistics📊")
 
-    # Datos ficticios (incluyendo los vendedores)
-    data_ficticia_ventas = {
-        'Fecha': pd.date_range(start='2024-09-01', periods=10, freq='D'),
-        'Monto': [1000, 1500, 1200, 1800, 2000, 1600, 1900, 1700, 1300, 2100],
-        'Vendedor': ['Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco', 'Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco']
-    }
-    df_ventas_ficticio = pd.DataFrame(data_ficticia_ventas)
+    # Datos reales del archivo Excel (Ventas)
+    df = pd.read_excel('archivo_modificado_pedidos_20240930_194115.xlsx')
+    df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
+
+    # Agrupando las ventas por día y sumando los totales
+    ventas_por_dia = df.groupby(df['Fecha'].dt.day_name())['Total'].sum().reindex(
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    )
 
     # Traducción manual de los días de la semana
     traduccion_dias = {
@@ -969,89 +990,85 @@ def modulo_estadistica():
         'Saturday': 'sábado',
         'Sunday': 'domingo'
     }
+    ventas_por_dia.index = ventas_por_dia.index.map(traduccion_dias)
 
-    # Datos ficticios para productos
-    productos_ficticios = {
-        'Nombre': ['Peluche Oso', 'Juguete Robot', 'Auto a Control', 'Muñeca', 'Peluche León'],
-        'Cantidad': [20, 15, 30, 12, 25],
-        'Importe': [2000, 3000, 4500, 1800, 3000]
-    }
-    df_productos_ficticios = pd.DataFrame(productos_ficticios)
+    # Agrupando las ventas por vendedor
+    ventas_por_vendedor = df.groupby('Vendedor')['Total'].sum()
 
-    # Datos ficticios para stock
-    stock_ficticio = {
-        'Nombre': ['Peluche Oso', 'Juguete Robot', 'Muñeca'],
-        'Stock': [8, 5, 3]
-    }
-    df_stock_ficticio = pd.DataFrame(stock_ficticio)
+    # Adaptando las métricas para el día de ventas (asumiendo que el último día es el actual)
+    ventas_dia_real = df[df['Fecha'].dt.date == df['Fecha'].max().date()]['Total'].sum()
 
-    # Datos ficticios para vendedores
-    vendedores_ficticios = {
-        'Nombre': ['Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco'],
-        'Monto': [10000, 8500, 7000, 6500, 6200]
-    }
-    df_vendedores_ficticio = pd.DataFrame(vendedores_ficticios)
+    # Total de ingresos (ventas totales)
+    total_ingresos_real = df['Total'].sum()
 
     # Tarjetas Resumidas
     col1, col2, col3 = st.columns(3)
 
-    # Ventas del Día (dato ficticio)
-    ventas_dia_ficticia = 1800
+    # Ventas del Día (dato real)
     with col1:
-        st.metric(label="Ventas del Día", value=f"${ventas_dia_ficticia:,.2f}")
+        st.metric(label="Ventas del Día", value=f"${ventas_dia_real:,.2f}")
 
-    # Total de Ingresos (ficticio)
-    total_ingresos_ficticio = df_ventas_ficticio['Monto'].sum()
+    # Total de Ingresos (real)
     with col2:
-        st.metric(label="Total de Ingresos", value=f"${total_ingresos_ficticio:,.2f}")
+        st.metric(label="Total de Ingresos", value=f"${total_ingresos_real:,.2f}")
 
-    # Total de Egresos (ficticio)
+    # Total de Egresos (mantener ficticio, ya que no hay datos de egresos)
     total_egresos_ficticio = 4500  # Un dato arbitrario para mostrar
     with col3:
         st.metric(label="Total de Egresos", value=f"${total_egresos_ficticio:,.2f}")
 
     st.markdown("---")
 
-    # Gráfico de ventas por día de la semana (ficticio)
+    # Gráfico de ventas por día de la semana (real)
     st.subheader("📅 Ventas por Día de la Semana")
-    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.day_name().map(traduccion_dias)
-    ventas_resumen_ficticio = df_ventas_ficticio.groupby('Día')['Monto'].sum().reindex(
-        ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
-    )
-    st.bar_chart(ventas_resumen_ficticio)
+    st.bar_chart(ventas_por_dia)
 
     st.markdown("---")
 
     # Seleccionar un día y mostrar las ventas por vendedor para ese día
     st.subheader("🔍 Ventas por Día y Vendedor")
-    dias_unicos = df_ventas_ficticio['Día'].unique().tolist()
+    dias_unicos = ventas_por_dia.index.tolist()
     dia_seleccionado = st.selectbox("Seleccionar un día", dias_unicos)
 
     # Filtrar por día seleccionado
-    ventas_por_dia = df_ventas_ficticio[df_ventas_ficticio['Día'] == dia_seleccionado]
-    if not ventas_por_dia.empty:
-        ventas_vendedores = ventas_por_dia.groupby('Vendedor')['Monto'].sum()
-        st.bar_chart(ventas_vendedores)
+    ventas_filtradas_dia = df[df['Fecha'].dt.day_name().map(traduccion_dias) == dia_seleccionado]
+    if not ventas_filtradas_dia.empty:
+        ventas_vendedor_dia = ventas_filtradas_dia.groupby('Vendedor')['Total'].sum()
+        st.bar_chart(ventas_vendedor_dia)
     else:
         st.info(f"No hay datos de ventas para el día {dia_seleccionado}.")
 
     st.markdown("---")
 
-    # Productos más vendidos (ficticio)
-    st.subheader("🎯 Productos más Vendidos")
-    st.table(df_productos_ficticios[['Nombre', 'Cantidad', 'Importe']])
+    # Tabla de Usuarios (Adaptado)
+    st.subheader("👥 Equipo Actual")
+    usuarios = {
+        'Usuario': ['Aniel', 'DianaC', 'Eduardo.Rita', 'Emili.Cabrera', 'JavierCesano', 'JLopez', 'Joni', 'JorgeMingrone', 
+                    'Mariar', 'Marian', 'Martu', 'MartinR', 'PruebaJoh', 'Vasco', 'Sofia', 'Soop', 'Valenti'],
+        'Nombre': ['Aniel', 'Diana', 'Eduardo', 'Emili', 'Javier', 'Johan', 'Jonathan', 'Jorge', 'Maria', 'Mariana', 
+                   'Martin', 'Martin', 'Prueba', 'Sebastian', 'Sofia', 'Soop', 'Valentina'],
+        'Apellido': ['Fernandez', 'Chodera', 'Rita', 'Cabrera', 'Cesano', 'Lopez', 'Sanovsky', 'Mingrone', 'Mavarez', 
+                     'Suarez', 'Nuñez', 'Regue', 'Mundo', 'Sohrobigarat', 'Juarez', 'VascoTest', 'Gordillo'],
+        'Email': ['anielf2608@gmail.com', 'dianachodera@gmail.com', 'eduardorita86@gmail.com', 'Emilicabrerag@gmail.com', 
+                  'fyjrepresentaciones@hotmail.com', 'Lopezjohan2310@gmail.com', 'jsanovsky@gmail.com', 
+                  'bestclaw@gmail.com', '1@int.con', 'missmarian2002@hotmail.com', 'mart@gmail.com', 
+                  'martinregue@gmail.com', 'jvlsma2310@gmail.com', 'seba.e.soro@gmail.com', 'sofiaajuarez1989@gmail.com', 
+                  'VascoTest@gmail.com.ar', 'valentinagordillo@hotmail.com'],
+        'Celular': ['1126428807', '1144042461', '', '1165140797', '03513026700', '1162770545', '1144042904', 
+                    '1144042867', '1126453237', '', '', '', '1153226303', '1522755577', '', '1153270929'],
+        'Tipo': ['Administrador', 'Administrador', 'Administrador', 'Gestion', 'Vendedores', 'Administrador', 'Administrador', 
+                 'Gestion', 'Gestion', 'Gestion', 'Gestion', 'Vendedores', 'Vendedores', 'Administrador', 'Gestion', 
+                 'Gestion', 'Gestion'],
+        'Fecha de Creación': ['28/04/23 12:54', '16/09/19 18:21', '26/09/22 14:48', '04/11/22 15:17', '10/06/24 13:23', 
+                              '22/11/22 10:55', '06/07/19 17:16', '23/04/20 20:47', '11/04/23 11:04', '30/08/21 10:45', 
+                              '05/03/24 09:47', '06/07/24 13:18', '05/06/23 10:33', '29/11/22 11:53', '13/08/24 11:14', 
+                              '05/09/24 13:10', '01/08/24 09:30']
+    }
+    
+    # Asegurar que todas las listas tengan la misma longitud para evitar errores
+    df_usuarios = pd.DataFrame(usuarios)
+    st.table(df_usuarios)
 
-    st.markdown("---")
-
-    # Stock crítico (ficticio)
-    st.subheader("⚠️ Productos con Stock Crítico")
-    st.table(df_stock_ficticio[['Nombre', 'Stock']])
-
-    st.markdown("---")
-
-    # Productividad del equipo (ficticio)
-    st.subheader("👥Productividad del Equipo📈")
-    st.table(df_vendedores_ficticio[['Nombre', 'Monto']])
 # ===============================
 # Importaciones necesarias
 # ===============================
