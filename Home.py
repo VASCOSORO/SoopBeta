@@ -951,7 +951,7 @@ def modulo_administracion():
 def modulo_estadistica():
     st.header("📈Modulo Estadistics📊")
 
-    # Datos reales del archivo Excel
+    # Datos reales del archivo Excel (Ventas)
     df = pd.read_excel('archivo_modificado_pedidos_20240930_194115.xlsx')
     df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
 
@@ -1020,9 +1020,32 @@ def modulo_estadistica():
 
     st.markdown("---")
 
-    # Productividad del equipo (real)
-    st.subheader("👥Productividad del Equipo📈")
-    st.table(ventas_por_vendedor)
+    # Tabla de Usuarios (Adaptado)
+    st.subheader("👥 Equipo Actual")
+    usuarios = {
+        'Usuario': ['Aniel', 'DianaC', 'Eduardo.Rita', 'Emili.Cabrera', 'JavierCesano', 'JLopez', 'Joni', 'JorgeMingrone', 
+                    'Mariar', 'Marian', 'Martu', 'MartinR', 'PruebaJoh', 'Vasco', 'Sofia', 'Soop', 'Valenti'],
+        'Nombre': ['Aniel', 'Diana', 'Eduardo', 'Emili', 'Javier', 'Johan', 'Jonathan', 'Jorge', 'Maria', 'Mariana', 
+                   'Martin', 'Martin', 'Prueba', 'Sebastian', 'Sofia', 'Soop', 'Valentina'],
+        'Apellido': ['Fernandez', 'Chodera', 'Rita', 'Cabrera', 'Cesano', 'Lopez', 'Sanovsky', 'Mingrone', 'Mavarez', 
+                     'Suarez', 'Nuñez', 'Regue', 'Mundo', 'Sohrobigarat', 'Juarez', 'VascoTest', 'Gordillo'],
+        'Email': ['anielf2608@gmail.com', 'dianachodera@gmail.com', 'eduardorita86@gmail.com', 'Emilicabrerag@gmail.com', 
+                  'fyjrepresentaciones@hotmail.com', 'Lopezjohan2310@gmail.com', 'jsanovsky@gmail.com', 
+                  'bestclaw@gmail.com', '1@int.con', 'missmarian2002@hotmail.com', 'mart@gmail.com', 
+                  'martinregue@gmail.com', 'jvlsma2310@gmail.com', 'seba.e.soro@gmail.com', 'sofiaajuarez1989@gmail.com', 
+                  'VascoTest@gmail.com.ar', 'valentinagordillo@hotmail.com'],
+        'Celular': ['1126428807', '1144042461', '', '1165140797', '03513026700', '1162770545', '1144042904', 
+                    '1144042867', '1126453237', '', '', '', '1153226303', '1522755577', '', '1153270929'],
+        'Tipo': ['Administrador', 'Administrador', 'Administrador', 'Gestion', 'Vendedores', 'Administrador', 'Administrador', 
+                 'Gestion', 'Gestion', 'Gestion', 'Gestion', 'Vendedores', 'Vendedores', 'Administrador', 'Gestion', 
+                 'Gestion', 'Gestion'],
+        'Fecha de Creación': ['28/04/23 12:54', '16/09/19 18:21', '26/09/22 14:48', '04/11/22 15:17', '10/06/24 13:23', 
+                              '22/11/22 10:55', '06/07/19 17:16', '23/04/20 20:47', '11/04/23 11:04', '30/08/21 10:45', 
+                              '05/03/24 09:47', '06/07/24 13:18', '05/06/23 10:33', '29/11/22 11:53', '13/08/24 11:14', 
+                              '05/09/24 13:10', '01/08/24 09:30']
+    }
+    df_usuarios = pd.DataFrame(usuarios)
+    st.table(df_usuarios)
 
 # ===============================
 # Importaciones necesarias
@@ -1031,6 +1054,7 @@ from PIL import Image, ImageDraw, ImageFont  # Para la generación de imágenes
 import requests
 from io import BytesIO
 from fpdf import FPDF  # Para la generación de PDF
+
 # ===============================
 # Módulo Marketing
 # ===============================
