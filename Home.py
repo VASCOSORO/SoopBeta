@@ -1,4 +1,4 @@
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 from openpyxl import load_workbook, Workbook
 import json
@@ -113,71 +113,15 @@ if 'delete_confirm' not in st.session_state:
     st.session_state.delete_confirm = {}
 
 # ===============================
-# Función de Autenticación con Autocompletado
+# Funciones de Utilidad
 # ===============================
 
-def login():
-    st.sidebar.title("🔒 Iniciar Sesión")
-
-    # Selectbox con las opciones de nombres disponibles
-    nombre_seleccionado = st.sidebar.selectbox(
-        "Selecciona tu nombre",
-        [""] + st.session_state.df_equipo['Nombre'].tolist(),
-        key="nombre_seleccionado",
-        help="Selecciona tu nombre de la lista."
-    )
-
-    # Solo mostrar el campo de contraseña y el botón si se selecciona un nombre
-    if nombre_seleccionado:
-        # Campo de contraseña (ahora opcional)
-        st.sidebar.text_input("Contraseña", type="password", key="password")
-        
-        # Botón para iniciar sesión
-        if st.sidebar.button("Iniciar Sesión"):
-            usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
-            st.session_state.usuario = {
-                'Nombre': usuario_data['Nombre'],
-                'Rol': usuario_data['Rol'],
-                'Nivel de Acceso': usuario_data['Nivel de Acceso']
-            }
-            st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
-    else:
-        st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
-
-# ===============================
 # Función para convertir DataFrame a Excel en memoria usando openpyxl
-# ===============================
-
 def convertir_a_excel(df):
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Hoja1')
     return buffer.getvalue()
-
-# ===============================
-# Configuración de la Página
-# ===============================
-
-st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
-
-# Título de la Aplicación
-st.title("🐻 Módulo de Ventas 🛒")
-
-# Sidebar para Inicio de Sesión
-login()
-
-# Si el usuario no está autenticado, detener la ejecución
-if not st.session_state.usuario:
-    st.stop()
-
-# Mostrar información del usuario en la parte superior
-st.markdown(f"### Usuario: **{st.session_state.usuario['Nombre']}**")
-st.markdown(f"### Rol: **{st.session_state.usuario['Rol']}**")
-st.markdown("---")
-
-# ===============================
-# Funciones de Utilidad
-# ===============================
 
 # Función para agregar el footer
 def agregar_footer():
@@ -200,6 +144,20 @@ def agregar_footer():
     </div>
     """
     st.markdown(footer, unsafe_allow_html=True)
+
+# Función para verificar nivel de acceso
+def verificar_acceso(nivel_requerido):
+    niveles = {
+        'Bajo': 1,
+        'Medio': 2,
+        'Alto': 3,
+        'Super Admin': 4
+    }
+    if st.session_state.usuario:
+        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
+        if niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0):
+            return True
+    return False
 
 # ===============================
 # Función para Guardar Pedido en Excel
@@ -708,6 +666,52 @@ def modulo_productos():
 def modulo_convertidor_csv():
     st.header("🔗 Acceder al Convertidor de CSV")
     st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
+
+# ===============================
+# Función de Autenticación con Autocompletado
+# ===============================
+
+def login():
+    st.sidebar.title("🔒 Iniciar Sesión")
+    
+    # Campo de texto para ingresar el nombre
+    nombre_busqueda = st.sidebar.text_input(
+        "Escribe tu nombre",
+        placeholder="Comienza a escribir tu nombre...",
+        key="nombre_busqueda"
+    )
+    
+    # Filtrar los nombres que contienen la búsqueda (case insensitive)
+    if nombre_busqueda:
+        opciones_filtradas = st.session_state.df_equipo[
+            st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
+        ]['Nombre'].tolist()
+    else:
+        opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
+    
+    # Agregar una opción vacía al inicio
+    opciones_filtradas = [""] + opciones_filtradas
+    
+    # Selectbox con las opciones filtradas
+    nombre_seleccionado = st.sidebar.selectbox(
+        "Selecciona tu nombre",
+        opciones_filtradas,
+        key="nombre_seleccionado",
+        help="Selecciona tu nombre de la lista."
+    )
+    
+    # Si se selecciona un nombre, autenticar al usuario
+    if nombre_seleccionado:
+        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
+        st.session_state.usuario = {
+            'Nombre': usuario_data['Nombre'],
+            'Rol': usuario_data['Rol'],
+            'Departamento': usuario_data['Departamento'],
+            'Nivel de Acceso': usuario_data['Nivel de Acceso']
+        }
+        st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+    else:
+        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
 
 # ===============================
 # Configuración de la Página
