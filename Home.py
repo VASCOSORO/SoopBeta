@@ -275,7 +275,7 @@ def guardar_pedido_excel(file_path, order_data):
 # ===============================
 
 def modulo_ventas():
-    st.header("📁 Ventas")
+    st.header("Ventas🛒")
     
     # Colocamos el buscador de cliente
     col1, col2 = st.columns([2, 1])
