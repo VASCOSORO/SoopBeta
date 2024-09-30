@@ -442,12 +442,22 @@ def modulo_ventas():
 # Módulo Ventas
 # ===============================
 
+import streamlit as st
+import pandas as pd
+import requests
+from PIL import Image
+from io import BytesIO
+
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
     
+    # Inicializar el pedido en session_state si no existe
+    if 'pedido' not in st.session_state:
+        st.session_state.pedido = []
+    
     # Colocamos el buscador de cliente y vendedor asignado en la misma fila
     col1, col2 = st.columns([2, 1])
-
+    
     with col1:
         cliente_seleccionado = st.selectbox(
             "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
@@ -480,7 +490,7 @@ def modulo_ventas():
                 'Mal pagador': '🔴'
             }
             credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')  # Asumiendo que 'Estado Credito' existe
-            color_credito = opciones_credito[credito_cliente]
+            color_credito = opciones_credito.get(credito_cliente, '🟡')  # Valor por defecto si no coincide
             st.write(f"**Estado de crédito:** {color_credito} {credito_cliente}")
 
         with col3:
@@ -581,10 +591,10 @@ def modulo_ventas():
                     else:
                         # Añadir producto al pedido con la cantidad seleccionada
                         producto_agregado = {
-                            'Codigo': producto_data['Codigo'],
+                            'Código': producto_data['Codigo'],
                             'Nombre': producto_data['Nombre'],
                             'Cantidad': cantidad,
-                            'Precio': producto_data['Precio'],
+                            'Precio Unitario': producto_data['Precio'],
                             'Importe': cantidad * producto_data['Precio']
                         }
                         st.session_state.pedido.append(producto_agregado)
@@ -604,6 +614,28 @@ def modulo_ventas():
                         st.image(image, width=200, caption="Imagen del producto")
                     except Exception as e:
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
+    
+    # ----------------------------
+    # Sección para mostrar el pedido actual
+    # ----------------------------
+    st.header("🛒 Pedido Actual")
+    
+    if st.session_state.pedido:
+        df_pedido = pd.DataFrame(st.session_state.pedido)
+        df_pedido['Importe'] = df_pedido['Cantidad'] * df_pedido['Precio Unitario']
+        st.table(df_pedido[['Código', 'Nombre', 'Cantidad', 'Precio Unitario', 'Importe']])
+
+        # Mostrar total del pedido
+        total = sum(item['Importe'] for item in st.session_state.pedido)
+        st.markdown(f"**Total Pedido:** ${total:.2f}")
+
+        # Botón para limpiar el pedido
+        if st.button("🗑️ Limpiar Pedido"):
+            st.session_state.pedido = []
+            st.success("Pedido limpiado exitosamente.")
+    else:
+        st.info("No hay productos en el pedido actualmente.")
+
 # ===============================
 # Módulo Equipo
 # ===============================
