@@ -59,12 +59,17 @@ if 'df_equipo' not in st.session_state:
             st.error(f"Error al cargar el archivo de equipo: {e}")
             st.stop()
     else:
-        # Definir los miembros del equipo
+        # Definir los miembros del equipo con nuevos campos
         data_equipo = {
             'Nombre': [
                 'Joni', 'Eduardo', 'Johan', 'Martin',
                 'Marian', 'Sofi', 'Valen', 'Emily',
                 'Maria-Jose', 'Vasco'
+            ],
+            'Contraseña': [
+                '', '', '', '',
+                '', '', '', '',
+                '', ''
             ],
             'Rol': [
                 'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
@@ -80,6 +85,26 @@ if 'df_equipo' not in st.session_state:
                 'Alto', 'Alto', 'Medio', 'Medio',
                 'Bajo', 'Bajo', 'Bajo', 'Bajo',
                 'Medio', 'Super Admin'
+            ],
+            'Número de Celular': [
+                '', '', '', '',
+                '', '', '', '',
+                '', ''
+            ],
+            'Fecha de Cumpleaños': [
+                '', '', '', '',
+                '', '', '', '',
+                '', ''
+            ],
+            'Dirección': [
+                '', '', '', '',
+                '', '', '', '',
+                '', ''
+            ],
+            'Activo': [
+                True, True, True, True,
+                True, True, True, True,
+                True, True
             ]
         }
         st.session_state.df_equipo = pd.DataFrame(data_equipo)
@@ -146,7 +171,10 @@ def color_stock(stock):
 
 def guardar_pedido_excel(file_path, order_data):
     try:
-        book = load_workbook(file_path)
+        if os.path.exists(file_path):
+            book = load_workbook(file_path)
+        else:
+            book = load_workbook()
         if 'Pedidos' in book.sheetnames:
             sheet = book['Pedidos']
         else:
@@ -417,7 +445,7 @@ def modulo_equipo():
     
     st.header("👥 Equipo de Trabajo")
     
-    # Mostrar la tabla del equipo
+    # Mostrar la tabla del equipo con los nuevos campos
     st.dataframe(st.session_state.df_equipo, use_container_width=True)
     
     st.markdown("---")
@@ -430,6 +458,7 @@ def modulo_equipo():
         with st.expander("Agregar Nuevo Miembro"):
             with st.form("form_agregar"):
                 nombre = st.text_input("Nombre")
+                contraseña = st.text_input("Contraseña", type="password")
                 rol = st.selectbox("Rol", [
                     'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
                     'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
@@ -440,6 +469,10 @@ def modulo_equipo():
                 nivel_acceso = st.selectbox("Nivel de Acceso", [
                     'Bajo', 'Medio', 'Alto', 'Super Admin'
                 ])
+                numero_celular = st.text_input("Número de Celular")
+                fecha_cumpleaños = st.date_input("Fecha de Cumpleaños")
+                direccion = st.text_area("Dirección")
+                activo = st.checkbox("Activo", value=True)
                 submit = st.form_submit_button("Agregar")
                 
                 if submit:
@@ -450,35 +483,44 @@ def modulo_equipo():
                     else:
                         nuevo_miembro = {
                             'Nombre': nombre.strip(),
+                            'Contraseña': contraseña.strip(),
                             'Rol': rol,
                             'Departamento': departamento,
-                            'Nivel de Acceso': nivel_acceso
+                            'Nivel de Acceso': nivel_acceso,
+                            'Número de Celular': numero_celular.strip(),
+                            'Fecha de Cumpleaños': fecha_cumpleaños.strftime("%Y-%m-%d") if isinstance(fecha_cumpleaños, datetime) else fecha_cumpleaños,
+                            'Dirección': direccion.strip(),
+                            'Activo': activo
                         }
                         st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
                         st.success(f"Miembro {nombre} agregado exitosamente.")
                         # Guardar los cambios en Excel
                         st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-    
+        
         st.markdown("---")
         
-        # Formulario para eliminar un miembro del equipo
-        with st.expander("Eliminar Miembro"):
-            with st.form("form_eliminar"):
-                nombre_eliminar = st.selectbox(
-                    "Selecciona el nombre a eliminar",
-                    st.session_state.df_equipo['Nombre'].unique().tolist()
+        # Formulario para activar/desactivar un miembro del equipo
+        with st.expander("Activar/Desactivar Miembro"):
+            with st.form("form_activar_desactivar"):
+                nombre_activar = st.selectbox(
+                    "Selecciona el nombre",
+                    st.session_state.df_equipo['Nombre'].unique().tolist(),
+                    key="nombre_activar"
                 )
-                submit_eliminar = st.form_submit_button("Eliminar")
+                accion = st.selectbox("Acción", ["Activar", "Desactivar"])
+                submit_activar = st.form_submit_button("Aplicar")
                 
-                if submit_eliminar:
-                    if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
-                        if nombre_eliminar == st.session_state.usuario['Nombre']:
-                            st.error("No puedes eliminarte a ti mismo.")
+                if submit_activar:
+                    if nombre_activar in st.session_state.df_equipo['Nombre'].values:
+                        indice = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_activar].index[0]
+                        if accion == "Activar":
+                            st.session_state.df_equipo.at[indice, 'Activo'] = True
+                            st.success(f"Miembro {nombre_activar} activado exitosamente.")
                         else:
-                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
-                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
-                            # Guardar los cambios en Excel
-                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                            st.session_state.df_equipo.at[indice, 'Activo'] = False
+                            st.success(f"Miembro {nombre_activar} desactivado exitosamente.")
+                        # Guardar los cambios en Excel
+                        st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
                     else:
                         st.error("El nombre seleccionado no existe.")
 
@@ -517,7 +559,7 @@ def modulo_convertidor_csv():
     st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
 
 # ===============================
-# Función de Autenticación con Solo Selectbox
+# Función de Autenticación con Solo Selectbox y Contraseña
 # ===============================
 
 def login():
@@ -531,16 +573,33 @@ def login():
         help="Selecciona tu nombre de la lista."
     )
     
-    # Si se selecciona un nombre, autenticar al usuario
+    # Si se selecciona un nombre, mostrar campo de contraseña
     if nombre_seleccionado:
-        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
-        st.session_state.usuario = {
-            'Nombre': usuario_data['Nombre'],
-            'Rol': usuario_data['Rol'],
-            'Departamento': usuario_data['Departamento'],
-            'Nivel de Acceso': usuario_data['Nivel de Acceso']
-        }
-        st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+        contraseña_ingresada = st.sidebar.text_input(
+            "Ingresa tu contraseña",
+            type="password",
+            key="contraseña_ingresada"
+        )
+        
+        # Botón para autenticar
+        if st.sidebar.button("Iniciar Sesión"):
+            usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado]
+            if not usuario_data.empty:
+                usuario_data = usuario_data.iloc[0]
+                if not usuario_data['Activo']:
+                    st.sidebar.error("Tu cuenta está desactivada. Contacta al administrador.")
+                elif contraseña_ingresada == usuario_data['Contraseña']:
+                    st.session_state.usuario = {
+                        'Nombre': usuario_data['Nombre'],
+                        'Rol': usuario_data['Rol'],
+                        'Departamento': usuario_data['Departamento'],
+                        'Nivel de Acceso': usuario_data['Nivel de Acceso']
+                    }
+                    st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+                else:
+                    st.sidebar.error("Contraseña incorrecta. Inténtalo de nuevo.")
+            else:
+                st.sidebar.error("Nombre de usuario no encontrado.")
     else:
         st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
 
