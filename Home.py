@@ -290,20 +290,49 @@ def modulo_ventas():
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
     
-        # Mostrar descuento y última compra
+        # Mostrar descuento, última compra, vendedor principal, notas y crédito
         with col1:
             st.write(f"**Descuento:** {cliente_data['Descuento']}%")
             st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
-    
-        # Mostrar vendedor principal
+        
         with col2:
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
             vendedor_default = vendedores[0]
             vendedor_seleccionado = st.selectbox("Vendedor", vendedores, index=0)
             st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
-    
+        
+        # Desplegable para las notas del cliente
+        with st.expander("🔖 Notas del Cliente"):
+            st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
+        
+        # Indicador de crédito del cliente
+        with col2:
+            # Seleccionar el estado de crédito del cliente
+            opciones_credito = {
+                'Buen pagador': '🟢',
+                'Pagos regulares': '🟡',
+                'Mal pagador': '🔴'
+            }
+            credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')  # Asumiendo que 'Estado Credito' existe
+            color_credito = opciones_credito[credito_cliente]
+            st.write(f"**Estado de crédito:** {color_credito} {credito_cliente}")
+        
+        # Desplegable para la forma de pago
+        forma_pago = st.selectbox(
+            "💳 Forma de Pago",
+            ["CC", "Contado", "Depósito/Transferencia"],
+            index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
+        )
+        
+        # Desplegable para el rubro del cliente
+        rubros_cliente = st.multiselect(
+            "🏢 Rubros del Cliente",
+            options=['Retail', 'Mayorista', 'Distribuidor', 'E-commerce'],  # Ejemplos de rubros
+            default=cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
+        )
+
         # Sección de productos solo aparece si hay cliente seleccionado
-        st.header("🔍Buscador de Productos🕶️")
+        st.header("🔍 Buscador de Productos 🕶️")
     
         # Tres columnas: Buscador, precio, y stock con colores
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
@@ -487,7 +516,7 @@ def modulo_ventas():
                         guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
     
                         # Confirmar al usuario
-                        st.success("Pedido guardado exitosamente.", icon="✅📈")
+                        st.success("Pedido guardado exitosamente.", icon="✅")
     
                         # Limpiar el pedido después de guardarlo
                         st.session_state.pedido = []
@@ -498,7 +527,6 @@ def modulo_ventas():
                             st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
                         except Exception as e:
                             st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-
 # ===============================
 # Módulo Equipo
 # ===============================
