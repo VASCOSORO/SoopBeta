@@ -323,16 +323,19 @@ def modulo_ventas():
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
         
-        # Rubros del cliente como desplegable
+        # Rubros del cliente como desplegable y lógica de filtrado
         rubros_cliente = cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
-        rubro_seleccionado = st.selectbox("🏷️ Filtrar por Rubro del Cliente", [""] + rubros_cliente)
-        
+        rubro_seleccionado = st.selectbox("🏷️ Filtrar por Rubro del Cliente", [""] + rubros_cliente, help="Seleccioná un rubro para filtrar productos")
+
         # Filtrar productos por el rubro seleccionado
         if rubro_seleccionado:
             productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].str.contains(rubro_seleccionado, na=False)]
             productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
+            cantidad_filtrados = len(productos_filtrados)
+            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por el rubro '{rubro_seleccionado}'")
         else:
             productos_filtrados = st.session_state.df_productos
+            st.info("Mostrando todos los productos disponibles")
 
         # Desplegable para las notas del cliente
         st.write("---")
@@ -514,27 +517,8 @@ def modulo_ventas():
                         # Preparar datos del pedido
                         order_data = {
                             'cliente': cliente_seleccionado,
-                            'vendedor': vendedor_seleccionado,
-                            'fecha': fecha_actual,
-                            'hora': hora_actual,
-                            'items': st.session_state.pedido
-                        }
-    
-                        # Guardar el pedido en la hoja 'Pedidos' de 'AdministracionSoop.xlsx'
-                        guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
-    
-                        # Confirmar al usuario
-                        st.success("Pedido guardado exitosamente.", icon="✅")
-    
-                        # Limpiar el pedido después de guardarlo
-                        st.session_state.pedido = []
-                        st.session_state.delete_confirm = {}
-    
-                        # Guardar los cambios en el stock de productos
-                        try:
-                            st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
-                        except Exception as e:
-                            st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+                            'vendedor': vendedor_se
+
 # ===============================
 # Módulo Equipo
 # ===============================
