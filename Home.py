@@ -326,22 +326,19 @@ def modulo_ventas():
         with st.expander("🔖 Notas del Cliente"):
             st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
 
-        # Rubros del cliente: Ficticios en un desplegable con la opción de seleccionar y destildar
-        rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]  # Rubros ficticios
-        rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
+        # Filtrar por categorías (en lugar de rubros)
+        categorias_disponibles = st.session_state.df_productos['Categorías'].unique().tolist()
+        categorias_seleccionadas = st.multiselect("🏷️ Filtrar por Categoría", categorias_disponibles, help="Seleccioná categorías para filtrar productos")
 
-        # Lógica para filtrar productos por rubro (aseguramos que la columna 'Rubros' exista en df_productos)
-        if 'Rubros' in st.session_state.df_productos.columns:
-            if rubros_seleccionados:
-                productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))]
-                productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
-                cantidad_filtrados = len(productos_filtrados)
-                st.info(f"Mostrando {cantidad_filtrados} productos filtrados por los rubros seleccionados")
-            else:
-                productos_filtrados = st.session_state.df_productos
-                st.info("Mostrando todos los productos disponibles")
+        # Lógica para filtrar productos por categoría
+        if categorias_seleccionadas:
+            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Categorías'].isin(categorias_seleccionadas)]
+            productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
+            cantidad_filtrados = len(productos_filtrados)
+            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por las categorías seleccionadas")
         else:
-            st.error("La columna 'Rubros' no existe en la base de datos de productos.")
+            productos_filtrados = st.session_state.df_productos
+            st.info("Mostrando todos los productos disponibles")
 
         # Sección de productos solo aparece si hay cliente seleccionado
         st.header("🔍 Buscador de Productos 🕶️")
@@ -350,7 +347,7 @@ def modulo_ventas():
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
     
         with col_prod1:
-            # Buscador de productos con el rubro seleccionado aplicado si existe
+            # Buscador de productos con el filtro de categorías aplicado si existe
             producto_buscado = st.selectbox(
                 "Buscar producto",
                 [""] + productos_filtrados['Nombre'].unique().tolist(),
@@ -363,7 +360,7 @@ def modulo_ventas():
             with col_prod2:
                 # Mostrar precio
                 st.write(f"**Precio:** ${producto_data['Precio']}")
-    
+
             with col_prod3:
                 # Mostrar stock con colores según la cantidad
                 stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
@@ -441,6 +438,8 @@ def modulo_ventas():
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
                     st.write("🔗 **No hay imagen disponible.**")
+
+
 # ===============================
 # Módulo Equipo
 # ===============================
