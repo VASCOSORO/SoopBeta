@@ -585,7 +585,6 @@ def modulo_ventas():
                         st.success("Stock de productos actualizado correctamente.", icon="✅")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-    ```
 
 ### **Pasos Detallados para Copiar el Código Correctamente**
 
