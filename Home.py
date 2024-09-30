@@ -277,18 +277,28 @@ def guardar_pedido_excel(file_path, order_data):
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
     
-    # Colocamos el buscador de cliente
+    # Colocamos el buscador de cliente y vendedor asignado en la misma fila
     col1, col2 = st.columns([2, 1])
-    
+
     with col1:
         cliente_seleccionado = st.selectbox(
             "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
             help="Escribí el nombre del cliente o seleccioná uno de la lista."
         )
+        
+    with col2:
+        if cliente_seleccionado != "":
+            cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+            vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+            vendedor_default = vendedores[0]
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
     
-    # Solo mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
+    # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+
+        # Colocamos el descuento arriba del vendedor
+        st.write(f"**Descuento:** {cliente_data['Descuento']}%")
 
         # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
         col1, col2, col3 = st.columns(3)
@@ -313,18 +323,6 @@ def modulo_ventas():
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
         
-        # Segunda fila: Vendedor, Vendedor asignado, Descuento
-        col4, col5, col6 = st.columns(3)
-
-        with col4:
-            st.write(f"**Descuento:** {cliente_data['Descuento']}%")
-
-        with col5:
-            vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_default = vendedores[0]
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
-            st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
-
         # Rubros del cliente: Mostrados como etiquetas una al lado de la otra
         rubros_cliente = cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
         rubro_tags = " ".join([f"🏷️ {rubro}" for rubro in rubros_cliente])
@@ -531,6 +529,7 @@ def modulo_ventas():
                             st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
                         except Exception as e:
                             st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+
 # ===============================
 # Módulo Equipo
 # ===============================
