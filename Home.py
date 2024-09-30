@@ -1450,7 +1450,7 @@ def modulo_convertidor_csv():
 st.sidebar.title("📚Modulos🧬")
 
 # Internal navigation
-seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
+seccion = st.sidebar.radio("Ir a", ["Ventas", "Marketing", "Logística", "Administración", "Estadísticas", "Equipo"])
 
 # External links
 st.sidebar.markdown("---")
