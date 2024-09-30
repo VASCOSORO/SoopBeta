@@ -697,10 +697,11 @@ def modulo_administracion():
 def modulo_estadistica():
     st.header("📈 Estadísticas para la toma de decisiones")
 
-    # Datos ficticios
+    # Datos ficticios (incluyendo los vendedores)
     data_ficticia_ventas = {
         'Fecha': pd.date_range(start='2024-09-01', periods=10, freq='D'),
-        'Monto': [1000, 1500, 1200, 1800, 2000, 1600, 1900, 1700, 1300, 2100]
+        'Monto': [1000, 1500, 1200, 1800, 2000, 1600, 1900, 1700, 1300, 2100],
+        'Vendedor': ['Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco', 'Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco']
     }
     df_ventas_ficticio = pd.DataFrame(data_ficticia_ventas)
 
@@ -726,6 +727,10 @@ def modulo_estadistica():
     }
     df_vendedores_ficticio = pd.DataFrame(vendedores_ficticios)
 
+    # Configurar la localización en español para los días de la semana
+    import locale
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+
     # Tarjetas Resumidas
     col1, col2, col3 = st.columns(3)
 
@@ -748,11 +753,26 @@ def modulo_estadistica():
 
     # Gráfico de ventas por día de la semana (ficticio)
     st.subheader("📅 Ventas por Día de la Semana")
-    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.day_name()
+    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.strftime('%A')
     ventas_resumen_ficticio = df_ventas_ficticio.groupby('Día')['Monto'].sum().reindex(
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
     )
     st.bar_chart(ventas_resumen_ficticio)
+
+    st.markdown("---")
+
+    # Seleccionar un día y mostrar las ventas por vendedor para ese día
+    st.subheader("🔍 Ventas por Día y Vendedor")
+    dias_unicos = df_ventas_ficticio['Día'].unique().tolist()
+    dia_seleccionado = st.selectbox("Seleccionar un día", dias_unicos)
+
+    # Filtrar por día seleccionado
+    ventas_por_dia = df_ventas_ficticio[df_ventas_ficticio['Día'] == dia_seleccionado]
+    if not ventas_por_dia.empty:
+        ventas_vendedores = ventas_por_dia.groupby('Vendedor')['Monto'].sum()
+        st.bar_chart(ventas_vendedores)
+    else:
+        st.info(f"No hay datos de ventas para el día {dia_seleccionado}.")
 
     st.markdown("---")
 
