@@ -275,7 +275,7 @@ def guardar_pedido_excel(file_path, order_data):
 # ===============================
 
 def modulo_ventas():
-    st.header("📁 Ventas")
+    st.header("🎐 Crear Pedido")
     
     # Colocamos el buscador de cliente
     col1, col2 = st.columns([2, 1])
@@ -303,7 +303,7 @@ def modulo_ventas():
             st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
     
         # Sección de productos solo aparece si hay cliente seleccionado
-        st.header("📁 Buscador de Productos 🔍")
+        st.header("🔍Buscador de Productos🕶️")
     
         # Tres columnas: Buscador, precio, y stock con colores
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
