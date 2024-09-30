@@ -435,7 +435,7 @@ def modulo_equipo():
                     'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
                 ])
                 departamento = st.selectbox("Departamento", [
-                    'Dirección', 'Depósito', 'Ventas', 'Marketing'
+                    'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
                 ])
                 nivel_acceso = st.selectbox("Nivel de Acceso", [
                     'Bajo', 'Medio', 'Alto', 'Super Admin'
