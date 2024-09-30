@@ -519,6 +519,10 @@ def modulo_equipo():
     if 'Avatar' not in st.session_state.df_equipo.columns:
         st.session_state.df_equipo['Avatar'] = 'https://via.placeholder.com/150'
     
+    # Añadir una columna de 'Estado' si no existe
+    if 'Estado' not in st.session_state.df_equipo.columns:
+        st.session_state.df_equipo['Estado'] = 'Activo'  # Valor predeterminado para nuevos usuarios
+
     # Buscar un miembro del equipo para mostrar su ficha
     miembro_seleccionado = st.selectbox(
         "Seleccionar Miembro del Equipo", 
@@ -677,7 +681,6 @@ def modulo_equipo():
                             st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
                     else:
                         st.error("El nombre seleccionado no existe.")
-
 # ===============================
 # Módulo Administración
 # ===============================
