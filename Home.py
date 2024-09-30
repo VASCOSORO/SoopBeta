@@ -13,6 +13,11 @@ import re
 from fpdf import FPDF  # Para la generación de PDF
 
 # ===============================
+# Configuración de la Página (ESTO DEBE IR AL PRINCIPIO)
+# ===============================
+st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
+
+# ===============================
 # Inicialización del Estado de Sesión
 # ===============================
 
@@ -711,27 +716,6 @@ def modulo_productos():
 def modulo_convertidor_csv():
     st.header("🔗 Acceder al Convertidor de CSV")
     st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
-
-# ===============================
-# Configuración de la Página
-# ===============================
-
-st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
-
-# Título de la Aplicación
-st.title("🐻 Módulo de Ventas 🛒")
-
-# Sidebar para Inicio de Sesión
-login()
-
-# Si el usuario no está autenticado, detener la ejecución
-if not st.session_state.usuario:
-    st.stop()
-
-# Mostrar información del usuario en la parte superior
-st.markdown(f"### Usuario: **{st.session_state.usuario['Nombre']}**")
-st.markdown(f"### Rol: **{st.session_state.usuario['Rol']}**")
-st.markdown("---")
 
 # ===============================
 # Navegación entre Módulos
