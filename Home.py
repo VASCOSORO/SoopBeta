@@ -462,7 +462,7 @@ def modulo_ventas():
                             'Codigo': producto_data['Codigo'],
                             'Nombre': producto_data['Nombre'],
                             'Cantidad': cantidad,
-                            'Precio Unitario': producto_data['Precio'],
+                            'Precio': producto_data['Precio'],
                             'Importe': cantidad * producto_data['Precio']
                         }
                         st.session_state.pedido.append(producto_agregado)
@@ -494,7 +494,7 @@ def modulo_ventas():
             codigo = producto['Codigo']
             nombre = producto['Nombre']
             cantidad = producto['Cantidad']
-            precio_unitario = producto['Precio Unitario']
+            precio = producto['Precio']
             importe = producto['Importe']
 
             # Crear columnas para mostrar el producto y el botón de eliminar
@@ -502,7 +502,7 @@ def modulo_ventas():
             col1.write(codigo)
             col2.write(nombre)
             col3.write(cantidad)
-            col4.write(f"${precio_unitario}")
+            col4.write(f"${precio}")
             col5.write(f"${importe}")
 
             # Verificar si este producto está pendiente de eliminación
@@ -585,7 +585,20 @@ def modulo_ventas():
                         st.success("Stock de productos actualizado correctamente.", icon="✅")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-    ```# ===============================
+    ```
+
+### **Detalles de las Modificaciones Realizadas:**
+
+1. **Consistencia en las Claves:**
+   - **`Codigo` sin acento:** He reemplazado todas las instancias de `'Código'` con `'Codigo'` para mantener la consistencia con la columna `'Codigo'` en `df_productos`.
+   - **`Precio` en lugar de `Precio Unitario`:** Mantengo `'Precio'` como la clave para el precio, evitando `'Precio Unitario'`.
+
+2. **Inicialización de `delete_confirm`:**
+   ```python
+   if 'delete_confirm' not in st.session_state:
+       st.session_state.delete_confirm = {}
+
+# ===============================
 # Módulo Administración
 # ===============================
 
