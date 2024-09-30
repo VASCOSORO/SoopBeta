@@ -939,6 +939,11 @@ def modulo_marketing():
                 generar_imagen_flayer(productos_flayer)
 from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
+import requests
+from io import BytesIO
+from fpdf import FPDF
+import streamlit as st
 
 # ===============================
 # Funciones para generar PDF e Imagen
