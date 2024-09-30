@@ -503,7 +503,6 @@ def guardar_pedido_excel(archivo, order_data):
 
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
-    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
 
     # Inicializar el pedido y delete_confirm en session_state si no existen
     if 'pedido' not in st.session_state:
