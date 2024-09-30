@@ -469,41 +469,16 @@ def modulo_equipo():
                     # Guardar los cambios en Excel
                     st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
 
-    st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
-
-    # Cargar datos de equipo al inicio
+    # Llamar a la función de carga al inicio del script
     cargar_equipo()
 
-    # Definición de otras funciones como modulo_ventas(), etc.
+    # Opcional: Navegación entre módulos (si tienes otros módulos)
+    # seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
 
-    # Navegación entre módulos
-    seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
-
-    if seccion == "Equipo":
-        modulo_equipo()
+    # if seccion == "Equipo":
+    #     modulo_equipo()
     
     # Otras secciones...
-    ```
-
-### **Detalles Importantes**
-
-1. **Agregar los Dos Puntos (`:`) en la Declaración `if`**
-
-   En la sección donde manejas la eliminación de un miembro, asegúrate de que todas las declaraciones `if` terminen con `:`. Por ejemplo:
-
-   ```python
-   if submit_eliminar:
-       if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
-           if nombre_eliminar == st.session_state.usuario.get('Nombre', ''):
-               st.error("No puedes eliminarte a ti mismo.")
-           else:
-               st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
-               st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
-               # Guardar los cambios en Excel
-               st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
-       else:
-           st.error("El nombre seleccionado no existe.")
-
 # ===============================
 # Módulo Ventas
 # ===============================
