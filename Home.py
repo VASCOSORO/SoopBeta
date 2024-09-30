@@ -939,6 +939,7 @@ def generar_pdf(productos):
 def generar_imagen_png(productos):
     # Placeholder: Aquí podrías usar Pillow para generar una imagen con los datos
     st.warning("Función de generación de imágenes aún no implementada.")
+    
 # ===============================
 # Módulo Logística
 # ===============================
