@@ -103,19 +103,41 @@ def guardar_pedido_excel(file_path, order_data):
         st.error(f"Error al guardar el pedido: {e}")
 
 # ===============================
-# Función de Autenticación
+# Función de Autenticación con Autocompletado
 # ===============================
 
 def login():
     st.sidebar.title("🔒 Iniciar Sesión")
-    nombre_usuario = st.sidebar.selectbox(
-        "Selecciona tu nombre",
-        [""] + st.session_state.df_equipo['Nombre'].unique().tolist(),
-        help="Selecciona tu nombre para iniciar sesión."
+    
+    # Campo de texto para ingresar el nombre
+    nombre_busqueda = st.sidebar.text_input(
+        "Escribe tu nombre",
+        placeholder="Comienza a escribir tu nombre...",
+        key="nombre_busqueda"
     )
     
-    if nombre_usuario:
-        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_usuario].iloc[0]
+    # Filtrar los nombres que contienen la búsqueda (case insensitive)
+    if nombre_busqueda:
+        opciones_filtradas = st.session_state.df_equipo[
+            st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
+        ]['Nombre'].tolist()
+    else:
+        opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
+    
+    # Agregar una opción vacía al inicio
+    opciones_filtradas = [""] + opciones_filtradas
+    
+    # Selectbox con las opciones filtradas
+    nombre_seleccionado = st.sidebar.selectbox(
+        "Selecciona tu nombre",
+        opciones_filtradas,
+        key="nombre_seleccionado",
+        help="Selecciona tu nombre de la lista."
+    )
+    
+    # Si se selecciona un nombre, autenticar al usuario
+    if nombre_seleccionado:
+        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
         st.session_state.usuario = {
             'Nombre': usuario_data['Nombre'],
             'Rol': usuario_data['Rol'],
@@ -124,7 +146,7 @@ def login():
         }
         st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
     else:
-        st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
+        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
 
 # ===============================
 # Función para Verificar Acceso
@@ -435,6 +457,8 @@ elif seccion == "Equipo":
                 if submit:
                     if nombre.strip() == "":
                         st.error("El nombre no puede estar vacío.")
+                    elif nombre.strip() in st.session_state.df_equipo['Nombre'].values:
+                        st.error("El nombre ya existe en el equipo.")
                     else:
                         nuevo_miembro = {
                             'Nombre': nombre.strip(),
@@ -458,8 +482,11 @@ elif seccion == "Equipo":
                 
                 if submit_eliminar:
                     if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
-                        st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
-                        st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
+                        if nombre_eliminar == st.session_state.usuario['Nombre']:
+                            st.error("No puedes eliminarte a ti mismo.")
+                        else:
+                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
+                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
                     else:
                         st.error("El nombre seleccionado no existe.")
 
