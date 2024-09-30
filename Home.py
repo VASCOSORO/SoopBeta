@@ -674,13 +674,7 @@ def modulo_convertidor_csv():
 def login():
     st.sidebar.title("🔒 Iniciar Sesión")
     
-    # Campo de texto para ingresar el nombre
-    nombre_busqueda = st.sidebar.text_input(
-        "Escribe tu nombre",
-        placeholder="Comienza a escribir tu nombre...",
-        key="nombre_busqueda"
-    )
-    
+
     # Filtrar los nombres que contienen la búsqueda (case insensitive)
     if nombre_busqueda:
         opciones_filtradas = st.session_state.df_equipo[
