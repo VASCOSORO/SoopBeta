@@ -803,10 +803,142 @@ def modulo_estadistica():
 # ===============================
 
 def modulo_marketing():
-    st.header("📢 Marketing")
-    st.write("Aquí puedes agregar funcionalidades de marketing.")
-    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de marketing.
+    st.header("📢 Marketing y Gestión de Productos")
 
+    # Parte 1: Visualizar productos
+    st.subheader("🔍 Buscar y Ver Productos")
+    
+    col_prod1, col_prod2 = st.columns([2, 1])
+    
+    with col_prod1:
+        producto_buscado = st.selectbox(
+            "Buscar producto",
+            [""] + st.session_state.df_productos['Nombre'].unique().tolist(),
+            help="Escribí el nombre del producto o seleccioná uno de la lista."
+        )
+
+    if producto_buscado:
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto_buscado].iloc[0]
+        
+        with col_prod2:
+            # Mostrar stock
+            st.write(f"**Stock disponible:** {producto_data['Stock']}")
+        
+        # Mostrar detalles del producto seleccionado
+        col_detalles1, col_detalles2 = st.columns([2, 1])
+        
+        with col_detalles1:
+            st.write(f"**Código del producto:** {producto_data['Codigo']}")
+            st.write(f"**Proveedor:** {producto_data['Proveedor']}")
+            st.write(f"**Categorías:** {producto_data['Categorías']}")
+        
+        with col_detalles2:
+            # Mostrar imagen del producto
+            if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+                try:
+                    response = requests.get(producto_data['imagen'], timeout=5)
+                    response.raise_for_status()
+                    image = Image.open(BytesIO(response.content))
+                    st.image(image, width=200, caption="Imagen del producto")
+                except Exception as e:
+                    st.write("🔗 **Imagen no disponible o URL inválida.**")
+            else:
+                st.write("🔗 **No hay imagen disponible.**")
+    
+    st.markdown("---")
+
+    # Parte 2: Agregar nuevo producto
+    st.subheader("➕ Agregar Nuevo Producto")
+    
+    with st.form("form_agregar_producto"):
+        col_form1, col_form2 = st.columns(2)
+        
+        with col_form1:
+            codigo = st.text_input("Código del Producto")
+            proveedor = st.text_input("Proveedor")
+            imagen_url = st.text_input("URL de la Imagen del Producto")
+            categorias = st.text_input("Categorías (separadas por coma)")
+            stock = st.number_input("Stock Inicial", min_value=0)
+            
+        with col_form2:
+            venta_forzada = st.checkbox("Venta Forzada", help="Marcar si la venta es forzada por múltiplos.")
+            costo_en_pesos = st.checkbox("Agregar Precio de Costo en Pesos")
+            costo_en_dolares = st.checkbox("Agregar Precio de Costo en Dólares")
+            
+            # Mostrar campos de precio según selección
+            if costo_en_pesos:
+                precio_pesos = st.number_input("Costo en Pesos", min_value=0.0, step=0.01)
+            if costo_en_dolares:
+                precio_dolares = st.number_input("Costo en Dólares", min_value=0.0, step=0.01)
+        
+        # Botón para agregar el producto
+        agregar_producto_submit = st.form_submit_button("Agregar Producto")
+        
+        if agregar_producto_submit:
+            nuevo_producto = {
+                'Codigo': codigo,
+                'Proveedor': proveedor,
+                'imagen': imagen_url,
+                'Categorías': categorias,
+                'Stock': stock,
+                'forzar multiplos': 1 if venta_forzada else 0,
+                'Precio Costo Pesos': precio_pesos if costo_en_pesos else None,
+                'Precio Costo USD': precio_dolares if costo_en_dolares else None
+            }
+            st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
+            st.success(f"Producto {codigo} agregado exitosamente.")
+            # Guardar en Excel (o en la base de datos según implementación)
+            st.session_state.df_productos.to_excel('archivo_modificado_productos.xlsx', index=False)
+    
+    st.markdown("---")
+
+    # Parte 3: Ver últimos productos agregados
+    st.subheader("🆕 Últimos Productos Agregados")
+    ultimos_productos = st.session_state.df_productos.tail(5)
+    st.table(ultimos_productos[['Codigo', 'Nombre', 'Proveedor', 'Stock']])
+
+    st.markdown("---")
+    
+    # Parte 4: Crear PDF o Imágenes
+    st.subheader("📄 Crear PDF o Imagen con Productos Seleccionados")
+    
+    productos_seleccionados = st.multiselect("Seleccionar productos para el PDF/Imagen", 
+                                             st.session_state.df_productos['Nombre'].unique())
+    
+    # Limitar selección a 6 productos
+    if len(productos_seleccionados) > 6:
+        st.error("Solo puedes seleccionar hasta 6 productos para el PDF o imagen.")
+    elif len(productos_seleccionados) > 0:
+        if st.button("Generar PDF"):
+            generar_pdf(productos_seleccionados)
+        if st.button("Generar Imagen PNG"):
+            generar_imagen_png(productos_seleccionados)
+
+# ===============================
+# Funciones para generar PDF e Imagen
+# ===============================
+
+def generar_pdf(productos):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
+        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
+        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
+        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
+        pdf.cell(200, 10, txt="---", ln=True)
+    
+    # Guardar el PDF
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
+
+def generar_imagen_png(productos):
+    # Placeholder: Aquí podrías usar Pillow para generar una imagen con los datos
+    st.warning("Función de generación de imágenes aún no implementada.")
 # ===============================
 # Módulo Logística
 # ===============================
