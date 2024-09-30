@@ -613,3 +613,187 @@ def modulo_picking():
                 st.session_state.df_logistica.to_excel('LogisticaSoop.xlsx', index=False)
                 # Guardar los cambios en Picking
                 st.session_state.df_picking.to_excel('PickingSoop.xlsx', index=False)
+# Parte 3.4: Implementación del Módulo Estadísticas
+
+def modulo_estadistica():
+    st.header("📈 Estadísticas")
+    
+    # Cargar datos de estadísticas
+    inicializar_dataframe('df_estadisticas', ['Vendedor', 'Fecha', 'Monto'], 'EstadisticasSoop.xlsx')
+    
+    st.subheader("📊 Gráfico de Ventas por Vendedor")
+    
+    # Filtrar por fecha
+    fecha_inicio = st.date_input("Fecha de Inicio", value=datetime(2023, 1, 1))
+    fecha_fin = st.date_input("Fecha de Fin", value=datetime.now())
+    
+    # Filtrar por vendedor
+    vendedores = ["Todos"] + st.session_state.df_estadisticas['Vendedor'].unique().tolist()
+    vendedor_seleccionado = st.selectbox("Selecciona Vendedor", vendedores)
+    
+    # Filtrar datos
+    if vendedor_seleccionado == "Todos":
+        df_filtrado = st.session_state.df_estadisticas[
+            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
+            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
+        ]
+    else:
+        df_filtrado = st.session_state.df_estadisticas[
+            (st.session_state.df_estadisticas['Vendedor'] == vendedor_seleccionado) &
+            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
+            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
+        ]
+    
+    # Agrupar datos por fecha y sumar montos
+    df_ventas = df_filtrado.groupby('Fecha')['Monto'].sum().reset_index()
+    
+    # Mostrar gráfico
+    st.line_chart(df_ventas.set_index('Fecha'))
+    
+    st.markdown("---")
+    
+    st.subheader("📊 Ventas Diarias por Vendedor")
+    vendedor_detalle = st.selectbox("Selecciona Vendedor para Detalles", ["Todos"] + st.session_state.df_estadisticas['Vendedor'].unique().tolist(), key="vendedor_detalle")
+    
+    if vendedor_detalle == "Todos":
+        df_detalle = st.session_state.df_estadisticas[
+            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
+            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
+        ]
+    else:
+        df_detalle = st.session_state.df_estadisticas[
+            (st.session_state.df_estadisticas['Vendedor'] == vendedor_detalle) &
+            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
+            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
+        ]
+    
+    st.dataframe(df_detalle, use_container_width=True)
+    
+    st.markdown("---")
+    
+    st.subheader("📊 Estadísticas Generales")
+    ventas_totales = st.session_state.df_estadisticas['Monto'].sum()
+    ventas_mensuales = st.session_state.df_estadisticas.groupby(pd.to_datetime(st.session_state.df_estadisticas['Fecha']).dt.to_period("M"))['Monto'].sum()
+    
+    st.write(f"**Ventas Totales Hasta la Fecha:** ${ventas_totales:,.2f}")
+    st.line_chart(ventas_mensuales)
+    
+    st.markdown("---")
+    
+    st.subheader("📋 Pedidos en Espera de Pago")
+    # Asumiendo que hay una columna 'Estado' en Logística para filtrar
+    df_espera_pago = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == 'Esperando Pago']
+    st.dataframe(df_espera_pago, use_container_width=True)
+    
+    st.markdown("---")
+    
+    st.subheader("❌ Pedidos Rechazados")
+    df_rechazados = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == 'Rechazado']
+    st.dataframe(df_rechazados, use_container_width=True)
+    
+    st.markdown("---")
+    
+    st.subheader("🆕 Últimos 5 Pedidos Cargados")
+    df_ultimos_pedidos = st.session_state.df_logistica.sort_values(by='Fecha', ascending=False).head(5)
+    st.dataframe(df_ultimos_pedidos, use_container_width=True)
+    
+    st.subheader("📦 Últimos Pedidos Despachados")
+    desplegable = st.selectbox("Selecciona para ver pedidos despachados", ["Mostrar"] + ["Últimos Pedidos Despachados"], key="desplegable_pedidos_despachados")
+    if desplegable == "Mostrar":
+        df_despachados = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == 'Enviado Pago']
+        st.dataframe(df_despachados, use_container_width=True)
+    
+    st.markdown("---")
+    
+    st.subheader("🔍 Detalle de Boleta de Cliente")
+    numero_pedido_detalle = st.selectbox("Selecciona Pedido para ver Boleta", st.session_state.df_logistica['Numero de Pedido'].tolist(), key="numero_pedido_detalle_estadisticas")
+    
+    if numero_pedido_detalle:
+        # Suponiendo que los detalles de productos están almacenados en el campo 'Detalles' como JSON
+        try:
+            detalles_productos = json.loads(st.session_state.df_logistica.loc[st.session_state.df_logistica['Numero de Pedido'] == numero_pedido_detalle, 'Detalles'].values[0])
+            df_boleta = pd.DataFrame(detalles_productos)
+            df_boleta['Total Item'] = df_boleta['Cantidad'] * df_boleta['Precio Unitario']
+            st.dataframe(df_boleta, use_container_width=True)
+        except:
+            st.write("No hay detalles de boleta disponibles.")
+# Parte 3.4: Implementación del Módulo Marketing
+
+def modulo_marketing():
+    st.header("📢 Marketing")
+    
+    # Cargar datos de marketing
+    inicializar_dataframe('df_marketing', ['Nombre Producto', 'Descripción', 'Imagen URL', 'Drive Link', 'Ayuda de Venta Link', 'Logística Link'], 'MarketingSoop.xlsx')
+    
+    st.subheader("🛍️ Gestión de Productos para Marketing")
+    
+    st.dataframe(st.session_state.df_marketing, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Opciones de gestión solo para Super Admin
+    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
+        st.subheader("🔧 Gestionar Productos de Marketing")
+        
+        # Formulario para agregar un nuevo producto
+        with st.expander("Agregar Nuevo Producto de Marketing"):
+            with st.form("form_agregar_producto_marketing"):
+                nombre_producto = st.text_input("Nombre del Producto")
+                descripcion = st.text_area("Descripción del Producto")
+                imagen_url = st.text_input("URL de la Imagen")
+                drive_link = st.text_input("Link a Drive")
+                ayuda_venta_link = st.text_input("Link para Ayuda de Venta")
+                logistica_link = st.text_input("Link para Logística")
+                submit_producto = st.form_submit_button("Agregar Producto")
+                
+                if submit_producto:
+                    if nombre_producto.strip() == "":
+                        st.error("El nombre del producto no puede estar vacío.")
+                    else:
+                        nuevo_producto_marketing = {
+                            'Nombre Producto': nombre_producto.strip(),
+                            'Descripción': descripcion.strip(),
+                            'Imagen URL': imagen_url.strip(),
+                            'Drive Link': drive_link.strip(),
+                            'Ayuda de Venta Link': ayuda_venta_link.strip(),
+                            'Logística Link': logistica_link.strip()
+                        }
+                        st.session_state.df_marketing = st.session_state.df_marketing.append(nuevo_producto_marketing, ignore_index=True)
+                        st.success(f"Producto '{nombre_producto}' agregado exitosamente.")
+                        # Guardar los cambios en Excel
+                        st.session_state.df_marketing.to_excel('MarketingSoop.xlsx', index=False)
+        
+        st.markdown("---")
+        
+        # Botones funcionales para cada producto
+        st.subheader("🔗 Acciones Rápidas")
+        for idx, producto in st.session_state.df_marketing.iterrows():
+            st.write(f"### {producto['Nombre Producto']}")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.markdown(f"**Descripción:** {producto['Descripción']}")
+            with col2:
+                if producto['Imagen URL']:
+                    try:
+                        response = requests.get(producto['Imagen URL'], timeout=5)
+                        response.raise_for_status()
+                        image = Image.open(BytesIO(response.content))
+                        st.image(image, width=150)
+                    except:
+                        st.write("🔗 **Imagen no disponible**")
+                else:
+                    st.write("🔗 **No hay imagen disponible**")
+            with col3:
+                st.markdown(f"[📁 Agregar al Drive]({producto['Drive Link']})" if producto['Drive Link'] else "🔗 **No disponible**")
+                st.markdown(f"[📈 Crear Ayuda de Venta]({producto['Ayuda de Venta Link']})" if producto['Ayuda de Venta Link'] else "🔗 **No disponible**")
+                st.markdown(f"[🚚 Pasar a Logística para Completar Ingreso]({producto['Logística Link']})" if producto['Logística Link'] else "🔗 **No disponible**")
+            st.markdown("---")
+# Parte 3.5: Implementación del Módulo Picking y Otros
+
+# Nota: Esta parte ya fue incluida en Parte 3.3. Si necesitas funcionalidades adicionales específicas para Picking, asegúrate de agregarlas aquí.
+
+# ===============================
+# Módulo Estadísticas (Si no se incluyó anteriormente)
+# ===============================
+
+# Ya incluido en Parte 3.3
