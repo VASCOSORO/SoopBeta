@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 import json
 from datetime import datetime
 import pytz
@@ -34,7 +34,7 @@ if 'df_productos' not in st.session_state:
 
 # Inicializar 'df_clientes' si no existe
 if 'df_clientes' not in st.session_state:
-    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
+    file_path_clientes = 'Clientes.xlsx'  # Archivo de clientes
     if os.path.exists(file_path_clientes):
         try:
             st.session_state.df_clientes = pd.read_excel(file_path_clientes)
@@ -42,8 +42,9 @@ if 'df_clientes' not in st.session_state:
             st.error(f"Error al cargar el archivo de clientes: {e}")
             st.stop()
     else:
-        st.warning(f"⚠️ El archivo {file_path_clientes} no existe. Por favor, súbelo desde el módulo Convertidor de CSV.")
-        st.session_state.df_clientes = pd.DataFrame()  # DataFrame vacío
+        st.warning(f"⚠️ El archivo {file_path_clientes} no existe. Creándolo automáticamente.")
+        st.session_state.df_clientes = pd.DataFrame(columns=['Nombre', 'Descuento', 'Fecha Modificado', 'Vendedores'])
+        st.session_state.df_clientes.to_excel(file_path_clientes, index=False)
 
 # Inicializar 'delete_confirm' como un diccionario si no existe
 if 'delete_confirm' not in st.session_state:
@@ -101,6 +102,16 @@ if 'df_equipo' not in st.session_state:
                 '', '', '', '',
                 '', ''
             ],
+            'Última Vez Inició Sesión': [
+                '', '', '', '',
+                '', '', '', '',
+                '', ''
+            ],
+            'Última Vez Utilizó el Sistema': [
+                '', '', '', '',
+                '', '', '', '',
+                '', ''
+            ],
             'Activo': [
                 True, True, True, True,
                 True, True, True, True,
@@ -113,6 +124,9 @@ if 'df_equipo' not in st.session_state:
             st.session_state.df_equipo.to_excel(file_path_equipo, index=False)
         except Exception as e:
             st.error(f"Error al guardar el archivo de equipo: {e}")
+
+# Inicializar otros DataFrames si es necesario
+# ...
 
 # Inicializar 'usuario' en sesión si no existe
 if 'usuario' not in st.session_state:
@@ -174,7 +188,7 @@ def guardar_pedido_excel(file_path, order_data):
         if os.path.exists(file_path):
             book = load_workbook(file_path)
         else:
-            book = load_workbook()
+            book = Workbook()
         if 'Pedidos' in book.sheetnames:
             sheet = book['Pedidos']
         else:
@@ -490,6 +504,8 @@ def modulo_equipo():
                             'Número de Celular': numero_celular.strip(),
                             'Fecha de Cumpleaños': fecha_cumpleaños.strftime("%Y-%m-%d") if isinstance(fecha_cumpleaños, datetime) else fecha_cumpleaños,
                             'Dirección': direccion.strip(),
+                            'Última Vez Inició Sesión': '',
+                            'Última Vez Utilizó el Sistema': '',
                             'Activo': activo
                         }
                         st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
@@ -548,18 +564,83 @@ def modulo_logistica():
     st.write("Aquí puedes agregar funcionalidades de logística.")
     # Placeholder: Puedes expandir esta sección con funcionalidades específicas de logística.
 
-# Productos Module (External Link)
-def modulo_productos():
-    st.header("🔗 Acceder al Módulo de Productos")
-    st.markdown("[Abrir Módulo de Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)", unsafe_allow_html=True)
-
-# Convertidor de CSV Module (External Link)
-def modulo_convertidor_csv():
-    st.header("🔗 Acceder al Convertidor de CSV")
-    st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
+# Clientes Module
+def modulo_clientes():
+    st.header("👥 Clientes")
+    st.write("Gestión de Clientes")
+    st.dataframe(st.session_state.df_clientes, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Opciones de gestión solo para Super Admin
+    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
+        st.subheader("🔧 Gestionar Clientes")
+        
+        # Formulario para agregar un nuevo cliente
+        with st.expander("Agregar Nuevo Cliente"):
+            with st.form("form_agregar_cliente"):
+                nombre_cliente = st.text_input("Nombre del Cliente")
+                descuento = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0)
+                fecha_modificado = st.date_input("Fecha de Última Modificación")
+                vendedores = st.text_input("Vendedores (separados por coma)")
+                submit_cliente = st.form_submit_button("Agregar Cliente")
+                
+                if submit_cliente:
+                    if nombre_cliente.strip() == "":
+                        st.error("El nombre del cliente no puede estar vacío.")
+                    elif nombre_cliente.strip() in st.session_state.df_clientes['Nombre'].values:
+                        st.error("El cliente ya existe.")
+                    else:
+                        nuevo_cliente = {
+                            'Nombre': nombre_cliente.strip(),
+                            'Descuento': descuento,
+                            'Fecha Modificado': fecha_modificado.strftime("%Y-%m-%d") if isinstance(fecha_modificado, datetime) else fecha_modificado,
+                            'Vendedores': vendedores.strip()
+                        }
+                        st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
+                        st.success(f"Cliente {nombre_cliente} agregado exitosamente.")
+                        # Guardar los cambios en Excel
+                        st.session_state.df_clientes.to_excel('Clientes.xlsx', index=False)
+        
+        st.markdown("---")
+        
+        # Formulario para eliminar o modificar un cliente
+        with st.expander("Eliminar o Modificar Cliente"):
+            with st.form("form_eliminar_modificar_cliente"):
+                nombre_cliente = st.selectbox(
+                    "Selecciona el cliente",
+                    st.session_state.df_clientes['Nombre'].unique().tolist(),
+                    key="nombre_cliente_modificar"
+                )
+                accion = st.selectbox("Acción", ["Eliminar", "Modificar"])
+                submit_accion = st.form_submit_button("Aplicar")
+                
+                if submit_accion:
+                    if nombre_cliente in st.session_state.df_clientes['Nombre'].values:
+                        if accion == "Eliminar":
+                            st.session_state.df_clientes = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] != nombre_cliente]
+                            st.success(f"Cliente {nombre_cliente} eliminado exitosamente.")
+                        else:
+                            # Modificar Cliente
+                            indice = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == nombre_cliente].index[0]
+                            with st.form("form_modificar_cliente"):
+                                nuevo_descuento = st.number_input("Nuevo Descuento (%)", min_value=0, max_value=100, value=int(st.session_state.df_clientes.at[indice, 'Descuento']))
+                                nueva_fecha_modificado = st.date_input("Nueva Fecha de Modificación", value=pd.to_datetime(st.session_state.df_clientes.at[indice, 'Fecha Modificado']))
+                                nuevos_vendedores = st.text_input("Nuevos Vendedores (separados por coma)", value=st.session_state.df_clientes.at[indice, 'Vendedores'])
+                                submit_modificar = st.form_submit_button("Modificar Cliente")
+                                
+                                if submit_modificar:
+                                    st.session_state.df_clientes.at[indice, 'Descuento'] = nuevo_descuento
+                                    st.session_state.df_clientes.at[indice, 'Fecha Modificado'] = nueva_fecha_modificado.strftime("%Y-%m-%d") if isinstance(nueva_fecha_modificado, datetime) else nueva_fecha_modificado
+                                    st.session_state.df_clientes.at[indice, 'Vendedores'] = nuevos_vendedores.strip()
+                                    st.success(f"Cliente {nombre_cliente} modificado exitosamente.")
+                        # Guardar los cambios en Excel
+                        st.session_state.df_clientes.to_excel('Clientes.xlsx', index=False)
+                    else:
+                        st.error("El cliente seleccionado no existe.")
 
 # ===============================
-# Función de Autenticación con Solo Selectbox y Contraseña
+# Función de Autenticación con Contraseña
 # ===============================
 
 def login():
@@ -596,6 +677,12 @@ def login():
                         'Nivel de Acceso': usuario_data['Nivel de Acceso']
                     }
                     st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+                    
+                    # Actualizar las fechas de última sesión
+                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre_seleccionado, 'Última Vez Inició Sesión'] = now
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre_seleccionado, 'Última Vez Utilizó el Sistema'] = now
+                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
                 else:
                     st.sidebar.error("Contraseña incorrecta. Inténtalo de nuevo.")
             else:
@@ -648,7 +735,7 @@ st.markdown("---")
 st.sidebar.title("📚 Navegación")
 
 # Internal navigation
-seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
+seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Clientes", "Administración", "Estadísticas", "Marketing", "Logística"])
 
 # External links
 st.sidebar.markdown("---")
@@ -665,6 +752,9 @@ if seccion == "Ventas":
 
 elif seccion == "Equipo":
     modulo_equipo()
+
+elif seccion == "Clientes":
+    modulo_clientes()
 
 elif seccion == "Administración":
     modulo_administracion()
