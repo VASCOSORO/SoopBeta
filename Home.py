@@ -830,7 +830,12 @@ def modulo_marketing():
         with col_detalles1:
             st.write(f"**Código del producto:** {producto_data['Codigo']}")
             st.write(f"**Proveedor:** {producto_data['Proveedor']}")
-            st.write(f"**Categorías:** {producto_data['Categorías']}")
+            
+            # Verificar si la columna 'Categorías' existe en el DataFrame
+            if 'Categorías' in producto_data:
+                st.write(f"**Categorías:** {producto_data['Categorías']}")
+            else:
+                st.write("**Categorías:** No disponible")
         
         with col_detalles2:
             # Mostrar imagen del producto
@@ -850,45 +855,46 @@ def modulo_marketing():
     # Parte 2: Agregar nuevo producto
     st.subheader("➕ Agregar Nuevo Producto")
     
-    with st.form("form_agregar_producto"):
-        col_form1, col_form2 = st.columns(2)
-        
-        with col_form1:
-            codigo = st.text_input("Código del Producto")
-            proveedor = st.text_input("Proveedor")
-            imagen_url = st.text_input("URL de la Imagen del Producto")
-            categorias = st.text_input("Categorías (separadas por coma)")
-            stock = st.number_input("Stock Inicial", min_value=0)
+    with st.expander("Agregar Nuevo Producto", expanded=False):
+        with st.form("form_agregar_producto"):
+            col_form1, col_form2 = st.columns(2)
             
-        with col_form2:
-            venta_forzada = st.checkbox("Venta Forzada", help="Marcar si la venta es forzada por múltiplos.")
-            costo_en_pesos = st.checkbox("Agregar Precio de Costo en Pesos")
-            costo_en_dolares = st.checkbox("Agregar Precio de Costo en Dólares")
+            with col_form1:
+                codigo = st.text_input("Código del Producto")
+                proveedor = st.text_input("Proveedor")
+                imagen_url = st.text_input("URL de la Imagen del Producto")
+                categorias = st.text_input("Categorías (separadas por coma)")
+                stock = st.number_input("Stock Inicial", min_value=0)
+                
+            with col_form2:
+                venta_forzada = st.checkbox("Venta Forzada", help="Marcar si la venta es forzada por múltiplos.")
+                costo_en_pesos = st.checkbox("Agregar Precio de Costo en Pesos")
+                costo_en_dolares = st.checkbox("Agregar Precio de Costo en Dólares")
+                
+                # Mostrar campos de precio según selección
+                if costo_en_pesos:
+                    precio_pesos = st.number_input("Costo en Pesos", min_value=0.0, step=0.01)
+                if costo_en_dolares:
+                    precio_dolares = st.number_input("Costo en Dólares", min_value=0.0, step=0.01)
             
-            # Mostrar campos de precio según selección
-            if costo_en_pesos:
-                precio_pesos = st.number_input("Costo en Pesos", min_value=0.0, step=0.01)
-            if costo_en_dolares:
-                precio_dolares = st.number_input("Costo en Dólares", min_value=0.0, step=0.01)
-        
-        # Botón para agregar el producto
-        agregar_producto_submit = st.form_submit_button("Agregar Producto")
-        
-        if agregar_producto_submit:
-            nuevo_producto = {
-                'Codigo': codigo,
-                'Proveedor': proveedor,
-                'imagen': imagen_url,
-                'Categorías': categorias,
-                'Stock': stock,
-                'forzar multiplos': 1 if venta_forzada else 0,
-                'Precio Costo Pesos': precio_pesos if costo_en_pesos else None,
-                'Precio Costo USD': precio_dolares if costo_en_dolares else None
-            }
-            st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
-            st.success(f"Producto {codigo} agregado exitosamente.")
-            # Guardar en Excel (o en la base de datos según implementación)
-            st.session_state.df_productos.to_excel('archivo_modificado_productos.xlsx', index=False)
+            # Botón para agregar el producto
+            agregar_producto_submit = st.form_submit_button("Agregar Producto")
+            
+            if agregar_producto_submit:
+                nuevo_producto = {
+                    'Codigo': codigo,
+                    'Proveedor': proveedor,
+                    'imagen': imagen_url,
+                    'Categorías': categorias,
+                    'Stock': stock,
+                    'forzar multiplos': 1 if venta_forzada else 0,
+                    'Precio Costo Pesos': precio_pesos if costo_en_pesos else None,
+                    'Precio Costo USD': precio_dolares if costo_en_dolares else None
+                }
+                st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
+                st.success(f"Producto {codigo} agregado exitosamente.")
+                # Guardar en Excel (o en la base de datos según implementación)
+                st.session_state.df_productos.to_excel('archivo_modificado_productos.xlsx', index=False)
     
     st.markdown("---")
 
@@ -914,6 +920,66 @@ def modulo_marketing():
         if st.button("Generar Imagen PNG"):
             generar_imagen_png(productos_seleccionados)
 
+    st.markdown("---")
+
+    # Parte 5: Creador de Flayer
+    st.subheader("🎨 Creador de Flayer")
+    
+    with st.expander("Generar Flayer de Productos"):
+        productos_flayer = st.multiselect("Seleccionar productos para el Flayer", 
+                                          st.session_state.df_productos['Nombre'].unique())
+        
+        if len(productos_flayer) > 6:
+            st.error("Solo puedes seleccionar hasta 6 productos.")
+        elif len(productos_flayer) > 0:
+            if st.button("Vista previa del Flayer"):
+                generar_flayer_preview(productos_flayer)
+            if st.button("Generar PDF del Flayer"):
+                generar_pdf_flayer(productos_flayer)
+            if st.button("Generar Imagen PNG del Flayer"):
+                generar_imagen_flayer(productos_flayer)
+
+# ===============================
+# Funciones para generar PDF e Imagen
+# ===============================
+
+def generar_pdf(productos):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
+        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
+        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
+        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
+        pdf.cell(200, 10, txt="---", ln=True)
+    
+    # Guardar el PDF
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
+
+def generar_imagen_png(productos):
+    # Placeholder: Aquí podrías usar Pillow para generar una imagen con los datos
+    st.warning("Función de generación de imágenes aún no implementada.")
+
+# ===============================
+# Funciones para generar Flayer
+# ===============================
+
+def generar_flayer_preview(productos):
+    st.write("🖼️ Aquí se generará una vista previa del flayer con los productos seleccionados.")
+    # Funcionalidad de vista previa usando imágenes y datos de productos
+
+def generar_pdf_flayer(productos):
+    st.write("📄 Aquí se generará un PDF con los productos seleccionados en formato de flayer.")
+    # Funcionalidad de generación de PDF de flayer
+
+def generar_imagen_flayer(productos):
+    st.write("🖼️ Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
+    # Funcionalidad de generación de imagen PNG del flayer
 # ===============================
 # Funciones para generar PDF e Imagen
 # ===============================
