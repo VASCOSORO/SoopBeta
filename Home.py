@@ -517,8 +517,27 @@ def modulo_ventas():
                         # Preparar datos del pedido
                         order_data = {
                             'cliente': cliente_seleccionado,
-                            'vendedor': vendedor_se
-
+                            'vendedor': vendedor_seleccionado,
+                            'fecha': fecha_actual,
+                            'hora': hora_actual,
+                            'items': st.session_state.pedido
+                        }
+    
+                        # Guardar el pedido en la hoja 'Pedidos' de 'AdministracionSoop.xlsx'
+                        guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
+    
+                        # Confirmar al usuario
+                        st.success("Pedido guardado exitosamente.", icon="✅")
+    
+                        # Limpiar el pedido después de guardarlo
+                        st.session_state.pedido = []
+                        st.session_state.delete_confirm = {}
+    
+                        # Guardar los cambios en el stock de productos
+                        try:
+                            st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                        except Exception as e:
+                            st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 # ===============================
 # Módulo Equipo
 # ===============================
