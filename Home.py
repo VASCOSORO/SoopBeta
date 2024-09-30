@@ -1,47 +1,93 @@
-# Parte 1: Imports, Inicialización del Estado de Sesión y Funciones de Utilidad
-
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook, Workbook
+from openpyxl import load_workbook
 import json
 from datetime import datetime
 import pytz
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 import requests
 from PIL import Image
 from io import BytesIO
 import os
+import re
 
 # ===============================
 # Inicialización del Estado de Sesión
 # ===============================
 
-# Función para inicializar DataFrames en sesión
-def inicializar_dataframe(nombre_df, columnas, archivo):
-    if nombre_df not in st.session_state:
-        if os.path.exists(archivo):
-            try:
-                st.session_state[nombre_df] = pd.read_excel(archivo)
-            except Exception as e:
-                st.error(f"Error al cargar el archivo {archivo}: {e}")
-                st.stop()
-        else:
-            st.warning(f"⚠️ El archivo {archivo} no existe. Creándolo automáticamente.")
-            st.session_state[nombre_df] = pd.DataFrame(columns=columnas)
-            st.session_state[nombre_df].to_excel(archivo, index=False)
+# Inicializar el estado del pedido y el stock si no existen
+if 'pedido' not in st.session_state:
+    st.session_state.pedido = []
 
-# Inicializar DataFrames necesarios
-inicializar_dataframe('df_productos', ['Codigo', 'Nombre', 'Precio', 'Stock', 'forzar multiplos', 'imagen'], 'archivo_modificado_productos_20240928_201237.xlsx')
-inicializar_dataframe('df_clientes', ['Nombre', 'Descuento', 'Fecha Modificado', 'Vendedores'], 'Clientes.xlsx')
-inicializar_dataframe('df_equipo', ['Nombre', 'Contraseña', 'Rol', 'Departamento', 'Nivel de Acceso', 
-                                   'Número de Celular', 'Fecha de Cumpleaños', 'Dirección',
-                                   'Última Vez Inició Sesión', 'Última Vez Utilizó el Sistema', 'Activo'],
-                      'equipo.xlsx')
-inicializar_dataframe('df_administracion', ['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora'], 'AdministracionSoop.xlsx')
-inicializar_dataframe('df_logistica', ['Pedido', 'Cliente', 'Vendedor', 'Monto', 'Controlado Por', 'Estado'], 'LogisticaSoop.xlsx')
-inicializar_dataframe('df_picking', ['Pedido', 'Agente de Picking', 'Caja', 'Notas'], 'PickingSoop.xlsx')
-inicializar_dataframe('df_estadisticas', ['Vendedor', 'Fecha', 'Monto'], 'EstadisticasSoop.xlsx')
-inicializar_dataframe('df_marketing', ['Producto', 'Imagen', 'Descripción'], 'MarketingSoop.xlsx')
-inicializar_dataframe('df_proveedores', ['Proveedor', 'Detalle Boleta'], 'ProveedoresSoop.xlsx')
+# Inicializar 'df_productos' si no existe
+if 'df_productos' not in st.session_state:
+    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
+    if os.path.exists(file_path_productos):
+        try:
+            st.session_state.df_productos = pd.read_excel(file_path_productos)
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de productos: {e}")
+            st.stop()
+    else:
+        st.warning(f"⚠️ El archivo {file_path_productos} no existe. Por favor, súbelo desde el módulo Productos.")
+        st.session_state.df_productos = pd.DataFrame()  # DataFrame vacío
+
+# Inicializar 'df_clientes' si no existe
+if 'df_clientes' not in st.session_state:
+    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
+    if os.path.exists(file_path_clientes):
+        try:
+            st.session_state.df_clientes = pd.read_excel(file_path_clientes)
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de clientes: {e}")
+            st.stop()
+    else:
+        st.warning(f"⚠️ El archivo {file_path_clientes} no existe. Por favor, súbelo desde el módulo Convertidor de CSV.")
+        st.session_state.df_clientes = pd.DataFrame()  # DataFrame vacío
+
+# Inicializar 'delete_confirm' como un diccionario si no existe
+if 'delete_confirm' not in st.session_state:
+    st.session_state.delete_confirm = {}
+
+# Inicializar 'df_equipo' si no existe
+if 'df_equipo' not in st.session_state:
+    file_path_equipo = 'equipo.xlsx'
+    if os.path.exists(file_path_equipo):
+        try:
+            st.session_state.df_equipo = pd.read_excel(file_path_equipo)
+        except Exception as e:
+            st.error(f"Error al cargar el archivo de equipo: {e}")
+            st.stop()
+    else:
+        # Definir los miembros del equipo
+        data_equipo = {
+            'Nombre': [
+                'Joni', 'Eduardo', 'Johan', 'Martin',
+                'Marian', 'Sofi', 'Valen', 'Emily',
+                'Maria-Jose', 'Vasco'
+            ],
+            'Rol': [
+                'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                'Vendedora', 'Vendedora', 'Vendedora', 'Vendedora',
+                'Fotógrafa y Catalogador', 'Super Admin'
+            ],
+            'Departamento': [
+                'Dirección', 'Dirección', 'Depósito', 'Depósito',
+                'Ventas', 'Ventas', 'Ventas', 'Ventas',
+                'Marketing', 'Dirección'
+            ],
+            'Nivel de Acceso': [
+                'Alto', 'Alto', 'Medio', 'Medio',
+                'Bajo', 'Bajo', 'Bajo', 'Bajo',
+                'Medio', 'Super Admin'
+            ]
+        }
+        st.session_state.df_equipo = pd.DataFrame(data_equipo)
+        # Guardar el DataFrame inicial en Excel
+        try:
+            st.session_state.df_equipo.to_excel(file_path_equipo, index=False)
+        except Exception as e:
+            st.error(f"Error al guardar el archivo de equipo: {e}")
 
 # Inicializar 'usuario' en sesión si no existe
 if 'usuario' not in st.session_state:
@@ -100,10 +146,7 @@ def color_stock(stock):
 
 def guardar_pedido_excel(file_path, order_data):
     try:
-        if os.path.exists(file_path):
-            book = load_workbook(file_path)
-        else:
-            book = Workbook()
+        book = load_workbook(file_path)
         if 'Pedidos' in book.sheetnames:
             sheet = book['Pedidos']
         else:
@@ -135,58 +178,389 @@ def guardar_pedido_excel(file_path, order_data):
         book.save(file_path)
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
-# Parte 2: Funciones de Autenticación, Verificación de Acceso y Navegación entre Módulos
 
 # ===============================
-# Función de Autenticación con Contraseña
+# Funciones de Cada Módulo
+# ===============================
+
+# Ventas Module
+def modulo_ventas():
+    # Colocamos el buscador de cliente
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        cliente_seleccionado = st.selectbox(
+            "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
+            help="Escribí el nombre del cliente o seleccioná uno de la lista."
+        )
+    
+    # Solo mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
+    if cliente_seleccionado != "":
+        cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+    
+        # Mostrar descuento y última compra
+        with col1:
+            st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+            st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
+    
+        # Mostrar vendedor principal
+        with col2:
+            vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+            vendedor_default = vendedores[0]
+            vendedor_seleccionado = st.selectbox("Vendedor", vendedores, index=0)
+            st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
+    
+        # Sección de productos solo aparece si hay cliente seleccionado
+        st.header("📁 Buscador de Productos 🔍")
+    
+        # Tres columnas: Buscador, precio, y stock con colores
+        col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
+    
+        with col_prod1:
+            # Buscador de productos con espacio vacío al inicio
+            producto_buscado = st.selectbox(
+                "Buscar producto",
+                [""] + st.session_state.df_productos['Nombre'].unique().tolist(),
+                help="Escribí el nombre del producto o seleccioná uno de la lista."
+            )
+    
+        if producto_buscado:
+            producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto_buscado].iloc[0]
+    
+            with col_prod2:
+                # Mostrar precio
+                st.write(f"**Precio:** ${producto_data['Precio']}")
+    
+            with col_prod3:
+                # Mostrar stock con colores según la cantidad
+                stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
+                if stock <= 0:
+                    color = 'red'
+                elif stock < 10:
+                    color = 'orange'
+                else:
+                    color = 'green'
+    
+                st.markdown(f"<span style='color:{color}'>**Stock disponible:** {stock}</span>", unsafe_allow_html=True)
+    
+            # Dividimos la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
+            col_izq, col_der = st.columns([2, 1])
+    
+            with col_izq:
+                # Mostrar código del producto
+                st.write(f"**Código del producto:** {producto_data['Codigo']}")
+    
+                # Verificar si la venta está forzada por múltiplos
+                if pd.notna(producto_data['forzar multiplos']) and producto_data['forzar multiplos'] > 0:
+                    st.warning(f"Este producto tiene venta forzada por {int(producto_data['forzar multiplos'])} unidades.")
+                    cantidad = st.number_input(
+                        "Cantidad",
+                        min_value=int(producto_data['forzar multiplos']),
+                        step=int(producto_data['forzar multiplos']),
+                        key=f"cantidad_{producto_data['Codigo']}"
+                    )
+                else:
+                    # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
+                    if stock > 0:
+                        cantidad = st.number_input(
+                            "Cantidad",
+                            min_value=1,
+                            max_value=stock,
+                            step=1,
+                            key=f"cantidad_{producto_data['Codigo']}"
+                        )
+                    else:
+                        cantidad = 0
+                        st.error("No hay stock disponible para este producto.")
+    
+                # Botón para agregar el producto al pedido, deshabilitado si no hay stock
+                boton_agregar_desactivado = stock <= 0  # Deshabilitar el botón si no hay stock
+                if st.button("Agregar producto", disabled=boton_agregar_desactivado, key=f"agregar_{producto_data['Codigo']}"):
+                    # Verificar si el producto ya está en el pedido
+                    existe = any(item['Codigo'] == producto_data['Codigo'] for item in st.session_state.pedido)
+                    if existe:
+                        st.warning("Este producto ya está en el pedido. Por favor, ajusta la cantidad si es necesario.")
+                    else:
+                        # Añadir producto al pedido con la cantidad seleccionada
+                        producto_agregado = {
+                            'Codigo': producto_data['Codigo'],
+                            'Nombre': producto_data['Nombre'],
+                            'Cantidad': cantidad,
+                            'Precio': producto_data['Precio'],
+                            'Importe': cantidad * producto_data['Precio']
+                        }
+                        st.session_state.pedido.append(producto_agregado)
+                        # Descontar del stock
+                        st.session_state.df_productos.loc[
+                            st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'
+                        ] -= cantidad
+                        st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
+    
+            with col_der:
+                # Mostrar imagen del producto en la columna aparte
+                if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+                    try:
+                        response = requests.get(producto_data['imagen'], timeout=5)
+                        response.raise_for_status()
+                        image = Image.open(BytesIO(response.content))
+                        st.image(image, width=200, caption="Imagen del producto")
+                    except Exception as e:
+                        st.write("🔗 **Imagen no disponible o URL inválida.**")
+                else:
+                    st.write("🔗 **No hay imagen disponible.**")
+    
+        # Mostrar el pedido actual
+        if st.session_state.pedido:
+            st.header("📦 Pedido actual")
+    
+            # Mostrar la tabla del pedido con la opción de eliminar ítems
+            for producto in st.session_state.pedido.copy():  # Use copy to avoid modification during iteration
+                codigo = producto['Codigo']
+                nombre = producto['Nombre']
+                cantidad = producto['Cantidad']
+                precio = producto['Precio']
+                importe = producto['Importe']
+    
+                # Crear columnas para mostrar el producto y el botón de eliminar
+                col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 1, 1, 1, 1])
+                col1.write(codigo)
+                col2.write(nombre)
+                col3.write(cantidad)
+                col4.write(f"${precio}")
+                col5.write(f"${importe}")
+    
+                # Verificar si este producto está pendiente de eliminación
+                if codigo in st.session_state.delete_confirm:
+                    # Mostrar botones "Sí" y "No"
+                    with col6:
+                        if st.button("Sí", key=f"confirmar_si_{codigo}"):
+                            # Eliminar el ítem del pedido
+                            index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
+                            if index is not None:
+                                producto_eliminado = st.session_state.pedido.pop(index)
+                                # Reponer el stock
+                                st.session_state.df_productos.loc[
+                                    st.session_state.df_productos['Codigo'] == producto_eliminado['Codigo'], 'Stock'
+                                ] += producto_eliminado['Cantidad']
+                            # Remover del diccionario de confirmaciones
+                            del st.session_state.delete_confirm[codigo]
+    
+                        if st.button("No", key=f"confirmar_no_{codigo}"):
+                            # Cancelar la eliminación
+                            del st.session_state.delete_confirm[codigo]
+                else:
+                    # Mostrar el botón de eliminar normal
+                    with col6:
+                        if st.button('🗑️', key=f"eliminar_{codigo}"):
+                            # Marcar este ítem para eliminación
+                            st.session_state.delete_confirm[codigo] = True
+    
+            # Calcular totales
+            pedido_df = pd.DataFrame(st.session_state.pedido)
+            total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
+            total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
+    
+            # Mostrar total de ítems y total del pedido en una sola fila
+            col_items, col_total = st.columns([1, 1])
+    
+            with col_items:
+                st.write(f"**Total de ítems:** {total_items}")
+    
+            with col_total:
+                # Mostrar total del pedido al lado de total de ítems
+                st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
+    
+            # Centrar el botón de guardar pedido
+            col_guardar, _ = st.columns([2, 3])
+            with col_guardar:
+                if st.button("Guardar Pedido"):
+                    if not st.session_state.pedido:
+                        st.warning("No hay ítems en el pedido para guardar.")
+                    else:
+                        # Obtener fecha y hora actuales
+                        now = datetime.now()
+                        fecha_actual = now.strftime("%Y-%m-%d")
+                        hora_actual = now.strftime("%H:%M:%S")
+    
+                        # Preparar datos del pedido
+                        order_data = {
+                            'cliente': cliente_seleccionado,
+                            'vendedor': vendedor_seleccionado,
+                            'fecha': fecha_actual,
+                            'hora': hora_actual,
+                            'items': st.session_state.pedido
+                        }
+    
+                        # Guardar el pedido en la hoja 'Pedidos'
+                        guardar_pedido_excel(file_path_productos, order_data)
+    
+                        # Confirmar al usuario
+                        st.success("Pedido guardado exitosamente.", icon="✅")
+    
+                        # Limpiar el pedido después de guardarlo
+                        st.session_state.pedido = []
+                        st.session_state.delete_confirm = {}
+    
+                        # Guardar los cambios en el stock de productos
+                        try:
+                            with pd.ExcelWriter(file_path_productos, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                st.session_state.df_productos.to_excel(writer, sheet_name='Hoja1', index=False)
+                        except Exception as e:
+                            st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+
+# Equipo Module
+def modulo_equipo():
+    # Verificar el nivel de acceso necesario para ver el módulo de equipo
+    if not verificar_acceso('Medio'):
+        st.error("No tienes permisos para acceder a esta sección.")
+        st.stop()
+    
+    st.header("👥 Equipo de Trabajo")
+    
+    # Mostrar la tabla del equipo
+    st.dataframe(st.session_state.df_equipo, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Opciones de gestión solo para Super Admin
+    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
+        st.subheader("🔧 Gestionar Equipo")
+        
+        # Formulario para agregar un nuevo miembro al equipo
+        with st.expander("Agregar Nuevo Miembro"):
+            with st.form("form_agregar"):
+                nombre = st.text_input("Nombre")
+                rol = st.selectbox("Rol", [
+                    'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                    'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
+                ])
+                departamento = st.selectbox("Departamento", [
+                    'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
+                ])
+                nivel_acceso = st.selectbox("Nivel de Acceso", [
+                    'Bajo', 'Medio', 'Alto', 'Super Admin'
+                ])
+                submit = st.form_submit_button("Agregar")
+                
+                if submit:
+                    if nombre.strip() == "":
+                        st.error("El nombre no puede estar vacío.")
+                    elif nombre.strip() in st.session_state.df_equipo['Nombre'].values:
+                        st.error("El nombre ya existe en el equipo.")
+                    else:
+                        nuevo_miembro = {
+                            'Nombre': nombre.strip(),
+                            'Rol': rol,
+                            'Departamento': departamento,
+                            'Nivel de Acceso': nivel_acceso
+                        }
+                        st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
+                        st.success(f"Miembro {nombre} agregado exitosamente.")
+                        # Guardar los cambios en Excel
+                        st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+    
+        st.markdown("---")
+        
+        # Formulario para eliminar un miembro del equipo
+        with st.expander("Eliminar Miembro"):
+            with st.form("form_eliminar"):
+                nombre_eliminar = st.selectbox(
+                    "Selecciona el nombre a eliminar",
+                    st.session_state.df_equipo['Nombre'].unique().tolist()
+                )
+                submit_eliminar = st.form_submit_button("Eliminar")
+                
+                if submit_eliminar:
+                    if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
+                        if nombre_eliminar == st.session_state.usuario['Nombre']:
+                            st.error("No puedes eliminarte a ti mismo.")
+                        else:
+                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
+                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
+                            # Guardar los cambios en Excel
+                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                    else:
+                        st.error("El nombre seleccionado no existe.")
+
+    # Administración Module
+def modulo_administracion():
+    st.header("⚙️ Administración")
+    st.write("Aquí puedes agregar funcionalidades de administración.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de administración.
+
+# Estadísticas Module
+def modulo_estadistica():
+    st.header("📈 Estadísticas")
+    st.write("Aquí puedes agregar funcionalidades de estadísticas.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de estadísticas.
+
+# Marketing Module
+def modulo_marketing():
+    st.header("📢 Marketing")
+    st.write("Aquí puedes agregar funcionalidades de marketing.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de marketing.
+
+# Logística Module
+def modulo_logistica():
+    st.header("🚚 Logística")
+    st.write("Aquí puedes agregar funcionalidades de logística.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de logística.
+
+# Productos Module (External Link)
+def modulo_productos():
+    st.header("🔗 Acceder al Módulo de Productos")
+    st.markdown("[Abrir Módulo de Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)", unsafe_allow_html=True)
+
+# Convertidor de CSV Module (External Link)
+def modulo_convertidor_csv():
+    st.header("🔗 Acceder al Convertidor de CSV")
+    st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
+
+# ===============================
+# Función de Autenticación con Autocompletado
 # ===============================
 
 def login():
     st.sidebar.title("🔒 Iniciar Sesión")
     
-    # Selectbox para seleccionar el nombre del usuario
+    # Campo de texto para ingresar el nombre
+    nombre_busqueda = st.sidebar.text_input(
+        "Escribe tu nombre",
+        placeholder="Comienza a escribir tu nombre...",
+        key="nombre_busqueda"
+    )
+    
+    # Filtrar los nombres que contienen la búsqueda (case insensitive)
+    if nombre_busqueda:
+        opciones_filtradas = st.session_state.df_equipo[
+            st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
+        ]['Nombre'].tolist()
+    else:
+        opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
+    
+    # Agregar una opción vacía al inicio
+    opciones_filtradas = [""] + opciones_filtradas
+    
+    # Selectbox con las opciones filtradas
     nombre_seleccionado = st.sidebar.selectbox(
         "Selecciona tu nombre",
-        [""] + st.session_state.df_equipo['Nombre'].unique().tolist(),
+        opciones_filtradas,
         key="nombre_seleccionado",
         help="Selecciona tu nombre de la lista."
     )
     
-    # Si se selecciona un nombre, mostrar campo de contraseña
+    # Si se selecciona un nombre, autenticar al usuario
     if nombre_seleccionado:
-        contraseña_ingresada = st.sidebar.text_input(
-            "Ingresa tu contraseña",
-            type="password",
-            key="contraseña_ingresada"
-        )
-        
-        # Botón para autenticar
-        if st.sidebar.button("Iniciar Sesión"):
-            usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado]
-            if not usuario_data.empty:
-                usuario_data = usuario_data.iloc[0]
-                if not usuario_data['Activo']:
-                    st.sidebar.error("Tu cuenta está desactivada. Contacta al administrador.")
-                elif contraseña_ingresada == usuario_data['Contraseña']:
-                    st.session_state.usuario = {
-                        'Nombre': usuario_data['Nombre'],
-                        'Rol': usuario_data['Rol'],
-                        'Departamento': usuario_data['Departamento'],
-                        'Nivel de Acceso': usuario_data['Nivel de Acceso']
-                    }
-                    st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
-                    
-                    # Actualizar las fechas de última sesión
-                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre_seleccionado, 'Última Vez Inició Sesión'] = now
-                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre_seleccionado, 'Última Vez Utilizó el Sistema'] = now
-                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-                else:
-                    st.sidebar.error("Contraseña incorrecta. Inténtalo de nuevo.")
-            else:
-                st.sidebar.error("Nombre de usuario no encontrado.")
+        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
+        st.session_state.usuario = {
+            'Nombre': usuario_data['Nombre'],
+            'Rol': usuario_data['Rol'],
+            'Departamento': usuario_data['Departamento'],
+            'Nivel de Acceso': usuario_data['Nivel de Acceso']
+        }
+        st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
     else:
-        st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
+        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
 
 # ===============================
 # Función para Verificar Acceso
@@ -233,46 +607,13 @@ st.markdown("---")
 st.sidebar.title("📚 Navegación")
 
 # Internal navigation
-seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Clientes", "Administración", "Estadísticas", "Marketing", "Logística"])
+seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
 
 # External links
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Módulos Externos:**")
 st.sidebar.markdown("[📁 Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)")
 st.sidebar.markdown("[📁 Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)")
-
-# ===============================
-# Implementación de Módulos (Parte 2 Continúa)
-# ===============================
-
-# Funciones placeholder para módulos que serán implementados en la Parte 3
-def modulo_ventas():
-    st.header("📁 Ventas")
-    st.write("Funcionalidades de Ventas serán implementadas en la Parte 3.")
-
-def modulo_equipo():
-    st.header("👥 Equipo de Trabajo")
-    st.write("Funcionalidades de Equipo serán implementadas en la Parte 3.")
-
-def modulo_clientes():
-    st.header("👥 Clientes")
-    st.write("Funcionalidades de Clientes serán implementadas en la Parte 3.")
-
-def modulo_administracion():
-    st.header("⚙️ Administración")
-    st.write("Funcionalidades de Administración serán implementadas en la Parte 3.")
-
-def modulo_estadistica():
-    st.header("📈 Estadísticas")
-    st.write("Funcionalidades de Estadísticas serán implementadas en la Parte 3.")
-
-def modulo_marketing():
-    st.header("📢 Marketing")
-    st.write("Funcionalidades de Marketing serán implementadas en la Parte 3.")
-
-def modulo_logistica():
-    st.header("🚚 Logística")
-    st.write("Funcionalidades de Logística serán implementadas en la Parte 3.")
 
 # ===============================
 # Implementación de Módulos
@@ -283,9 +624,6 @@ if seccion == "Ventas":
 
 elif seccion == "Equipo":
     modulo_equipo()
-
-elif seccion == "Clientes":
-    modulo_clientes()
 
 elif seccion == "Administración":
     modulo_administracion()
@@ -313,487 +651,3 @@ if st.sidebar.button("Cerrar Sesión"):
 # ===============================
 
 agregar_footer()
-# Parte 3.1: Implementación del Módulo Administración
-
-def modulo_administracion():
-    st.header("⚙️ Administración")
-    
-    # Mostrar la caja actual
-    ingresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso']['Monto'].sum()
-    egresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso']['Monto'].sum()
-    caja_actual = ingresos - egresos
-    
-    st.subheader("💰 Caja Actual")
-    st.write(f"**Total Ingresos/Cobrados:** ${ingresos:,.2f}")
-    st.write(f"**Total Egresos/Gastos:** ${egresos:,.2f}")
-    st.write(f"**Caja Disponible:** ${caja_actual:,.2f}")
-    
-    st.markdown("---")
-    
-    st.subheader("📥 Registrar Ingreso")
-    with st.form("form_registrar_ingreso"):
-        nombre_ingreso = st.text_input("Nombre del Ingreso")
-        tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
-        if tipo_ingreso == "Venta Cobrada":
-            cliente_ingreso = st.selectbox("Selecciona el Cliente", st.session_state.df_clientes['Nombre'].unique().tolist())
-        else:
-            cliente_ingreso = st.text_input("Nombre de quien realizó la Cobranza")
-        monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
-        fecha_ingreso = st.date_input("Fecha de Ingreso")
-        hora_ingreso = st.time_input("Hora de Ingreso")
-        submit_ingreso = st.form_submit_button("Registrar Ingreso")
-        
-        if submit_ingreso:
-            if nombre_ingreso.strip() == "":
-                st.error("El nombre del ingreso no puede estar vacío.")
-            elif monto_ingreso <= 0:
-                st.error("El monto debe ser mayor a cero.")
-            else:
-                detalle = f"{tipo_ingreso} - {cliente_ingreso}" if tipo_ingreso == "Venta Cobrada" else f"{tipo_ingreso} - {cliente_ingreso}"
-                nuevo_ingreso = {
-                    'Tipo': 'Ingreso',
-                    'Nombre': nombre_ingreso.strip(),
-                    'Detalle': detalle,
-                    'Monto': monto_ingreso,
-                    'Fecha': fecha_ingreso.strftime("%Y-%m-%d"),
-                    'Hora': hora_ingreso.strftime("%H:%M:%S")
-                }
-                st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_ingreso, ignore_index=True)
-                st.success(f"Ingreso '{nombre_ingreso}' registrado exitosamente.")
-                # Guardar los cambios en Excel
-                st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
-    
-    st.markdown("---")
-    
-    st.subheader("📤 Registrar Egreso")
-    with st.form("form_registrar_egreso"):
-        nombre_egreso = st.text_input("Nombre del Egreso")
-        tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
-        if tipo_egreso == "Proveedor":
-            proveedor = st.selectbox("Selecciona el Proveedor", st.session_state.df_proveedores['Proveedor'].unique().tolist())
-            detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
-        else:
-            proveedor = st.text_input("Destino del Gasto")
-            detalle_boleta = st.text_area("Detalle del Gasto")
-        monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
-        fecha_egreso = st.date_input("Fecha de Egreso")
-        hora_egreso = st.time_input("Hora de Egreso")
-        submit_egreso = st.form_submit_button("Registrar Egreso")
-        
-        if submit_egreso:
-            if nombre_egreso.strip() == "":
-                st.error("El nombre del egreso no puede estar vacío.")
-            elif monto_egreso <= 0:
-                st.error("El monto debe ser mayor a cero.")
-            else:
-                detalle = f"{tipo_egreso} - {proveedor}"
-                nuevo_egreso = {
-                    'Tipo': 'Egreso',
-                    'Nombre': nombre_egreso.strip(),
-                    'Detalle': detalle_boleta.strip(),
-                    'Monto': monto_egreso,
-                    'Fecha': fecha_egreso.strftime("%Y-%m-%d"),
-                    'Hora': hora_egreso.strftime("%H:%M:%S")
-                }
-                st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_egreso, ignore_index=True)
-                st.success(f"Egreso '{nombre_egreso}' registrado exitosamente.")
-                # Guardar los cambios en Excel
-                st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
-                
-                # Si el egreso es a un proveedor, actualizar el stock de productos
-                if tipo_egreso == "Proveedor":
-                    # Asumiendo que el detalle_boleta tiene productos separados por comas en el formato "Codigo:Cantidad"
-                    try:
-                        items = detalle_boleta.split('\n')
-                        for item in items:
-                            if ':' in item:
-                                codigo, cantidad = item.split(':')
-                                codigo = codigo.strip()
-                                cantidad = int(cantidad.strip())
-                                if codigo in st.session_state.df_productos['Codigo'].values:
-                                    st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
-                                else:
-                                    st.warning(f"Producto con código '{codigo}' no encontrado.")
-                        # Guardar los cambios en el stock de productos
-                        st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
-                        st.success("Stock de productos actualizado exitosamente.")
-                    except Exception as e:
-                        st.error(f"Error al actualizar el stock de productos: {e}")
-# Parte 3.2: Implementación del Módulo Logística
-
-def modulo_logistica():
-    st.header("🚚 Logística")
-    
-    # Cargar datos de logística
-    inicializar_dataframe('df_logistica', ['Numero de Pedido', 'Cliente', 'Vendedor', 'Monto', 
-                                          'Controlado Por', 'Estado', 'Detalles'], 'LogisticaSoop.xlsx')
-    
-    # Mostrar tabla de pedidos
-    st.subheader("📋 Pedidos")
-    st.write("Gestiona el estado de los pedidos aquí.")
-    
-    # Filtrar pedidos según el estado
-    estados = ["Ingresado", "Esperando Pago", "Pagado", "En Proceso de Armado", 
-               "Esperando Envío", "Enviado Pago", "Enviado Debe", "Rechazado"]
-    estado_seleccionado = st.selectbox("Filtrar por Estado", ["Todos"] + estados)
-    
-    if estado_seleccionado != "Todos":
-        df_filtrado = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == estado_seleccionado]
-    else:
-        df_filtrado = st.session_state.df_logistica.copy()
-    
-    # Mostrar la tabla con selección
-    pedidos_seleccionados = st.selectbox("Selecciona un Pedido para ver detalles", df_filtrado['Numero de Pedido'].tolist(), key="seleccionar_pedido")
-    
-    if pedidos_seleccionados:
-        pedido_data = st.session_state.df_logistica[st.session_state.df_logistica['Numero de Pedido'] == pedidos_seleccionados].iloc[0]
-        
-        st.subheader(f"Detalles del Pedido {pedidos_seleccionados}")
-        st.write(f"**Cliente:** {pedido_data['Cliente']}")
-        st.write(f"**Vendedor:** {pedido_data['Vendedor']}")
-        st.write(f"**Monto:** ${pedido_data['Monto']:,.2f}")
-        st.write(f"**Controlado Por:** {pedido_data['Controlado Por']}")
-        st.write(f"**Estado Actual:** {pedido_data['Estado']}")
-        
-        st.markdown("---")
-        
-        # Formulario para actualizar el estado del pedido
-        with st.form("form_actualizar_estado_logistica"):
-            nuevo_estado = st.selectbox("Actualizar Estado", estados, index=estados.index(pedido_data['Estado']) if pedido_data['Estado'] in estados else 0)
-            submit_estado = st.form_submit_button("Actualizar Estado")
-            
-            if submit_estado:
-                st.session_state.df_logistica.loc[
-                    st.session_state.df_logistica['Numero de Pedido'] == pedidos_seleccionados, 'Estado'
-                ] = nuevo_estado
-                st.success(f"Estado del pedido {pedidos_seleccionados} actualizado a '{nuevo_estado}'.")
-                # Guardar los cambios en Excel
-                st.session_state.df_logistica.to_excel('LogisticaSoop.xlsx', index=False)
-    
-    st.markdown("---")
-    
-    st.subheader("📝 Registrar Detalles del Pedido")
-    with st.form("form_registrar_detalles_logistica"):
-        numero_pedido = st.selectbox("Selecciona el Pedido", st.session_state.df_logistica['Numero de Pedido'].tolist(), key="numero_pedido_logistica")
-        controlador = st.selectbox("Controlado Por", ["Johan", "Aniel", "Martin"])
-        estado_nuevo = st.selectbox("Estado", estados)
-        detalles = st.text_area("Detalles Adicionales")
-        submit_detalles = st.form_submit_button("Registrar Detalles")
-        
-        if submit_detalles:
-            if numero_pedido in st.session_state.df_logistica['Numero de Pedido'].values:
-                st.session_state.df_logistica.loc[
-                    st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Controlado Por'
-                ] = controlador
-                st.session_state.df_logistica.loc[
-                    st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Estado'
-                ] = estado_nuevo
-                st.session_state.df_logistica.loc[
-                    st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Detalles'
-                ] = detalles.strip()
-                st.success(f"Detalles del pedido {numero_pedido} actualizados exitosamente.")
-                # Guardar los cambios en Excel
-                st.session_state.df_logistica.to_excel('LogisticaSoop.xlsx', index=False)
-            else:
-                st.error("El número de pedido seleccionado no existe.")
-# Parte 3.3: Implementación de los Módulos Picking, Estadísticas y Marketing
-
-# ===============================
-# Módulo Picking
-# ===============================
-
-def modulo_picking():
-    st.header("📦 Picking")
-    
-    # Cargar datos de picking
-    inicializar_dataframe('df_picking', ['Numero de Pedido', 'Cliente', 'Vendedor', 'Monto', 
-                                        'Armado Por', 'Caja', 'Notas', 'Estado'], 'PickingSoop.xlsx')
-    
-    # Mostrar tabla de pedidos asignados
-    st.subheader("📋 Pedidos Asignados")
-    st.write("Gestiona los pedidos asignados para el armado.")
-    
-    # Filtrar pedidos por el usuario actual (Armadores)
-    armadores = ["Martin", "Aniel", "Johan"]
-    armador_actual = st.session_state.usuario['Nombre'] if st.session_state.usuario['Nombre'] in armadores else "Martin"
-    
-    df_asignados = st.session_state.df_picking[
-        (st.session_state.df_picking['Armado Por'] == armador_actual) & 
-        (st.session_state.df_picking['Estado'] == 'En Proceso de Armado')
-    ]
-    
-    pedidos_seleccionados = st.selectbox("Selecciona un Pedido para ver detalles", df_asignados['Numero de Pedido'].tolist(), key="seleccionar_pedido_picking")
-    
-    if pedidos_seleccionados:
-        pedido_data = st.session_state.df_picking[st.session_state.df_picking['Numero de Pedido'] == pedidos_seleccionados].iloc[0]
-        
-        st.subheader(f"Detalles del Pedido {pedidos_seleccionados}")
-        st.write(f"**Cliente:** {pedido_data['Cliente']}")
-        st.write(f"**Vendedor:** {pedido_data['Vendedor']}")
-        st.write(f"**Monto:** ${pedido_data['Monto']:,.2f}")
-        st.write(f"**Armado Por:** {pedido_data['Armado Por']}")
-        st.write(f"**Caja:** {pedido_data['Caja']}")
-        st.write(f"**Notas:** {pedido_data['Notas']}")
-        st.write(f"**Estado Actual:** {pedido_data['Estado']}")
-        
-        st.markdown("---")
-        
-        # Detalles de los productos en el pedido
-        st.subheader("🛒 Detalles de Productos")
-        # Suponiendo que los detalles de productos están almacenados en el campo 'Detalles' como JSON
-        try:
-            detalles_productos = json.loads(pedido_data['Detalles'])
-            df_detalles = pd.DataFrame(detalles_productos)
-            st.dataframe(df_detalles, use_container_width=True)
-        except:
-            st.write("No hay detalles de productos disponibles.")
-        
-        st.markdown("---")
-        
-        # Formulario para actualizar detalles del pedido
-        with st.form("form_actualizar_picking"):
-            caja = st.text_input("Caja", value=pedido_data['Caja'])
-            notas = st.text_area("Notas", value=pedido_data['Notas'])
-            marcar_armado = st.checkbox("Marcar como Pedido Armado")
-            submit_picking = st.form_submit_button("Actualizar Pedido")
-            
-            if submit_picking:
-                st.session_state.df_picking.loc[
-                    st.session_state.df_picking['Numero de Pedido'] == pedidos_seleccionados, 'Caja'
-                ] = caja.strip()
-                st.session_state.df_picking.loc[
-                    st.session_state.df_picking['Numero de Pedido'] == pedidos_seleccionados, 'Notas'
-                ] = notas.strip()
-                if marcar_armado:
-                    st.session_state.df_picking.loc[
-                        st.session_state.df_picking['Numero de Pedido'] == pedidos_seleccionados, 'Estado'
-                    ] = 'Pedido Armado'
-                    # Actualizar el estado en Logística
-                    st.session_state.df_logistica.loc[
-                        st.session_state.df_logistica['Numero de Pedido'] == pedidos_seleccionados, 'Estado'
-                    ] = 'Esperando Envío'
-                    st.session_state.df_logistica.to_excel('LogisticaSoop.xlsx', index=False)
-                    st.success(f"Pedido {pedidos_seleccionados} marcado como armado y actualizado en Logística.")
-                else:
-                    st.success(f"Detalles del pedido {pedidos_seleccionados} actualizados exitosamente.")
-                # Guardar los cambios en Picking
-                st.session_state.df_picking.to_excel('PickingSoop.xlsx', index=False)
-    
-    st.markdown("---")
-    
-    st.subheader("📝 Registrar Nuevo Pedido en Picking")
-    with st.form("form_registrar_picking"):
-        numero_pedido = st.selectbox("Selecciona el Pedido", st.session_state.df_logistica['Numero de Pedido'].tolist(), key="numero_pedido_picking_registrar")
-        armado_por = st.selectbox("Armado Por", ["Martin", "Aniel", "Johan"])
-        caja = st.text_input("Caja")
-        notas = st.text_area("Notas")
-        submit_picking_registrar = st.form_submit_button("Registrar en Picking")
-        
-        if submit_picking_registrar:
-            if numero_pedido in st.session_state.df_picking['Numero de Pedido'].values:
-                st.error("Este pedido ya está registrado en Picking.")
-            else:
-                nuevo_picking = {
-                    'Numero de Pedido': numero_pedido,
-                    'Cliente': st.session_state.df_logistica.loc[st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Cliente'].values[0],
-                    'Vendedor': st.session_state.df_logistica.loc[st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Vendedor'].values[0],
-                    'Monto': st.session_state.df_logistica.loc[st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Monto'].values[0],
-                    'Armado Por': armado_por,
-                    'Caja': caja.strip(),
-                    'Notas': notas.strip(),
-                    'Estado': 'En Proceso de Armado',
-                    'Detalles': st.session_state.df_logistica.loc[st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Detalles'].values[0]
-                }
-                st.session_state.df_picking = st.session_state.df_picking.append(nuevo_picking, ignore_index=True)
-                st.success(f"Pedido {numero_pedido} registrado en Picking exitosamente.")
-                # Actualizar el estado en Logística
-                st.session_state.df_logistica.loc[
-                    st.session_state.df_logistica['Numero de Pedido'] == numero_pedido, 'Estado'
-                ] = 'En Proceso de Armado'
-                st.session_state.df_logistica.to_excel('LogisticaSoop.xlsx', index=False)
-                # Guardar los cambios en Picking
-                st.session_state.df_picking.to_excel('PickingSoop.xlsx', index=False)
-# Parte 3.4: Implementación del Módulo Estadísticas
-
-def modulo_estadistica():
-    st.header("📈 Estadísticas")
-    
-    # Cargar datos de estadísticas
-    inicializar_dataframe('df_estadisticas', ['Vendedor', 'Fecha', 'Monto'], 'EstadisticasSoop.xlsx')
-    
-    st.subheader("📊 Gráfico de Ventas por Vendedor")
-    
-    # Filtrar por fecha
-    fecha_inicio = st.date_input("Fecha de Inicio", value=datetime(2023, 1, 1))
-    fecha_fin = st.date_input("Fecha de Fin", value=datetime.now())
-    
-    # Filtrar por vendedor
-    vendedores = ["Todos"] + st.session_state.df_estadisticas['Vendedor'].unique().tolist()
-    vendedor_seleccionado = st.selectbox("Selecciona Vendedor", vendedores)
-    
-    # Filtrar datos
-    if vendedor_seleccionado == "Todos":
-        df_filtrado = st.session_state.df_estadisticas[
-            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
-            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
-        ]
-    else:
-        df_filtrado = st.session_state.df_estadisticas[
-            (st.session_state.df_estadisticas['Vendedor'] == vendedor_seleccionado) &
-            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
-            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
-        ]
-    
-    # Agrupar datos por fecha y sumar montos
-    df_ventas = df_filtrado.groupby('Fecha')['Monto'].sum().reset_index()
-    
-    # Mostrar gráfico
-    st.line_chart(df_ventas.set_index('Fecha'))
-    
-    st.markdown("---")
-    
-    st.subheader("📊 Ventas Diarias por Vendedor")
-    vendedor_detalle = st.selectbox("Selecciona Vendedor para Detalles", ["Todos"] + st.session_state.df_estadisticas['Vendedor'].unique().tolist(), key="vendedor_detalle")
-    
-    if vendedor_detalle == "Todos":
-        df_detalle = st.session_state.df_estadisticas[
-            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
-            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
-        ]
-    else:
-        df_detalle = st.session_state.df_estadisticas[
-            (st.session_state.df_estadisticas['Vendedor'] == vendedor_detalle) &
-            (st.session_state.df_estadisticas['Fecha'] >= fecha_inicio.strftime("%Y-%m-%d")) &
-            (st.session_state.df_estadisticas['Fecha'] <= fecha_fin.strftime("%Y-%m-%d"))
-        ]
-    
-    st.dataframe(df_detalle, use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.subheader("📊 Estadísticas Generales")
-    ventas_totales = st.session_state.df_estadisticas['Monto'].sum()
-    ventas_mensuales = st.session_state.df_estadisticas.groupby(pd.to_datetime(st.session_state.df_estadisticas['Fecha']).dt.to_period("M"))['Monto'].sum()
-    
-    st.write(f"**Ventas Totales Hasta la Fecha:** ${ventas_totales:,.2f}")
-    st.line_chart(ventas_mensuales)
-    
-    st.markdown("---")
-    
-    st.subheader("📋 Pedidos en Espera de Pago")
-    # Asumiendo que hay una columna 'Estado' en Logística para filtrar
-    df_espera_pago = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == 'Esperando Pago']
-    st.dataframe(df_espera_pago, use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.subheader("❌ Pedidos Rechazados")
-    df_rechazados = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == 'Rechazado']
-    st.dataframe(df_rechazados, use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.subheader("🆕 Últimos 5 Pedidos Cargados")
-    df_ultimos_pedidos = st.session_state.df_logistica.sort_values(by='Fecha', ascending=False).head(5)
-    st.dataframe(df_ultimos_pedidos, use_container_width=True)
-    
-    st.subheader("📦 Últimos Pedidos Despachados")
-    desplegable = st.selectbox("Selecciona para ver pedidos despachados", ["Mostrar"] + ["Últimos Pedidos Despachados"], key="desplegable_pedidos_despachados")
-    if desplegable == "Mostrar":
-        df_despachados = st.session_state.df_logistica[st.session_state.df_logistica['Estado'] == 'Enviado Pago']
-        st.dataframe(df_despachados, use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.subheader("🔍 Detalle de Boleta de Cliente")
-    numero_pedido_detalle = st.selectbox("Selecciona Pedido para ver Boleta", st.session_state.df_logistica['Numero de Pedido'].tolist(), key="numero_pedido_detalle_estadisticas")
-    
-    if numero_pedido_detalle:
-        # Suponiendo que los detalles de productos están almacenados en el campo 'Detalles' como JSON
-        try:
-            detalles_productos = json.loads(st.session_state.df_logistica.loc[st.session_state.df_logistica['Numero de Pedido'] == numero_pedido_detalle, 'Detalles'].values[0])
-            df_boleta = pd.DataFrame(detalles_productos)
-            df_boleta['Total Item'] = df_boleta['Cantidad'] * df_boleta['Precio Unitario']
-            st.dataframe(df_boleta, use_container_width=True)
-        except:
-            st.write("No hay detalles de boleta disponibles.")
-# Parte 3.4: Implementación del Módulo Marketing
-
-def modulo_marketing():
-    st.header("📢 Marketing")
-    
-    # Cargar datos de marketing
-    inicializar_dataframe('df_marketing', ['Nombre Producto', 'Descripción', 'Imagen URL', 'Drive Link', 'Ayuda de Venta Link', 'Logística Link'], 'MarketingSoop.xlsx')
-    
-    st.subheader("🛍️ Gestión de Productos para Marketing")
-    
-    st.dataframe(st.session_state.df_marketing, use_container_width=True)
-    
-    st.markdown("---")
-    
-    # Opciones de gestión solo para Super Admin
-    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
-        st.subheader("🔧 Gestionar Productos de Marketing")
-        
-        # Formulario para agregar un nuevo producto
-        with st.expander("Agregar Nuevo Producto de Marketing"):
-            with st.form("form_agregar_producto_marketing"):
-                nombre_producto = st.text_input("Nombre del Producto")
-                descripcion = st.text_area("Descripción del Producto")
-                imagen_url = st.text_input("URL de la Imagen")
-                drive_link = st.text_input("Link a Drive")
-                ayuda_venta_link = st.text_input("Link para Ayuda de Venta")
-                logistica_link = st.text_input("Link para Logística")
-                submit_producto = st.form_submit_button("Agregar Producto")
-                
-                if submit_producto:
-                    if nombre_producto.strip() == "":
-                        st.error("El nombre del producto no puede estar vacío.")
-                    else:
-                        nuevo_producto_marketing = {
-                            'Nombre Producto': nombre_producto.strip(),
-                            'Descripción': descripcion.strip(),
-                            'Imagen URL': imagen_url.strip(),
-                            'Drive Link': drive_link.strip(),
-                            'Ayuda de Venta Link': ayuda_venta_link.strip(),
-                            'Logística Link': logistica_link.strip()
-                        }
-                        st.session_state.df_marketing = st.session_state.df_marketing.append(nuevo_producto_marketing, ignore_index=True)
-                        st.success(f"Producto '{nombre_producto}' agregado exitosamente.")
-                        # Guardar los cambios en Excel
-                        st.session_state.df_marketing.to_excel('MarketingSoop.xlsx', index=False)
-        
-        st.markdown("---")
-        
-        # Botones funcionales para cada producto
-        st.subheader("🔗 Acciones Rápidas")
-        for idx, producto in st.session_state.df_marketing.iterrows():
-            st.write(f"### {producto['Nombre Producto']}")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown(f"**Descripción:** {producto['Descripción']}")
-            with col2:
-                if producto['Imagen URL']:
-                    try:
-                        response = requests.get(producto['Imagen URL'], timeout=5)
-                        response.raise_for_status()
-                        image = Image.open(BytesIO(response.content))
-                        st.image(image, width=150)
-                    except:
-                        st.write("🔗 **Imagen no disponible**")
-                else:
-                    st.write("🔗 **No hay imagen disponible**")
-            with col3:
-                st.markdown(f"[📁 Agregar al Drive]({producto['Drive Link']})" if producto['Drive Link'] else "🔗 **No disponible**")
-                st.markdown(f"[📈 Crear Ayuda de Venta]({producto['Ayuda de Venta Link']})" if producto['Ayuda de Venta Link'] else "🔗 **No disponible**")
-                st.markdown(f"[🚚 Pasar a Logística para Completar Ingreso]({producto['Logística Link']})" if producto['Logística Link'] else "🔗 **No disponible**")
-            st.markdown("---")
-# Parte 3.5: Implementación del Módulo Picking y Otros
-
-# Nota: Esta parte ya fue incluida en Parte 3.3. Si necesitas funcionalidades adicionales específicas para Picking, asegúrate de agregarlas aquí.
-
-# ===============================
-# Módulo Estadísticas (Si no se incluyó anteriormente)
-# ===============================
-
-# Ya incluido en Parte 3.3
