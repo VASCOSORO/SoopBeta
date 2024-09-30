@@ -1057,10 +1057,121 @@ def generar_imagen_flayer(productos):
 # Módulo Logística
 # ===============================
 
+import pandas as pd
+import streamlit as st
+
 def modulo_logistica():
-    st.header("🚚 Logística")
-    st.write("Aquí puedes agregar funcionalidades de logística.")
-    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de logística.
+    st.header("🚚 Gestión de Logística")
+
+    # Parte 1: Tabla de Pedidos Ingresados
+    st.subheader("📋 Pedidos Ingresados")
+    
+    # Simulación de datos de pedidos ingresados
+    pedidos_data = {
+        'N° Seguimiento': [f"PED-{i:04d}" for i in range(1, 101)],
+        'Cliente': [f"Cliente {i}" for i in range(1, 101)],
+        'Vendedor': [f"Vendedor {i % 5 + 1}" for i in range(1, 101)],
+        'Monto': [round(5000 + i * 50, 2) for i in range(1, 101)],
+        'Estado': ['Nuevo Pedido'] * 20 + ['Esperando Pago'] * 20 + ['Pedido Pagado'] * 20 + ['Pedido en Armado'] * 20 + ['Pedido Enviado'] * 20,
+        'Fecha Ingreso': pd.date_range("2024-09-01", periods=100, freq='D').strftime("%d/%m/%Y"),
+        'Hora Ingreso': pd.date_range("2024-09-01 08:00", periods=100, freq='D').strftime("%H:%M")
+    }
+    df_pedidos = pd.DataFrame(pedidos_data)
+    
+    # Paginación de la tabla de pedidos
+    page_size = 15
+    page = st.number_input("Página", min_value=1, max_value=(len(df_pedidos) // page_size) + 1, step=1)
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    
+    # Mostrar tabla de pedidos con control para modificar el estado
+    for idx in range(start_idx, end_idx):
+        pedido = df_pedidos.iloc[idx]
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        
+        with col1:
+            st.write(pedido['N° Seguimiento'])
+        with col2:
+            st.write(pedido['Cliente'])
+        with col3:
+            st.write(pedido['Vendedor'])
+        with col4:
+            st.write(f"${pedido['Monto']:,.2f}")
+        with col5:
+            # Modificar estado del pedido
+            nuevo_estado = st.selectbox(f"Estado del Pedido {pedido['N° Seguimiento']}", 
+                                        options=['Nuevo Pedido', 'Esperando Pago', 'Pedido Pagado', 
+                                                 'Pedido en Armado', 'Pedido Esperando Despacho', 'Pedido Enviado'],
+                                        index=['Nuevo Pedido', 'Esperando Pago', 'Pedido Pagado', 
+                                               'Pedido en Armado', 'Pedido Enviado'].index(pedido['Estado']))
+            df_pedidos.at[idx, 'Estado'] = nuevo_estado
+        with col6:
+            st.write(f"{pedido['Fecha Ingreso']} {pedido['Hora Ingreso']}")
+    
+    st.markdown("---")
+    
+    # Parte 2: Ingresar Boletas de Proveedores
+    st.subheader("📄 Ingreso de Boletas de Proveedores")
+    
+    with st.expander("Ingresar Nueva Boleta", expanded=False):
+        with st.form("form_boleta"):
+            col_boleta1, col_boleta2, col_boleta3 = st.columns(3)
+            
+            with col_boleta1:
+                proveedor = st.text_input("Proveedor")
+                fecha_boleta = st.date_input("Fecha de Boleta")
+            with col_boleta2:
+                codigo_producto = st.text_input("Código del Producto")
+                cantidad = st.number_input("Cantidad Ingresada", min_value=0)
+            with col_boleta3:
+                precio_unitario = st.number_input("Precio Unitario", min_value=0.0, step=0.01)
+                total = cantidad * precio_unitario
+                st.write(f"Total: ${total:,.2f}")
+            
+            # Botón para ingresar la boleta
+            submitted = st.form_submit_button("Ingresar Boleta")
+            if submitted:
+                st.success(f"Boleta ingresada para {proveedor}, Código Producto: {codigo_producto}, Cantidad: {cantidad}, Total: ${total:,.2f}")
+    
+    st.markdown("---")
+    
+    # Parte 3: Últimos Productos Agregados (por Marketing)
+    st.subheader("🆕 Últimos Productos Agregados por Marketing (Pendientes de Completar)")
+    
+    # Simulación de productos agregados por marketing (que aún no están disponibles en ventas)
+    productos_data = {
+        'Producto': [f"Producto {i}" for i in range(1, 6)],
+        'Costo Pesos': [None] * 5,
+        'Costo Dólares': [None] * 5,
+        'Precio Mayorista': [None] * 5,
+        'Precio Venta': [None] * 5,
+        'Stock': [None] * 5,
+        'Proveedor': [None] * 5,
+        'Pasillo': [None] * 5,
+        'Estante': [None] * 5
+    }
+    df_productos = pd.DataFrame(productos_data)
+    
+    for idx, producto in df_productos.iterrows():
+        st.write(f"Producto: {producto['Producto']}")
+        col_prod1, col_prod2, col_prod3 = st.columns(3)
+        
+        with col_prod1:
+            costo_pesos = st.number_input(f"Costo en Pesos ({producto['Producto']})", min_value=0.0, step=0.01, key=f"costo_pesos_{idx}")
+            costo_dolares = st.number_input(f"Costo en Dólares ({producto['Producto']})", min_value=0.0, step=0.01, key=f"costo_dolares_{idx}")
+        with col_prod2:
+            precio_mayorista = st.number_input(f"Precio Mayorista ({producto['Producto']})", min_value=0.0, step=0.01, key=f"precio_mayorista_{idx}")
+            precio_venta = st.number_input(f"Precio de Venta ({producto['Producto']})", min_value=0.0, step=0.01, key=f"precio_venta_{idx}")
+        with col_prod3:
+            stock = st.number_input(f"Stock Inicial ({producto['Producto']})", min_value=0)
+            proveedor = st.text_input(f"Proveedor ({producto['Producto']})")
+            pasillo = st.text_input(f"Pasillo ({producto['Producto']})")
+            estante = st.text_input(f"Estante ({producto['Producto']})")
+        
+        if st.button(f"Confirmar {producto['Producto']}", key=f"confirmar_{idx}"):
+            st.success(f"Producto {producto['Producto']} actualizado y disponible en ventas.")
+    
+    st.markdown("---")
 
 # ===============================
 # Productos Module (External Link)
