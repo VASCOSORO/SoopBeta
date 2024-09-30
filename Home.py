@@ -705,6 +705,17 @@ def modulo_estadistica():
     }
     df_ventas_ficticio = pd.DataFrame(data_ficticia_ventas)
 
+    # Traducción manual de los días de la semana
+    traduccion_dias = {
+        'Monday': 'lunes',
+        'Tuesday': 'martes',
+        'Wednesday': 'miércoles',
+        'Thursday': 'jueves',
+        'Friday': 'viernes',
+        'Saturday': 'sábado',
+        'Sunday': 'domingo'
+    }
+
     # Datos ficticios para productos
     productos_ficticios = {
         'Nombre': ['Peluche Oso', 'Juguete Robot', 'Auto a Control', 'Muñeca', 'Peluche León'],
@@ -726,10 +737,6 @@ def modulo_estadistica():
         'Monto': [10000, 8500, 7000, 6500, 6200]
     }
     df_vendedores_ficticio = pd.DataFrame(vendedores_ficticios)
-
-    # Configurar la localización en español para los días de la semana
-    import locale
-    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
     # Tarjetas Resumidas
     col1, col2, col3 = st.columns(3)
@@ -753,7 +760,7 @@ def modulo_estadistica():
 
     # Gráfico de ventas por día de la semana (ficticio)
     st.subheader("📅 Ventas por Día de la Semana")
-    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.strftime('%A')
+    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.day_name().map(traduccion_dias)
     ventas_resumen_ficticio = df_ventas_ficticio.groupby('Día')['Monto'].sum().reindex(
         ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
     )
@@ -791,7 +798,6 @@ def modulo_estadistica():
     # Productividad del equipo (ficticio)
     st.subheader("👥 Productividad del Equipo")
     st.table(df_vendedores_ficticio[['Nombre', 'Monto']])
-
 # ===============================
 # Módulo Marketing
 # ===============================
