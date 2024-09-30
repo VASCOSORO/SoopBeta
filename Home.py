@@ -374,7 +374,7 @@ def modulo_ventas():
         rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]  # Rubros ficticios
         rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
 
-        # Lógica para filtrar productos por la columna 'Categorías' en lugar de 'Rubros'
+        # Lógica para filtrar productos por la columna 'Categorias' en lugar de 'Rubros'
         if rubros_seleccionados:
             productos_filtrados = st.session_state.df_productos[
                 st.session_state.df_productos['Categorias'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))
@@ -587,60 +587,36 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     ```
 
-### **Instrucciones Detalladas para Copiar el Código Correctamente**
+### **Pasos Detallados para Copiar el Código Correctamente**
 
 1. **Selecciona Solo el Código Interno:**
-   - No incluyas las líneas que contienen solo tres acentos graves (```). Por ejemplo, **no copies** las siguientes líneas:
-     ```
-     ```
-     ```
-     Estas líneas son solo para formatear el código en Markdown y no deben estar en tu script de Python.
+   - **No copies** las líneas que contienen solo tres acentos graves (```).
+   - **Copia desde la línea** `# ===============================` hasta el final del código proporcionado.
 
-2. **Copia Desde `# ===============================` Hasta el Final del Código:**
-   - Asegúrate de copiar todo el contenido dentro del bloque de código proporcionado, excluyendo las líneas con ```.
+2. **Pega el Código en Tu Archivo Python (`Home.py`):**
+   - Abre tu archivo `Home.py`.
+   - Pega el código copiado en la ubicación correspondiente, reemplazando cualquier versión anterior del módulo de ventas si es necesario.
 
-3. **Pega el Código en Tu Archivo Python (`Home.py`):**
-   - Abre tu archivo `Home.py` y pega el código copiado en la ubicación correspondiente, reemplazando cualquier versión anterior del módulo de ventas si es necesario.
+3. **Asegúrate de que los DataFrames Estén Correctamente Cargados:**
+   - Antes de llamar a `modulo_ventas()`, asegúrate de que `st.session_state.df_clientes` y `st.session_state.df_productos` estén correctamente cargados y contengan las columnas necesarias.
 
-### **Verifica la Consistencia de las Claves**
+   ```python
+   import streamlit as st
+   import pandas as pd
 
-Para evitar errores de tipo `KeyError`, asegúrate de que:
+   # Carga de datos de clientes y productos
+   if 'df_clientes' not in st.session_state:
+       st.session_state.df_clientes = pd.read_excel('clientes.xlsx')  # Ajusta la ruta y el archivo según corresponda
 
-- **Claves en el Diccionario `pedido`:**
-  - Al agregar productos al pedido, utiliza las mismas claves que usas al visualizarlo. En el código corregido, las claves son:
-    - `'Codigo'`
-    - `'Nombre'`
-    - `'Cantidad'`
-    - `'Precio'`
-    - `'Importe'`
+   if 'df_productos' not in st.session_state:
+       st.session_state.df_productos = pd.read_excel('productos.xlsx')  # Ajusta la ruta y el archivo según corresponda
 
-- **Acceso a Columnas en el DataFrame `pedido_df`:**
-  - Asegúrate de que las columnas en `pedido_df` coincidan con las claves utilizadas en los diccionarios. Por ejemplo:
-    ```python
-    df_pedido['Importe'] = df_pedido['Cantidad'] * df_pedido['Precio']
-    ```
+   # Inicializar session_state para eliminar confirmaciones
+   if 'delete_confirm' not in st.session_state:
+       st.session_state.delete_confirm = {}
 
-### **Asegura que los DataFrames Estén Correctamente Cargados**
-
-Antes de llamar a `modulo_ventas()`, asegúrate de que `st.session_state.df_clientes` y `st.session_state.df_productos` estén correctamente cargados y contengan las columnas necesarias. Por ejemplo:
-
-```python
-import streamlit as st
-import pandas as pd
-
-# Carga de datos de clientes y productos
-if 'df_clientes' not in st.session_state:
-    st.session_state.df_clientes = pd.read_excel('clientes.xlsx')  # Ajusta la ruta y el archivo según corresponda
-
-if 'df_productos' not in st.session_state:
-    st.session_state.df_productos = pd.read_excel('productos.xlsx')  # Ajusta la ruta y el archivo según corresponda
-
-# Inicializar session_state para eliminar confirmaciones
-if 'delete_confirm' not in st.session_state:
-    st.session_state.delete_confirm = {}
-    
-# Ejecutar el módulo de ventas
-modulo_ventas()
+   # Ejecutar el módulo de ventas
+   modulo_ventas()
 
 # ===============================
 # Módulo Administración
