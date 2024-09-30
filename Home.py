@@ -893,7 +893,92 @@ def modulo_marketing():
                 st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
                 st.success(f"Producto {codigo} agregado exitosamente.")
                 # Guardar en Excel (o en la base de datos según implementación)
-                st.session
+                st.session_state.df_productos.to_excel('archivo_modificado_productos.xlsx', index=False)
+    
+    st.markdown("---")
+
+    # Parte 3: Ver últimos productos agregados
+    st.subheader("🆕 Últimos Productos Agregados")
+    ultimos_productos = st.session_state.df_productos.tail(5)
+    st.table(ultimos_productos[['Codigo', 'Nombre', 'Proveedor', 'Stock']])
+
+    st.markdown("---")
+    
+    # Parte 4: Crear PDF o Imágenes
+    st.subheader("📄 Crear PDF o Imagen con Productos Seleccionados")
+    
+    productos_seleccionados = st.multiselect("Seleccionar productos para el PDF/Imagen", 
+                                             st.session_state.df_productos['Nombre'].unique())
+    
+    # Limitar selección a 6 productos
+    if len(productos_seleccionados) > 6:
+        st.error("Solo puedes seleccionar hasta 6 productos para el PDF o imagen.")
+    elif len(productos_seleccionados) > 0:
+        if st.button("Generar PDF"):
+            generar_pdf(productos_seleccionados)
+        if st.button("Generar Imagen PNG"):
+            generar_imagen_png(productos_seleccionados)
+
+    st.markdown("---")
+
+    # Parte 5: Creador de Flayer
+    st.subheader("🎨 Creador de Flayer")
+    
+    with st.expander("Generar Flayer de Productos"):
+        productos_flayer = st.multiselect("Seleccionar productos para el Flayer", 
+                                          st.session_state.df_productos['Nombre'].unique())
+        
+        if len(productos_flayer) > 6:
+            st.error("Solo puedes seleccionar hasta 6 productos.")
+        elif len(productos_flayer) > 0:
+            if st.button("Vista previa del Flayer"):
+                generar_flayer_preview(productos_flayer)
+            if st.button("Generar PDF del Flayer"):
+                generar_pdf_flayer(productos_flayer)
+            if st.button("Generar Imagen PNG del Flayer"):
+                generar_imagen_flayer(productos_flayer)
+
+# ===============================
+# Funciones para generar PDF e Imagen
+# ===============================
+
+def generar_pdf(productos):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
+        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
+        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
+        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
+        pdf.cell(200, 10, txt="---", ln=True)
+    
+    # Guardar el PDF
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
+
+def generar_imagen_png(productos):
+    # Placeholder: Aquí podrías usar Pillow para generar una imagen con los datos
+    st.warning("Función de generación de imágenes aún no implementada.")
+
+# ===============================
+# Funciones para generar Flayer
+# ===============================
+
+def generar_flayer_preview(productos):
+    st.write("🖼️ Aquí se generará una vista previa del flayer con los productos seleccionados.")
+    # Funcionalidad de vista previa usando imágenes y datos de productos
+
+def generar_pdf_flayer(productos):
+    st.write("📄 Aquí se generará un PDF con los productos seleccionados en formato de flayer.")
+    # Funcionalidad de generación de PDF de flayer
+
+def generar_imagen_flayer(productos):
+    st.write("🖼️ Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
+    # Funcionalidad de generación de imagen PNG del flayer
 
 # ===============================
 # Módulo Logística
