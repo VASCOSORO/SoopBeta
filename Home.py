@@ -482,7 +482,7 @@ def modulo_equipo():
                     else:
                         st.error("El nombre seleccionado no existe.")
 
-    # Administración Module
+# Administración Module
 def modulo_administracion():
     st.header("⚙️ Administración")
     st.write("Aquí puedes agregar funcionalidades de administración.")
@@ -517,35 +517,16 @@ def modulo_convertidor_csv():
     st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
 
 # ===============================
-# Función de Autenticación con Autocompletado
+# Función de Autenticación con Solo Selectbox
 # ===============================
 
 def login():
     st.sidebar.title("🔒 Iniciar Sesión")
     
-    # Campo de texto para ingresar el nombre
-    nombre_busqueda = st.sidebar.text_input(
-        "Escribe tu nombre",
-        placeholder="Comienza a escribir tu nombre...",
-        key="nombre_busqueda"
-    )
-    
-    # Filtrar los nombres que contienen la búsqueda (case insensitive)
-    if nombre_busqueda:
-        opciones_filtradas = st.session_state.df_equipo[
-            st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
-        ]['Nombre'].tolist()
-        placeholder="Comienza a escribir tu nombre...",
-    else:
-        opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
-    
-    # Agregar una opción vacía al inicio
-    opciones_filtradas = [""] + opciones_filtradas
-    
-    # Selectbox con las opciones filtradas
+    # Selectbox para seleccionar el nombre del usuario
     nombre_seleccionado = st.sidebar.selectbox(
         "Selecciona tu nombre",
-        opciones_filtradas,
+        [""] + st.session_state.df_equipo['Nombre'].unique().tolist(),
         key="nombre_seleccionado",
         help="Selecciona tu nombre de la lista."
     )
@@ -561,7 +542,7 @@ def login():
         }
         st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
     else:
-        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
+        st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
 
 # ===============================
 # Función para Verificar Acceso
