@@ -290,7 +290,6 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_default = vendedores[0]  # Primer vendedor de la lista
             vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
     # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
@@ -324,20 +323,19 @@ def modulo_ventas():
             )
         
         # Desplegable para las notas del cliente
-        st.write("---")
         with st.expander("🔖 Notas del Cliente"):
             st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
 
-        # Filtro por categorías (provisional para simular rubros)
-        categorias_disponibles = st.session_state.df_productos['Categorías'].unique().tolist()
-        categoria_seleccionada = st.selectbox("🏷️ Filtrar por Categoría", [""] + categorias_disponibles, help="Seleccioná una categoría para filtrar productos")
+        # Rubros del cliente: Ficticios en un desplegable con la opción de seleccionar y destildar
+        rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]  # Rubros ficticios
+        rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
 
-        # Filtrar productos por la categoría seleccionada
-        if categoria_seleccionada:
-            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Categorías'].str.contains(categoria_seleccionada, na=False)]
+        # Lógica para filtrar productos por rubro
+        if rubros_seleccionados:
+            productos_filtrados = st.session_state.df_productos[st.session_state.df_productos['Rubros'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))]
             productos_filtrados = productos_filtrados.sort_values(by='Fecha', ascending=False)
             cantidad_filtrados = len(productos_filtrados)
-            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por la categoría '{categoria_seleccionada}'")
+            st.info(f"Mostrando {cantidad_filtrados} productos filtrados por los rubros seleccionados")
         else:
             productos_filtrados = st.session_state.df_productos
             st.info("Mostrando todos los productos disponibles")
@@ -349,7 +347,7 @@ def modulo_ventas():
         col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
     
         with col_prod1:
-            # Buscador de productos con el filtro de categoría aplicado si existe
+            # Buscador de productos con el rubro seleccionado aplicado si existe
             producto_buscado = st.selectbox(
                 "Buscar producto",
                 [""] + productos_filtrados['Nombre'].unique().tolist(),
@@ -440,7 +438,6 @@ def modulo_ventas():
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
                     st.write("🔗 **No hay imagen disponible.**")
-
 # ===============================
 # Módulo Equipo
 # ===============================
