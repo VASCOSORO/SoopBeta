@@ -6,3 +6,6 @@ pytz==2023.3
 streamlit-aggrid==1.0.5
 requests==2.31.0
 fpdf==1.7.2  # Para la generación de PDF
+sqlalchemy==2.0.15  # Para manejo de base de datos, opcional
+plotly==5.15.0  # Para gráficos, opcional
+pypdf2==3.0.0  # Para manejo de PDFs, opcional
