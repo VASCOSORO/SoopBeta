@@ -703,10 +703,20 @@ def modulo_administracion():
         ultimo_ingreso = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso'].tail(1)
         ultimo_egreso = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso'].tail(1)
 
-        monto_ultimo_ingreso = ultimo_ingreso['Monto'].values[0] if not ultimo_ingreso.empty else 0.0
-        monto_ultimo_egreso = ultimo_egreso['Monto'].values[0] if not ultimo_egreso.empty else 0.0
-        moneda_ultimo_ingreso = "USD" if "USD" in ultimo_ingreso['Detalle'].values[0] else "ARS"
-        moneda_ultimo_egreso = "USD" if "USD" in ultimo_egreso['Detalle'].values[0] else "ARS"
+        # Manejo seguro de ingreso y egreso vacíos
+        if not ultimo_ingreso.empty:
+            monto_ultimo_ingreso = ultimo_ingreso['Monto'].values[0]
+            moneda_ultimo_ingreso = "USD" if "USD" in ultimo_ingreso['Detalle'].values[0] else "ARS"
+        else:
+            monto_ultimo_ingreso = 0.0
+            moneda_ultimo_ingreso = "ARS"
+
+        if not ultimo_egreso.empty:
+            monto_ultimo_egreso = ultimo_egreso['Monto'].values[0]
+            moneda_ultimo_egreso = "USD" if "USD" in ultimo_egreso['Detalle'].values[0] else "ARS"
+        else:
+            monto_ultimo_egreso = 0.0
+            moneda_ultimo_egreso = "ARS"
     except KeyError as e:
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
@@ -820,7 +830,6 @@ def modulo_administracion():
                 
                 # Si el egreso es a un proveedor, actualizar el stock de productos
                 if tipo_egreso == "Proveedor":
-                    # Asumiendo que el detalle_boleta tiene productos separados por comas en el formato "Codigo:Cantidad"
                     try:
                         items = detalle_boleta.strip().split('\n')
                         for item in items:
@@ -832,13 +841,10 @@ def modulo_administracion():
                                     st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
                                 else:
                                     st.warning(f"Producto con código '{codigo}' no encontrado.")
-                        # Guardar los cambios en el stock de productos
                         st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
                         st.success("Stock de productos actualizado exitosamente.")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock de productos: {e}")
-
-
 # ===============================
 # Módulo Estadísticas
 # ===============================
