@@ -693,34 +693,61 @@ def modulo_equipo():
 def modulo_administracion():
     st.header("⚙️ Administración")
 
-    # Mostrar la caja actual
+    # Mostrar la caja actual en la parte superior, destacada y con último ingreso/egreso
     try:
         ingresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso']['Monto'].sum()
         egresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso']['Monto'].sum()
         caja_actual = ingresos - egresos
+
+        # Último ingreso y egreso
+        ultimo_ingreso = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso'].tail(1)
+        ultimo_egreso = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso'].tail(1)
+
+        monto_ultimo_ingreso = ultimo_ingreso['Monto'].values[0] if not ultimo_ingreso.empty else 0.0
+        monto_ultimo_egreso = ultimo_egreso['Monto'].values[0] if not ultimo_egreso.empty else 0.0
+        moneda_ultimo_ingreso = "USD" if "USD" in ultimo_ingreso['Detalle'].values[0] else "ARS"
+        moneda_ultimo_egreso = "USD" if "USD" in ultimo_egreso['Detalle'].values[0] else "ARS"
     except KeyError as e:
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
-    
-    st.subheader("💰 Caja Actual")
-    st.write(f"**Total Ingresos/Cobrados:** ${ingresos:,.2f}")
-    st.write(f"**Total Egresos/Gastos:** ${egresos:,.2f}")
-    st.write(f"**Caja Disponible:** ${caja_actual:,.2f}")
+
+    # Layout de caja total
+    col_caja, col_ultimos = st.columns([2, 1])
+
+    with col_caja:
+        st.subheader("💰 Caja Actual")
+        st.write(f"<h2 style='text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
+
+    with col_ultimos:
+        st.write(f"**Último Ingreso:** ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}")
+        st.write(f"**Último Egreso:** ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}")
 
     st.markdown("---")
 
-    # Registrar Ingreso
+    # Registrar Ingreso (diseño con columnas)
     st.subheader("📥 Registrar Ingreso")
     with st.form("form_registrar_ingreso"):
-        nombre_ingreso = st.text_input("Nombre del Ingreso")
-        tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            nombre_ingreso = st.text_input("Nombre del Ingreso")
+        with col2:
+            tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
+        with col3:
+            monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
+
+        col4, col5 = st.columns(2)
+        with col4:
+            fecha_ingreso = st.date_input("Fecha de Ingreso")
+        with col5:
+            hora_ingreso = st.time_input("Hora de Ingreso")
+
+        # Cliente o cobrador según el tipo de ingreso
         if tipo_ingreso == "Venta Cobrada":
             cliente_ingreso = st.selectbox("Selecciona el Cliente", st.session_state.df_clientes['Nombre'].unique().tolist())
         else:
             cliente_ingreso = st.text_input("Nombre de quien realizó la Cobranza")
-        monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
-        fecha_ingreso = st.date_input("Fecha de Ingreso")
-        hora_ingreso = st.time_input("Hora de Ingreso")
+
         submit_ingreso = st.form_submit_button("Registrar Ingreso")
 
         if submit_ingreso:
@@ -743,20 +770,31 @@ def modulo_administracion():
 
     st.markdown("---")
 
-    # Registrar Egreso
+    # Registrar Egreso (diseño con columnas)
     st.subheader("📤 Registrar Egreso")
     with st.form("form_registrar_egreso"):
-        nombre_egreso = st.text_input("Nombre del Egreso")
-        tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            nombre_egreso = st.text_input("Nombre del Egreso")
+        with col2:
+            tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
+        with col3:
+            monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
+
+        col4, col5 = st.columns(2)
+        with col4:
+            fecha_egreso = st.date_input("Fecha de Egreso")
+        with col5:
+            hora_egreso = st.time_input("Hora de Egreso")
+
         if tipo_egreso == "Proveedor":
             proveedor = st.text_input("Nombre del Proveedor")
             detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
         else:
             proveedor = st.text_input("Destino del Gasto")
             detalle_boleta = st.text_area("Detalle del Gasto")
-        monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
-        fecha_egreso = st.date_input("Fecha de Egreso")
-        hora_egreso = st.time_input("Hora de Egreso")
+
         submit_egreso = st.form_submit_button("Registrar Egreso")
 
         if submit_egreso:
@@ -799,6 +837,7 @@ def modulo_administracion():
                         st.success("Stock de productos actualizado exitosamente.")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock de productos: {e}")
+
 
 # ===============================
 # Módulo Estadísticas
