@@ -587,17 +587,16 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     ```
 
-### **Detalles de las Modificaciones Realizadas:**
+### **Explicación de las Modificaciones Realizadas:**
 
-1. **Consistencia en las Claves:**
-   - **`Codigo` sin acento:** He reemplazado todas las instancias de `'Código'` con `'Codigo'` para mantener la consistencia con la columna `'Codigo'` en `df_productos`.
-   - **`Precio` en lugar de `Precio Unitario`:** Mantengo `'Precio'` como la clave para el precio, evitando `'Precio Unitario'`.
+1. **Consistencia en los Nombres de las Claves:**
+   - **Uso de `'Codigo'` sin acento:** He reemplazado todas las instancias de `'Código'` con `'Codigo'` para mantener la consistencia con la columna `'Codigo'` en `df_productos`.
+   - **Uso de `'Precio'`:** Mantengo `'Precio'` como la clave para el precio, evitando `'Precio Unitario'`.
 
 2. **Inicialización de `delete_confirm`:**
    ```python
    if 'delete_confirm' not in st.session_state:
        st.session_state.delete_confirm = {}
-
 # ===============================
 # Módulo Administración
 # ===============================
