@@ -447,7 +447,7 @@ def modulo_equipo():
                     estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
                     # Modificar accesos a módulos
                     acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
-                    acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
+                    acceso_logistica = st.checkbox("Acceso Logística", value=miembro_data['Acceso Logística'])
                     acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
                     acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
 
@@ -479,6 +479,7 @@ def modulo_equipo():
     #     modulo_equipo()
     
     # Otras secciones...
+
 # ===============================
 # Módulo Ventas
 # ===============================
