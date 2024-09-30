@@ -118,16 +118,6 @@ if 'delete_confirm' not in st.session_state:
     st.session_state.delete_confirm = {}
 
 # ===============================
-# Importar matplotlib con manejo de errores
-# ===============================
-
-try:
-    import matplotlib.pyplot as plt
-except ModuleNotFoundError:
-    st.error("No se pudo importar 'matplotlib'. Asegurate de que esté instalado correctamente.")
-    st.stop()
-
-# ===============================
 # Función de Autenticación con Autocompletado
 # ===============================
 
