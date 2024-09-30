@@ -16,95 +16,38 @@ from fpdf import FPDF  # Para la generación de PDF
 # Inicialización del Estado de Sesión
 # ===============================
 
-# Inicializar el estado del pedido y el stock si no existen
-if 'pedido' not in st.session_state:
-    st.session_state.pedido = []
+# Función para inicializar DataFrames en sesión
+def inicializar_dataframe(nombre_df, columnas, archivo):
+    if nombre_df not in st.session_state:
+        if os.path.exists(archivo):
+            try:
+                st.session_state[nombre_df] = pd.read_excel(archivo)
+            except Exception as e:
+                st.error(f"Error al cargar el archivo {archivo}: {e}")
+                st.stop()
+        else:
+            st.warning(f"⚠️ El archivo {archivo} no existe. Creándolo automáticamente.")
+            st.session_state[nombre_df] = pd.DataFrame(columns=columnas)
+            st.session_state[nombre_df].to_excel(archivo, index=False)
 
-# Inicializar 'df_productos' si no existe
-if 'df_productos' not in st.session_state:
-    file_path_productos = 'archivo_modificado_productos_20240928_201237.xlsx'  # Archivo de productos
-    if os.path.exists(file_path_productos):
-        try:
-            st.session_state.df_productos = pd.read_excel(file_path_productos)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de productos: {e}")
-            st.stop()
-    else:
-        st.warning(f"⚠️ El archivo {file_path_productos} no existe. Por favor, súbelo desde el módulo Productos.")
-        st.session_state.df_productos = pd.DataFrame()  # DataFrame vacío
+# Inicializar DataFrames necesarios
+inicializar_dataframe('df_productos', ['Codigo', 'Nombre', 'Precio', 'Stock', 'forzar multiplos', 'imagen'], 'archivo_modificado_productos_20240928_201237.xlsx')
+inicializar_dataframe('df_clientes', ['Nombre', 'Descuento', 'Fecha Modificado', 'Vendedores'], 'archivo_modificado_clientes_20240928_200050.xlsx')
+inicializar_dataframe('df_equipo', ['Nombre', 'Contraseña', 'Rol', 'Departamento', 'Nivel de Acceso', 
+                                   'Número de Celular', 'Fecha de Cumpleaños', 'Dirección',
+                                   'Última Vez Inició Sesión', 'Última Vez Utilizó el Sistema', 'Activo'], 'equipo.xlsx')
+inicializar_dataframe('df_administracion', ['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora'], 'AdministracionSoop.xlsx')
 
-# Inicializar 'df_clientes' si no existe
-if 'df_clientes' not in st.session_state:
-    file_path_clientes = 'archivo_modificado_clientes_20240928_200050.xlsx'  # Archivo de clientes
-    if os.path.exists(file_path_clientes):
-        try:
-            st.session_state.df_clientes = pd.read_excel(file_path_clientes)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de clientes: {e}")
-            st.stop()
-    else:
-        st.warning(f"⚠️ El archivo {file_path_clientes} no existe. Por favor, súbelo desde el módulo Convertidor de CSV.")
-        st.session_state.df_clientes = pd.DataFrame()  # DataFrame vacío
-
-# Inicializar 'df_administracion' si no existe
-if 'df_administracion' not in st.session_state:
-    file_path_administracion = 'AdministracionSoop.xlsx'
-    if os.path.exists(file_path_administracion):
-        try:
-            st.session_state.df_administracion = pd.read_excel(file_path_administracion)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de administración: {e}")
-            st.stop()
-    else:
-        st.session_state.df_administracion = pd.DataFrame(columns=['Tipo', 'Nombre', 'Detalle', 'Monto', 'Fecha', 'Hora'])
-
-# Inicializar 'delete_confirm' como un diccionario si no existe
-if 'delete_confirm' not in st.session_state:
-    st.session_state.delete_confirm = {}
-
-# Inicializar 'df_equipo' si no existe
-if 'df_equipo' not in st.session_state:
-    file_path_equipo = 'equipo.xlsx'
-    if os.path.exists(file_path_equipo):
-        try:
-            st.session_state.df_equipo = pd.read_excel(file_path_equipo)
-        except Exception as e:
-            st.error(f"Error al cargar el archivo de equipo: {e}")
-            st.stop()
-    else:
-        # Definir los miembros del equipo
-        data_equipo = {
-            'Nombre': [
-                'Joni', 'Eduardo', 'Johan', 'Martin',
-                'Marian', 'Sofi', 'Valen', 'Emily',
-                'Maria-Jose', 'Vasco'
-            ],
-            'Rol': [
-                'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                'Vendedora', 'Vendedora', 'Vendedora', 'Vendedora',
-                'Fotógrafa y Catalogador', 'Super Admin'
-            ],
-            'Departamento': [
-                'Dirección', 'Dirección', 'Depósito', 'Depósito',
-                'Ventas', 'Ventas', 'Ventas', 'Ventas',
-                'Marketing', 'Dirección'
-            ],
-            'Nivel de Acceso': [
-                'Alto', 'Alto', 'Medio', 'Medio',
-                'Bajo', 'Bajo', 'Bajo', 'Bajo',
-                'Medio', 'Super Admin'
-            ]
-        }
-        st.session_state.df_equipo = pd.DataFrame(data_equipo)
-        # Guardar el DataFrame inicial en Excel
-        try:
-            st.session_state.df_equipo.to_excel(file_path_equipo, index=False)
-        except Exception as e:
-            st.error(f"Error al guardar el archivo de equipo: {e}")
+# Inicializar otros DataFrames si es necesario
+# ...
 
 # Inicializar 'usuario' en sesión si no existe
 if 'usuario' not in st.session_state:
     st.session_state.usuario = None
+
+# Inicializar 'delete_confirm' como un diccionario si no existe
+if 'delete_confirm' not in st.session_state:
+    st.session_state.delete_confirm = {}
 
 # ===============================
 # Funciones de Utilidad
@@ -178,7 +121,7 @@ def guardar_pedido_excel(file_path, order_data):
             last_id = sheet['A'][sheet.max_row - 1].value
             id_pedido = last_id + 1 if last_id is not None else 1
         
-        # Agregar cada ítem del pedido
+        # Agregar cada ítem como una fila separada
         for item in order_data['items']:
             sheet.append([
                 id_pedido,
@@ -500,6 +443,117 @@ def modulo_equipo():
                             st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
                     else:
                         st.error("El nombre seleccionado no existe.")
+
+# ===============================
+# Módulo Administración
+# ===============================
+
+def modulo_administracion():
+    st.header("⚙️ Administración")
+    
+    # Mostrar la caja actual
+    ingresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso']['Monto'].sum()
+    egresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso']['Monto'].sum()
+    caja_actual = ingresos - egresos
+    
+    st.subheader("💰 Caja Actual")
+    st.write(f"**Total Ingresos/Cobrados:** ${ingresos:,.2f}")
+    st.write(f"**Total Egresos/Gastos:** ${egresos:,.2f}")
+    st.write(f"**Caja Disponible:** ${caja_actual:,.2f}")
+    
+    st.markdown("---")
+    
+    # Registrar Ingreso
+    st.subheader("📥 Registrar Ingreso")
+    with st.form("form_registrar_ingreso"):
+        nombre_ingreso = st.text_input("Nombre del Ingreso")
+        tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
+        if tipo_ingreso == "Venta Cobrada":
+            cliente_ingreso = st.selectbox("Selecciona el Cliente", st.session_state.df_clientes['Nombre'].unique().tolist())
+        else:
+            cliente_ingreso = st.text_input("Nombre de quien realizó la Cobranza")
+        monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
+        fecha_ingreso = st.date_input("Fecha de Ingreso")
+        hora_ingreso = st.time_input("Hora de Ingreso")
+        submit_ingreso = st.form_submit_button("Registrar Ingreso")
+    
+        if submit_ingreso:
+            if nombre_ingreso.strip() == "":
+                st.error("El nombre del ingreso no puede estar vacío.")
+            elif monto_ingreso <= 0:
+                st.error("El monto debe ser mayor a cero.")
+            else:
+                detalle = f"{tipo_ingreso} - {cliente_ingreso}" if tipo_ingreso == "Venta Cobrada" else f"{tipo_ingreso} - {cliente_ingreso}"
+                nuevo_ingreso = {
+                    'Tipo': 'Ingreso',
+                    'Nombre': nombre_ingreso.strip(),
+                    'Detalle': detalle,
+                    'Monto': monto_ingreso,
+                    'Fecha': fecha_ingreso.strftime("%Y-%m-%d"),
+                    'Hora': hora_ingreso.strftime("%H:%M:%S")
+                }
+                st.session_state.df_administracion = pd.concat([st.session_state.df_administracion, pd.DataFrame([nuevo_ingreso])], ignore_index=True)
+                st.success(f"Ingreso '{nombre_ingreso}' registrado exitosamente.")
+                st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
+    
+    st.markdown("---")
+    
+    # Registrar Egreso
+    st.subheader("📤 Registrar Egreso")
+    with st.form("form_registrar_egreso"):
+        nombre_egreso = st.text_input("Nombre del Egreso")
+        tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
+        if tipo_egreso == "Proveedor":
+            proveedor = st.text_input("Nombre del Proveedor")
+            detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
+        else:
+            proveedor = st.text_input("Destino del Gasto")
+            detalle_boleta = st.text_area("Detalle del Gasto")
+        monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
+        fecha_egreso = st.date_input("Fecha de Egreso")
+        hora_egreso = st.time_input("Hora de Egreso")
+        submit_egreso = st.form_submit_button("Registrar Egreso")
+    
+        if submit_egreso:
+            if nombre_egreso.strip() == "":
+                st.error("El nombre del egreso no puede estar vacío.")
+            elif monto_egreso <= 0:
+                st.error("El monto debe ser mayor a cero.")
+            elif tipo_egreso == "Proveedor" and proveedor.strip() == "":
+                st.error("El proveedor no puede estar vacío para un egreso a proveedor.")
+            else:
+                detalle = f"{tipo_egreso} - {proveedor} - {detalle_boleta}"
+                nuevo_egreso = {
+                    'Tipo': 'Egreso',
+                    'Nombre': nombre_egreso.strip(),
+                    'Detalle': detalle.strip(),
+                    'Monto': monto_egreso,
+                    'Fecha': fecha_egreso.strftime("%Y-%m-%d"),
+                    'Hora': hora_egreso.strftime("%H:%M:%S")
+                }
+                st.session_state.df_administracion = pd.concat([st.session_state.df_administracion, pd.DataFrame([nuevo_egreso])], ignore_index=True)
+                st.success(f"Egreso '{nombre_egreso}' registrado exitosamente.")
+                st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
+                
+                # Si el egreso es a un proveedor, actualizar el stock de productos
+                if tipo_egreso == "Proveedor":
+                    # Asumiendo que el detalle_boleta tiene productos separados por líneas en el formato "Codigo:Cantidad"
+                    try:
+                        items = detalle_boleta.strip().split('\n')
+                        for item in items:
+                            if ':' in item:
+                                codigo, cantidad = item.split(':')
+                                codigo = codigo.strip()
+                                cantidad = int(cantidad.strip())
+                                if codigo in st.session_state.df_productos['Codigo'].values:
+                                    st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
+                                else:
+                                    st.warning(f"Producto con código '{codigo}' no encontrado.")
+                        # Guardar los cambios en el stock de productos
+                        st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                        st.success("Stock de productos actualizado exitosamente.")
+                    except Exception as e:
+                        st.error(f"Error al actualizar el stock de productos: {e}")
 
 # ===============================
 # Módulo Estadísticas
