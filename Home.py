@@ -407,11 +407,13 @@ def modulo_equipo():
                             'Acceso Marketing': acceso_marketing,
                             'Avatar': avatar_url if avatar_url else 'https://via.placeholder.com/150'
                         }
-                        st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
+                        # Nota: pd.DataFrame.append() está deprecado, usar pd.concat()
+                        nuevo_miembro_df = pd.DataFrame([nuevo_miembro])
+                        st.session_state.df_equipo = pd.concat([st.session_state.df_equipo, nuevo_miembro_df], ignore_index=True)
                         st.success(f"Miembro {nombre} agregado exitosamente.")
                         # Guardar los cambios en Excel
                         st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
-    
+
         st.markdown("---")
         
         # Formulario para modificar un miembro del equipo
@@ -440,55 +442,68 @@ def modulo_equipo():
                             'Bajo', 'Medio', 'Alto', 'Super Admin'
                         ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']))
                         avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'])
-    
-                    with col_form2:
-                        estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
-                        # Modificar accesos a módulos
-                        acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
-                        acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
-                        acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
-                        acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
-    
-                    submit_modificar = st.form_submit_button("Modificar")
-                    
-                    if submit_modificar:
-                        # Actualizar los datos del miembro
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'] = nombre
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Rol'] = rol
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Departamento'] = departamento
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nivel de Acceso'] = nivel_acceso
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Estado'] = estado
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Ventas'] = acceso_ventas
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Logística'] = acceso_logistica
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Administración'] = acceso_administracion
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Marketing'] = acceso_marketing
-                        st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
-                        st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
-                        # Guardar los cambios en Excel
-                        st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
-    
-        st.markdown("---")
-        
-        # Formulario para eliminar un miembro del equipo
-        with st.expander("Eliminar Miembro"):
-            with st.form("form_eliminar"):
-                nombre_eliminar = st.selectbox(
-                    "Selecciona el nombre a eliminar",
-                    st.session_state.df_equipo['Nombre'].unique().tolist()
-                )
-                submit_eliminar = st.form_submit_button("Eliminar")
+
+                with col_form2:
+                    estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
+                    # Modificar accesos a módulos
+                    acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
+                    acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
+                    acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
+                    acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
+
+                submit_modificar = st.form_submit_button("Modificar")
                 
-                if submit_eliminar:
-                    if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
-                        if nombre_eliminar == st.session_state.usuario.get('Nombre', ''):
-                            st.error("No puedes eliminarte a ti mismo.")
-                        else:
-                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
-                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
-                            # Guardar los cambios en Excel
-                            st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
-                    else:
-                        st.error("El nombre seleccionado no existe.")
+                if submit_modificar and miembro_modificar:
+                    # Actualizar los datos del miembro
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'] = nombre
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Rol'] = rol
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Departamento'] = departamento
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nivel de Acceso'] = nivel_acceso
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Estado'] = estado
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Ventas'] = acceso_ventas
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Logística'] = acceso_logistica
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Administración'] = acceso_administracion
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Marketing'] = acceso_marketing
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
+                    st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
+                    # Guardar los cambios en Excel
+                    st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
+
+    st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
+
+    # Cargar datos de equipo al inicio
+    cargar_equipo()
+
+    # Definición de otras funciones como modulo_ventas(), etc.
+
+    # Navegación entre módulos
+    seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
+
+    if seccion == "Equipo":
+        modulo_equipo()
+    
+    # Otras secciones...
+    ```
+
+### **Detalles Importantes**
+
+1. **Agregar los Dos Puntos (`:`) en la Declaración `if`**
+
+   En la sección donde manejas la eliminación de un miembro, asegúrate de que todas las declaraciones `if` terminen con `:`. Por ejemplo:
+
+   ```python
+   if submit_eliminar:
+       if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
+           if nombre_eliminar == st.session_state.usuario.get('Nombre', ''):
+               st.error("No puedes eliminarte a ti mismo.")
+           else:
+               st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
+               st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
+               # Guardar los cambios en Excel
+               st.session_state.df_equipo.to_excel('equipo de trabajo.xlsx', index=False)
+       else:
+           st.error("El nombre seleccionado no existe.")
+
 # ===============================
 # Módulo Ventas
 # ===============================
