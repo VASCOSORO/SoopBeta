@@ -810,130 +810,138 @@ def modulo_administracion():
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
 
-    # Layout de caja total
-    col_caja, col_ultimos = st.columns([2, 1])
+    # Layout de caja total con el "ojito" para ocultar/mostrar
+    mostrar_caja = st.checkbox("Mostrar Caja Actual", value=True)
+
+    col_admin, col_caja = st.columns([2, 1])
+
+    with col_admin:
+        st.subheader("💰 Administración")
 
     with col_caja:
-        st.subheader("💰 Caja Actual")
-        st.write(f"<h2 style='text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
+        if mostrar_caja:
+            # Mostrar caja en verde o rojo si es negativa
+            color_caja = "red" if caja_actual < 0 else "green"
+            st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
 
-    with col_ultimos:
+        # Mostrar último ingreso y egreso debajo de la caja
         st.write(f"**Último Ingreso:** ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}")
         st.write(f"**Último Egreso:** ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}")
 
     st.markdown("---")
 
-    # Registrar Ingreso (diseño con columnas)
-    st.subheader("📥 Registrar Ingreso")
-    with st.form("form_registrar_ingreso"):
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            nombre_ingreso = st.text_input("Nombre del Ingreso")
-        with col2:
-            tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
-        with col3:
-            monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
+    # Registrar Ingreso (diseño con secciones desplegables)
+    with st.expander("📥 Registrar Ingreso"):
+        with st.form("form_registrar_ingreso"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                nombre_ingreso = st.text_input("Nombre del Ingreso")
+            with col2:
+                tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
+            with col3:
+                monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
 
-        col4, col5 = st.columns(2)
-        with col4:
-            fecha_ingreso = st.date_input("Fecha de Ingreso")
-        with col5:
-            hora_ingreso = st.time_input("Hora de Ingreso")
+            col4, col5 = st.columns(2)
+            with col4:
+                fecha_ingreso = st.date_input("Fecha de Ingreso")
+            with col5:
+                hora_ingreso = st.time_input("Hora de Ingreso")
 
-        # Cliente o cobrador según el tipo de ingreso
-        if tipo_ingreso == "Venta Cobrada":
-            cliente_ingreso = st.selectbox("Selecciona el Cliente", st.session_state.df_clientes['Nombre'].unique().tolist())
-        else:
-            cliente_ingreso = st.text_input("Nombre de quien realizó la Cobranza")
-
-        submit_ingreso = st.form_submit_button("Registrar Ingreso")
-
-        if submit_ingreso:
-            if nombre_ingreso.strip() == "":
-                st.error("El nombre del ingreso no puede estar vacío.")
-            elif monto_ingreso <= 0:
-                st.error("El monto debe ser mayor a cero.")
+            # Cliente o cobrador según el tipo de ingreso
+            if tipo_ingreso == "Venta Cobrada":
+                cliente_ingreso = st.selectbox("Selecciona el Cliente", st.session_state.df_clientes['Nombre'].unique().tolist())
             else:
-                nuevo_ingreso = {
-                    'Tipo': 'Ingreso',
-                    'Nombre': nombre_ingreso.strip(),
-                    'Detalle': f"{tipo_ingreso} - {cliente_ingreso}",
-                    'Monto': monto_ingreso,
-                    'Fecha': fecha_ingreso.strftime("%Y-%m-%d"),
-                    'Hora': hora_ingreso.strftime("%H:%M:%S")
-                }
-                st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_ingreso, ignore_index=True)
-                st.success(f"Ingreso '{nombre_ingreso}' registrado exitosamente.")
-                st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
+                cliente_ingreso = st.text_input("Nombre de quien realizó la Cobranza")
+
+            submit_ingreso = st.form_submit_button("Registrar Ingreso")
+
+            if submit_ingreso:
+                if nombre_ingreso.strip() == "":
+                    st.error("El nombre del ingreso no puede estar vacío.")
+                elif monto_ingreso <= 0:
+                    st.error("El monto debe ser mayor a cero.")
+                else:
+                    nuevo_ingreso = {
+                        'Tipo': 'Ingreso',
+                        'Nombre': nombre_ingreso.strip(),
+                        'Detalle': f"{tipo_ingreso} - {cliente_ingreso}",
+                        'Monto': monto_ingreso,
+                        'Fecha': fecha_ingreso.strftime("%Y-%m-%d"),
+                        'Hora': hora_ingreso.strftime("%H:%M:%S")
+                    }
+                    st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_ingreso, ignore_index=True)
+                    st.success(f"Ingreso '{nombre_ingreso}' registrado exitosamente.")
+                    st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
 
     st.markdown("---")
 
-    # Registrar Egreso (diseño con columnas)
-    st.subheader("📤 Registrar Egreso")
-    with st.form("form_registrar_egreso"):
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            nombre_egreso = st.text_input("Nombre del Egreso")
-        with col2:
-            tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
-        with col3:
-            monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
+    # Registrar Egreso (diseño con secciones desplegables)
+    with st.expander("📤 Registrar Egreso"):
+        with st.form("form_registrar_egreso"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                nombre_egreso = st.text_input("Nombre del Egreso")
+            with col2:
+                tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
+            with col3:
+                monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
 
-        col4, col5 = st.columns(2)
-        with col4:
-            fecha_egreso = st.date_input("Fecha de Egreso")
-        with col5:
-            hora_egreso = st.time_input("Hora de Egreso")
+            col4, col5 = st.columns(2)
+            with col4:
+                fecha_egreso = st.date_input("Fecha de Egreso")
+            with col5:
+                hora_egreso = st.time_input("Hora de Egreso")
 
-        if tipo_egreso == "Proveedor":
-            proveedor = st.text_input("Nombre del Proveedor")
-            detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
-        else:
-            proveedor = st.text_input("Destino del Gasto")
-            detalle_boleta = st.text_area("Detalle del Gasto")
-
-        submit_egreso = st.form_submit_button("Registrar Egreso")
-
-        if submit_egreso:
-            if nombre_egreso.strip() == "":
-                st.error("El nombre del egreso no puede estar vacío.")
-            elif monto_egreso <= 0:
-                st.error("El monto debe ser mayor a cero.")
-            elif tipo_egreso == "Proveedor" and proveedor.strip() == "":
-                st.error("El proveedor no puede estar vacío para un egreso a proveedor.")
+            if tipo_egreso == "Proveedor":
+                proveedor = st.text_input("Nombre del Proveedor")
+                detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
             else:
-                detalle_completo = f"{tipo_egreso} - {proveedor} - {detalle_boleta.strip()}" if tipo_egreso == "Proveedor" else f"{tipo_egreso} - {proveedor} - {detalle_boleta.strip()}"
-                nuevo_egreso = {
-                    'Tipo': 'Egreso',
-                    'Nombre': nombre_egreso.strip(),
-                    'Detalle': detalle_completo,
-                    'Monto': monto_egreso,
-                    'Fecha': fecha_egreso.strftime("%Y-%m-%d"),
-                    'Hora': hora_egreso.strftime("%H:%M:%S")
-                }
-                st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_egreso, ignore_index=True)
-                st.success(f"Egreso '{nombre_egreso}' registrado exitosamente.")
-                st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
-                
-                # Si el egreso es a un proveedor, actualizar el stock de productos
-                if tipo_egreso == "Proveedor":
-                    try:
-                        items = detalle_boleta.strip().split('\n')
-                        for item in items:
-                            if ':' in item:
-                                codigo, cantidad = item.split(':')
-                                codigo = codigo.strip()
-                                cantidad = int(cantidad.strip())
-                                if codigo in st.session_state.df_productos['Codigo'].values:
-                                    st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
-                                else:
-                                    st.warning(f"Producto con código '{codigo}' no encontrado.")
-                        st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
-                        st.success("Stock de productos actualizado exitosamente.")
-                    except Exception as e:
-                        st.error(f"Error al actualizar el stock de productos: {e}")
+                proveedor = st.text_input("Destino del Gasto")
+                detalle_boleta = st.text_area("Detalle del Gasto")
+
+            submit_egreso = st.form_submit_button("Registrar Egreso")
+
+            if submit_egreso:
+                if nombre_egreso.strip() == "":
+                    st.error("El nombre del egreso no puede estar vacío.")
+                elif monto_egreso <= 0:
+                    st.error("El monto debe ser mayor a cero.")
+                elif tipo_egreso == "Proveedor" and proveedor.strip() == "":
+                    st.error("El proveedor no puede estar vacío para un egreso a proveedor.")
+                else:
+                    detalle_completo = f"{tipo_egreso} - {proveedor} - {detalle_boleta.strip()}" if tipo_egreso == "Proveedor" else f"{tipo_egreso} - {proveedor} - {detalle_boleta.strip()}"
+                    nuevo_egreso = {
+                        'Tipo': 'Egreso',
+                        'Nombre': nombre_egreso.strip(),
+                        'Detalle': detalle_completo,
+                        'Monto': monto_egreso,
+                        'Fecha': fecha_egreso.strftime("%Y-%m-%d"),
+                        'Hora': hora_egreso.strftime("%H:%M:%S")
+                    }
+                    st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_egreso, ignore_index=True)
+                    st.success(f"Egreso '{nombre_egreso}' registrado exitosamente.")
+                    st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
+                    
+                    # Si el egreso es a un proveedor, actualizar el stock de productos
+                    if tipo_egreso == "Proveedor":
+                        try:
+                            items = detalle_boleta.strip().split('\n')
+                            for item in items:
+                                if ':' in item:
+                                    codigo, cantidad = item.split(':')
+                                    codigo = codigo.strip()
+                                    cantidad = int(cantidad.strip())
+                                    if codigo in st.session_state.df_productos['Codigo'].values:
+                                        st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
+                                    else:
+                                        st.warning(f"Producto con código '{codigo}' no encontrado.")
+                            st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                            st.success("Stock de productos actualizado exitosamente.")
+                        except Exception as e:
+                            st.error(f"Error al actualizar el stock de productos: {e}")
+
 # ===============================
 # Módulo Estadísticas
 # ===============================
