@@ -951,14 +951,13 @@ def modulo_administracion():
 def modulo_estadistica():
     st.header("📈Modulo Estadistics📊")
 
-    # Datos reales del archivo Excel (Ventas)
-    df = pd.read_excel('archivo_modificado_pedidos_20240930_194115.xlsx')
-    df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
-
-    # Agrupando las ventas por día y sumando los totales
-    ventas_por_dia = df.groupby(df['Fecha'].dt.day_name())['Total'].sum().reindex(
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    )
+    # Datos ficticios (incluyendo los vendedores)
+    data_ficticia_ventas = {
+        'Fecha': pd.date_range(start='2024-09-01', periods=10, freq='D'),
+        'Monto': [1000, 1500, 1200, 1800, 2000, 1600, 1900, 1700, 1300, 2100],
+        'Vendedor': ['Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco', 'Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco']
+    }
+    df_ventas_ficticio = pd.DataFrame(data_ficticia_ventas)
 
     # Traducción manual de los días de la semana
     traduccion_dias = {
@@ -970,85 +969,89 @@ def modulo_estadistica():
         'Saturday': 'sábado',
         'Sunday': 'domingo'
     }
-    ventas_por_dia.index = ventas_por_dia.index.map(traduccion_dias)
 
-    # Agrupando las ventas por vendedor
-    ventas_por_vendedor = df.groupby('Vendedor')['Total'].sum()
+    # Datos ficticios para productos
+    productos_ficticios = {
+        'Nombre': ['Peluche Oso', 'Juguete Robot', 'Auto a Control', 'Muñeca', 'Peluche León'],
+        'Cantidad': [20, 15, 30, 12, 25],
+        'Importe': [2000, 3000, 4500, 1800, 3000]
+    }
+    df_productos_ficticios = pd.DataFrame(productos_ficticios)
 
-    # Adaptando las métricas para el día de ventas (asumiendo que el último día es el actual)
-    ventas_dia_real = df[df['Fecha'].dt.date == df['Fecha'].max().date()]['Total'].sum()
+    # Datos ficticios para stock
+    stock_ficticio = {
+        'Nombre': ['Peluche Oso', 'Juguete Robot', 'Muñeca'],
+        'Stock': [8, 5, 3]
+    }
+    df_stock_ficticio = pd.DataFrame(stock_ficticio)
 
-    # Total de ingresos (ventas totales)
-    total_ingresos_real = df['Total'].sum()
+    # Datos ficticios para vendedores
+    vendedores_ficticios = {
+        'Nombre': ['Joni', 'Eduardo', 'Sofi', 'Martin', 'Vasco'],
+        'Monto': [10000, 8500, 7000, 6500, 6200]
+    }
+    df_vendedores_ficticio = pd.DataFrame(vendedores_ficticios)
 
     # Tarjetas Resumidas
     col1, col2, col3 = st.columns(3)
 
-    # Ventas del Día (dato real)
+    # Ventas del Día (dato ficticio)
+    ventas_dia_ficticia = 1800
     with col1:
-        st.metric(label="Ventas del Día", value=f"${ventas_dia_real:,.2f}")
+        st.metric(label="Ventas del Día", value=f"${ventas_dia_ficticia:,.2f}")
 
-    # Total de Ingresos (real)
+    # Total de Ingresos (ficticio)
+    total_ingresos_ficticio = df_ventas_ficticio['Monto'].sum()
     with col2:
-        st.metric(label="Total de Ingresos", value=f"${total_ingresos_real:,.2f}")
+        st.metric(label="Total de Ingresos", value=f"${total_ingresos_ficticio:,.2f}")
 
-    # Total de Egresos (mantener ficticio, ya que no hay datos de egresos)
+    # Total de Egresos (ficticio)
     total_egresos_ficticio = 4500  # Un dato arbitrario para mostrar
     with col3:
         st.metric(label="Total de Egresos", value=f"${total_egresos_ficticio:,.2f}")
 
     st.markdown("---")
 
-    # Gráfico de ventas por día de la semana (real)
+    # Gráfico de ventas por día de la semana (ficticio)
     st.subheader("📅 Ventas por Día de la Semana")
-    st.bar_chart(ventas_por_dia)
+    df_ventas_ficticio['Día'] = df_ventas_ficticio['Fecha'].dt.day_name().map(traduccion_dias)
+    ventas_resumen_ficticio = df_ventas_ficticio.groupby('Día')['Monto'].sum().reindex(
+        ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+    )
+    st.bar_chart(ventas_resumen_ficticio)
 
     st.markdown("---")
 
     # Seleccionar un día y mostrar las ventas por vendedor para ese día
     st.subheader("🔍 Ventas por Día y Vendedor")
-    dias_unicos = ventas_por_dia.index.tolist()
+    dias_unicos = df_ventas_ficticio['Día'].unique().tolist()
     dia_seleccionado = st.selectbox("Seleccionar un día", dias_unicos)
 
     # Filtrar por día seleccionado
-    ventas_filtradas_dia = df[df['Fecha'].dt.day_name().map(traduccion_dias) == dia_seleccionado]
-    if not ventas_filtradas_dia.empty:
-        ventas_vendedor_dia = ventas_filtradas_dia.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_vendedor_dia)
+    ventas_por_dia = df_ventas_ficticio[df_ventas_ficticio['Día'] == dia_seleccionado]
+    if not ventas_por_dia.empty:
+        ventas_vendedores = ventas_por_dia.groupby('Vendedor')['Monto'].sum()
+        st.bar_chart(ventas_vendedores)
     else:
         st.info(f"No hay datos de ventas para el día {dia_seleccionado}.")
 
     st.markdown("---")
 
-    # Tabla de Usuarios (Adaptado)
-    st.subheader("👥 Equipo Actual")
-    usuarios = {
-        'Usuario': ['Aniel', 'DianaC', 'Eduardo.Rita', 'Emili.Cabrera', 'JavierCesano', 'JLopez', 'Joni', 'JorgeMingrone', 
-                    'Mariar', 'Marian', 'Martu', 'MartinR', 'PruebaJoh', 'Vasco', 'Sofia', 'Soop', 'Valenti'],
-        'Nombre': ['Aniel', 'Diana', 'Eduardo', 'Emili', 'Javier', 'Johan', 'Jonathan', 'Jorge', 'Maria', 'Mariana', 
-                   'Martin', 'Martin', 'Prueba', 'Sebastian', 'Sofia', 'Soop', 'Valentina'],
-        'Apellido': ['Fernandez', 'Chodera', 'Rita', 'Cabrera', 'Cesano', 'Lopez', 'Sanovsky', 'Mingrone', 'Mavarez', 
-                     'Suarez', 'Nuñez', 'Regue', 'Mundo', 'Sohrobigarat', 'Juarez', 'VascoTest', 'Gordillo'],
-        'Email': ['anielf2608@gmail.com', 'dianachodera@gmail.com', 'eduardorita86@gmail.com', 'Emilicabrerag@gmail.com', 
-                  'fyjrepresentaciones@hotmail.com', 'Lopezjohan2310@gmail.com', 'jsanovsky@gmail.com', 
-                  'bestclaw@gmail.com', '1@int.con', 'missmarian2002@hotmail.com', 'mart@gmail.com', 
-                  'martinregue@gmail.com', 'jvlsma2310@gmail.com', 'seba.e.soro@gmail.com', 'sofiaajuarez1989@gmail.com', 
-                  'VascoTest@gmail.com.ar', 'valentinagordillo@hotmail.com'],
-        'Celular': ['1126428807', '1144042461', '', '1165140797', '03513026700', '1162770545', '1144042904', 
-                    '1144042867', '1126453237', '', '', '', '1153226303', '1522755577', '', '1153270929'],
-        'Tipo': ['Administrador', 'Administrador', 'Administrador', 'Gestion', 'Vendedores', 'Administrador', 'Administrador', 
-                 'Gestion', 'Gestion', 'Gestion', 'Gestion', 'Vendedores', 'Vendedores', 'Administrador', 'Gestion', 
-                 'Gestion', 'Gestion'],
-        'Fecha de Creación': ['28/04/23 12:54', '16/09/19 18:21', '26/09/22 14:48', '04/11/22 15:17', '10/06/24 13:23', 
-                              '22/11/22 10:55', '06/07/19 17:16', '23/04/20 20:47', '11/04/23 11:04', '30/08/21 10:45', 
-                              '05/03/24 09:47', '06/07/24 13:18', '05/06/23 10:33', '29/11/22 11:53', '13/08/24 11:14', 
-                              '05/09/24 13:10', '01/08/24 09:30']
-    }
-    
-    # Asegurar que todas las listas tengan la misma longitud para evitar errores
-    df_usuarios = pd.DataFrame(usuarios)
-    st.table(df_usuarios)
+    # Productos más vendidos (ficticio)
+    st.subheader("🎯 Productos más Vendidos")
+    st.table(df_productos_ficticios[['Nombre', 'Cantidad', 'Importe']])
 
+    st.markdown("---")
+
+    # Stock crítico (ficticio)
+    st.subheader("⚠️ Productos con Stock Crítico")
+    st.table(df_stock_ficticio[['Nombre', 'Stock']])
+
+    st.markdown("---")
+
+    # Productividad del equipo (ficticio)
+    st.subheader("👥Productividad del Equipo📈")
+    st.table(df_vendedores_ficticio[['Nombre', 'Monto']])
 # ===============================
 # Importaciones necesarias
 # ===============================
