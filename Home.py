@@ -470,6 +470,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 from datetime import datetime
+import json  # Asegúrate de importar json
 
 def guardar_pedido_excel(archivo, order_data):
     """
@@ -489,7 +490,7 @@ def guardar_pedido_excel(archivo, order_data):
             'Vendedor': order_data['vendedor'],
             'Fecha': order_data['fecha'],
             'Hora': order_data['hora'],
-            'Items': [str(item) for item in order_data['items']]  # Convertir los ítems a string para almacenarlos
+            'Items': json.dumps(order_data['items'])  # Convertir los ítems a JSON para almacenarlos
         }
 
         # Añadir el nuevo pedido al DataFrame existente
@@ -775,62 +776,69 @@ def modulo_ventas():
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 
-import streamlit as st
-from streamlit.components.v1 import html
-# ----------------------------
-# Desplegable para mostrar el último pedido del cliente
-# ----------------------------
-if cliente_seleccionado:
-    try:
-        # Cargar los pedidos desde el archivo Excel
-        df_pedidos = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Pedidos')
-        
-        # Filtrar los pedidos por el cliente seleccionado
-        df_client_pedidos = df_pedidos[df_pedidos['Cliente'] == cliente_seleccionado]
-        
-        if not df_client_pedidos.empty:
-            # Convertir 'Fecha' y 'Hora' a datetime para ordenar
-            df_client_pedidos['Fecha'] = pd.to_datetime(df_client_pedidos['Fecha'])
-            df_client_pedidos['Hora'] = pd.to_datetime(df_client_pedidos['Hora'], format='%H:%M:%S').dt.time
-            
-            # Combinar 'Fecha' y 'Hora' en una nueva columna 'Fecha_Hora'
-            df_client_pedidos['Fecha_Hora'] = df_client_pedidos.apply(lambda row: datetime.combine(row['Fecha'], row['Hora']), axis=1)
-            
-            # Ordenar los pedidos por 'Fecha_Hora' descendente para obtener el más reciente
-            df_client_pedidos = df_client_pedidos.sort_values('Fecha_Hora', ascending=False)
-            
-            # Obtener el último pedido
-            ultimo_pedido = df_client_pedidos.iloc[0]
-            
-            # Crear una opción para el desplegable
-            opcion_ultimo = f"Pedido realizado el {ultimo_pedido['Fecha'].strftime('%Y-%m-%d')} a las {ultimo_pedido['Hora'].strftime('%H:%M:%S')}"
-            
-            # Mostrar el desplegable
-            st.subheader("📄 Último Pedido Realizado")
-            seleccion_pedido = st.selectbox("Selecciona el último pedido", [opcion_ultimo])
-            
-            # Mostrar detalles del pedido seleccionado
-            st.write(f"**Cliente:** {ultimo_pedido['Cliente']}")
-            st.write(f"**Vendedor:** {ultimo_pedido['Vendedor']}")
-            st.write(f"**Fecha:** {ultimo_pedido['Fecha'].strftime('%Y-%m-%d')}")
-            st.write(f"**Hora:** {ultimo_pedido['Hora'].strftime('%H:%M:%S')}")
-            st.write("**Items:**")
-            
-            # Convertir la cadena de 'Items' de vuelta a un diccionario si es posible
-            try:
-                # Asumiendo que 'Items' está almacenado como una cadena de diccionario
-                items = json.loads(ultimo_pedido['Items'].replace("'", '"'))
-                st.json(items)
-            except json.JSONDecodeError:
-                # Si no se puede decodificar, mostrar la cadena tal cual
-                st.write(ultimo_pedido['Items'])
-        else:
-            st.info("No hay pedidos previos para este cliente.")
-    except FileNotFoundError:
-        st.error("El archivo 'AdministracionSoop.xlsx' no existe.")
-    except Exception as e:
-        st.error(f"Error al cargar los pedidos: {e}")
+    # ----------------------------
+    # Desplegable para mostrar el último pedido del cliente
+    # ----------------------------
+    if cliente_seleccionado:
+        try:
+            # Cargar los pedidos desde el archivo Excel
+            df_pedidos = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Pedidos')
 
+            # Filtrar los pedidos por el cliente seleccionado
+            df_client_pedidos = df_pedidos[df_pedidos['Cliente'] == cliente_seleccionado]
+
+            if not df_client_pedidos.empty:
+                # Convertir 'Fecha' y 'Hora' a datetime para ordenar
+                df_client_pedidos['Fecha'] = pd.to_datetime(df_client_pedidos['Fecha'])
+                df_client_pedidos['Hora'] = pd.to_datetime(df_client_pedidos['Hora'], format='%H:%M:%S').dt.time
+
+                # Combinar 'Fecha' y 'Hora' en una nueva columna 'Fecha_Hora'
+                df_client_pedidos['Fecha_Hora'] = df_client_pedidos.apply(lambda row: datetime.combine(row['Fecha'], row['Hora']), axis=1)
+
+                # Ordenar los pedidos por 'Fecha_Hora' descendente para obtener el más reciente primero
+                df_client_pedidos = df_client_pedidos.sort_values('Fecha_Hora', ascending=False)
+
+                # Obtener los últimos pedidos, por ejemplo, los 5 más recientes
+                ultimos_pedidos = df_client_pedidos.head(5)
+
+                # Crear opciones para el desplegable
+                opciones = ultimos_pedidos.apply(
+                    lambda row: f"Pedido #{row.name + 1} - Fecha: {row['Fecha'].strftime('%Y-%m-%d')} {row['Hora'].strftime('%H:%M:%S')}",
+                    axis=1
+                ).tolist()
+
+                # Mostrar el desplegable con las opciones
+                st.subheader("📄 Últimos Pedidos del Cliente")
+                seleccion_pedido = st.selectbox("Selecciona un pedido", opciones)
+
+                # Mostrar detalles del pedido seleccionado
+                if seleccion_pedido:
+                    # Encontrar el pedido correspondiente
+                    pedido_index = opciones.index(seleccion_pedido)
+                    pedido_seleccionado = ultimos_pedidos.iloc[pedido_index]
+
+                    # Mostrar detalles del pedido
+                    st.write(f"**Cliente:** {pedido_seleccionado['Cliente']}")
+                    st.write(f"**Vendedor:** {pedido_seleccionado['Vendedor']}")
+                    st.write(f"**Fecha:** {pedido_seleccionado['Fecha'].strftime('%Y-%m-%d')}")
+                    st.write(f"**Hora:** {pedido_seleccionado['Hora'].strftime('%H:%M:%S')}")
+                    st.write("**Items:**")
+
+                    # Intentar convertir 'Items' a un formato legible
+                    try:
+                        items = json.loads(pedido_seleccionado['Items'])
+                        # Mostrar los items en una tabla
+                        df_items = pd.DataFrame(items)
+                        st.table(df_items)
+                    except json.JSONDecodeError:
+                        # Si no se puede decodificar, mostrar la cadena tal cual
+                        st.write(pedido_seleccionado['Items'])
+            else:
+                st.info("No hay pedidos previos para este cliente.")
+        except FileNotFoundError:
+            st.error("El archivo 'AdministracionSoop.xlsx' no existe.")
+        except Exception as e:
+            st.error(f"Error al cargar los pedidos: {e}")
 # ===============================
 # Módulo Administración
 # ===============================
