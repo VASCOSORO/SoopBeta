@@ -946,6 +946,118 @@ from fpdf import FPDF
 import streamlit as st
 
 # ===============================
+# Funciones para generar PDF e Imagen
+# ===============================
+
+def generar_pdf(productos):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
+        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
+        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
+        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
+        pdf.cell(200, 10, txt="---", ln=True)
+    
+    # Guardar el PDF
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
+
+
+def generar_imagen_png(productos):
+    """Generar una imagen PNG con los productos seleccionados en formato de flayer"""
+    # Crear una imagen en blanco con Pillow
+    ancho_img = 800
+    alto_img = 120 * len(productos) + 100
+    img = Image.new("RGB", (ancho_img, alto_img), "white")
+    draw = ImageDraw.Draw(img)
+
+    # Definir la fuente
+    font = ImageFont.load_default()
+    
+    y_pos = 20
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        
+        # Dibujar el texto en la imagen
+        draw.text((20, y_pos), f"Producto {i}: {producto_data['Nombre']}", font=font, fill="black")
+        draw.text((20, y_pos + 20), f"Código: {producto_data['Codigo']}", font=font, fill="black")
+        draw.text((20, y_pos + 40), f"Proveedor: {producto_data['Proveedor']}", font=font, fill="black")
+        draw.text((20, y_pos + 60), f"Stock: {producto_data['Stock']}", font=font, fill="black")
+
+        # Intentar agregar la imagen del producto si existe
+        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+            try:
+                response = requests.get(producto_data['imagen'], timeout=5)
+                response.raise_for_status()
+                product_img = Image.open(BytesIO(response.content))
+                product_img = product_img.resize((100, 100))  # Redimensionar la imagen
+                img.paste(product_img, (650, y_pos))  # Pegar la imagen
+            except Exception as e:
+                draw.text((650, y_pos), "Imagen no disponible", font=font, fill="black")
+        
+        y_pos += 120
+
+    # Mostrar vista previa
+    img_output = BytesIO()
+    img.save(img_output, format="PNG")
+    st.image(img, caption="Vista previa del Flayer", use_column_width=True)
+    
+    # Botón para descargar la imagen
+    st.download_button(label="Descargar Imagen PNG", data=img_output.getvalue(), file_name="flayer_productos.png")
+
+# ===============================
+# Funciones para generar Flayer
+# ===============================
+
+def generar_flayer_preview(productos):
+    """Generar una vista previa del flayer con los productos seleccionados"""
+    st.write("🖼️ Vista previa del flayer con los productos seleccionados.")
+    generar_imagen_png(productos)
+
+def generar_pdf_flayer(productos):
+    """Generar un PDF con los productos seleccionados en formato de flayer"""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    for i, producto in enumerate(productos, 1):
+        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
+        pdf.cell(200, 10, txt=f"Producto {i}: {producto_data['Nombre']}", ln=True)
+        pdf.cell(200, 10, txt=f"Código: {producto_data['Codigo']}", ln=True)
+        pdf.cell(200, 10, txt=f"Proveedor: {producto_data['Proveedor']}", ln=True)
+        pdf.cell(200, 10, txt=f"Stock: {producto_data['Stock']}", ln=True)
+        pdf.cell(200, 10, txt="---", ln=True)
+
+        # Intentar agregar la imagen del producto si existe
+        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+            try:
+                response = requests.get(producto_data['imagen'], timeout=5)
+                response.raise_for_status()
+                product_img = Image.open(BytesIO(response.content))
+                product_img = product_img.resize((100, 100))  # Redimensionar la imagen
+                product_img_output = BytesIO()
+                product_img.save(product_img_output, format="JPEG")
+                pdf.image(product_img_output, x=10, y=pdf.get_y(), w=30)
+                pdf.ln(40)  # Crear espacio después de la imagen
+            except Exception as e:
+                pdf.cell(200, 10, txt="Imagen no disponible", ln=True)
+                pdf.ln(10)  # Espacio extra después del texto
+    
+    # Guardar el PDF
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="flayer_productos.pdf")
+
+def generar_imagen_flayer(productos):
+    """Generar una imagen PNG con los productos seleccionados en formato de flayer"""
+    generar_imagen_png(productos)
+
+# ===============================
 # Módulo Logística
 # ===============================
 
