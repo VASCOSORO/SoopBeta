@@ -440,7 +440,6 @@ def modulo_ventas():
                         st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
                     st.write("🔗 **No hay imagen disponible.**")
-
 # ===============================
 # Módulo Equipo
 # ===============================
