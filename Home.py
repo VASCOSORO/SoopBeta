@@ -1462,22 +1462,22 @@ st.sidebar.markdown("[🧫Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4v
 # Implementación de Módulos
 # ===============================
 
-if seccion == "Ventas":
+if seccion == "🛒Ventas":
     modulo_ventas()
     
-elif seccion == "Marketing":
+elif seccion == "📣Marketing":
     modulo_marketing()
     
-elif seccion == "Logística":
+elif seccion == "🚚Logística":
     modulo_logistica()
     
-elif seccion == "Administración":
+elif seccion == "💲Administración":
     modulo_administracion()
     
-elif seccion == "Estadísticas":
+elif seccion == "📊Estadísticas":
     modulo_estadistica()
     
-elif seccion == "Equipo":
+elif seccion == "👻Equipo":
     modulo_equipo()
     
 # ===============================
