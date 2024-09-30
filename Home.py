@@ -289,13 +289,13 @@ def modulo_ventas():
     # Solo mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
-    
-        # Organizar en tres columnas: última compra, estado de crédito, y forma de pago
+
+        # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
         col1, col2, col3 = st.columns(3)
 
         with col1:
             st.write(f"**Última compra:** {cliente_data['Fecha Modificado']}")
-
+        
         with col2:
             opciones_credito = {
                 'Buen pagador': '🟢',
@@ -313,17 +313,27 @@ def modulo_ventas():
                 index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
             )
         
+        # Segunda fila: Vendedor, Vendedor asignado, Descuento
+        col4, col5, col6 = st.columns(3)
+
+        with col4:
+            st.write(f"**Descuento:** {cliente_data['Descuento']}%")
+
+        with col5:
+            vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+            vendedor_default = vendedores[0]
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+            st.write(f"**Vendedor Principal:** {vendedor_seleccionado}")
+
+        # Rubros del cliente: Mostrados como etiquetas una al lado de la otra
+        rubros_cliente = cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
+        rubro_tags = " ".join([f"🏷️ {rubro}" for rubro in rubros_cliente])
+        st.write(f"**Rubros del cliente:** {rubro_tags}")
+
         # Desplegable para las notas del cliente
         st.write("---")
         with st.expander("🔖 Notas del Cliente"):
             st.write(cliente_data['Notas'])  # Asumiendo que hay una columna de 'Notas' en el df_clientes
-
-        # Multiselect para los rubros del cliente
-        rubros_cliente = st.multiselect(
-            "🏢 Rubros del Cliente",
-            options=['Retail', 'Mayorista', 'Distribuidor', 'E-commerce'],  # Ejemplos de rubros
-            default=cliente_data.get('Rubros', '').split(',') if cliente_data.get('Rubros', '') else []
-        )
 
         # Sección de productos solo aparece si hay cliente seleccionado
         st.header("🔍 Buscador de Productos 🕶️")
@@ -521,7 +531,6 @@ def modulo_ventas():
                             st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
                         except Exception as e:
                             st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-
 # ===============================
 # Módulo Equipo
 # ===============================
