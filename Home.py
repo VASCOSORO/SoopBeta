@@ -502,6 +502,8 @@ def guardar_pedido_excel(archivo, order_data):
         st.error(f"Error al guardar el pedido: {e}")
 
 def modulo_ventas():
+    # Mostrar descuento debajo del nombre del cliente pero arriba del vendedor asignado
+    st.write(f"**Descuento:** {cliente_data['Descuento']}%")
     st.header("🎐 Crear Pedido")
 
     # Inicializar el pedido y delete_confirm en session_state si no existen
