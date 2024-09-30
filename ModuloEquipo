@@ -94,6 +94,53 @@ if 'usuario' not in st.session_state:
     st.session_state.usuario = None
 
 # ===============================
+# Funciones de Utilidad
+# ===============================
+
+# Función para convertir DataFrame a Excel en memoria usando openpyxl
+def convertir_a_excel(df):
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Hoja1')
+    excel_bytes = buffer.getvalue()
+    return excel_bytes
+
+# Función para agregar el footer
+def agregar_footer():
+    footer = """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #f1f1f1;
+        color: #555;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+    </style>
+    <div class="footer">
+        Powered by VASCO.SORO
+    </div>
+    """
+    st.markdown(footer, unsafe_allow_html=True)
+
+# Función para asegurar que el valor es al menos el mínimo permitido
+def safe_value(value, min_value=0.0):
+    return max(value, min_value)
+
+# Función para aplicar color al stock y mostrar el título, cantidad y detalle
+def color_stock(stock):
+    if stock > 10:
+        return f'🟢 Stock\n**{stock} unidades**\n(Suficiente stock)'
+    elif stock > 0:
+        return f'🟡 Stock\n**{stock} unidades**\n(Poco stock)'
+    else:
+        return f'🔴 Stock\n**{stock} unidades**\n(Sin stock)'
+
+# ===============================
 # Función para Guardar Pedido en Excel
 # ===============================
 
@@ -131,69 +178,6 @@ def guardar_pedido_excel(file_path, order_data):
         book.save(file_path)
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
-
-# ===============================
-# Función de Autenticación con Autocompletado
-# ===============================
-
-def login():
-    st.sidebar.title("🔒 Iniciar Sesión")
-    
-    # Campo de texto para ingresar el nombre
-    nombre_busqueda = st.sidebar.text_input(
-        "Escribe tu nombre",
-        placeholder="Comienza a escribir tu nombre...",
-        key="nombre_busqueda"
-    )
-    
-    # Filtrar los nombres que contienen la búsqueda (case insensitive)
-    if nombre_busqueda:
-        opciones_filtradas = st.session_state.df_equipo[
-            st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
-        ]['Nombre'].tolist()
-    else:
-        opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
-    
-    # Agregar una opción vacía al inicio
-    opciones_filtradas = [""] + opciones_filtradas
-    
-    # Selectbox con las opciones filtradas
-    nombre_seleccionado = st.sidebar.selectbox(
-        "Selecciona tu nombre",
-        opciones_filtradas,
-        key="nombre_seleccionado",
-        help="Selecciona tu nombre de la lista."
-    )
-    
-    # Si se selecciona un nombre, autenticar al usuario
-    if nombre_seleccionado:
-        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
-        st.session_state.usuario = {
-            'Nombre': usuario_data['Nombre'],
-            'Rol': usuario_data['Rol'],
-            'Departamento': usuario_data['Departamento'],
-            'Nivel de Acceso': usuario_data['Nivel de Acceso']
-        }
-        st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
-    else:
-        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
-
-# ===============================
-# Función para Verificar Acceso
-# ===============================
-
-def verificar_acceso(nivel_requerido):
-    niveles = {
-        'Bajo': 1,
-        'Medio': 2,
-        'Alto': 3,
-        'Super Admin': 4
-    }
-    if st.session_state.usuario:
-        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
-        if niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0):
-            return True
-    return False
 
 # ===============================
 # Funciones de Cada Módulo
@@ -315,9 +299,15 @@ def modulo_ventas():
             with col_der:
                 # Mostrar imagen del producto en la columna aparte
                 if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
-                    st.image(producto_data['imagen'], width=200, caption="Imagen del producto")
+                    try:
+                        response = requests.get(producto_data['imagen'], timeout=5)
+                        response.raise_for_status()
+                        image = Image.open(BytesIO(response.content))
+                        st.image(image, width=200, caption="Imagen del producto")
+                    except Exception as e:
+                        st.write("🔗 **Imagen no disponible o URL inválida.**")
                 else:
-                    st.write("No hay imagen disponible.")
+                    st.write("🔗 **No hay imagen disponible.**")
     
         # Mostrar el pedido actual
         if st.session_state.pedido:
@@ -341,9 +331,8 @@ def modulo_ventas():
     
                 # Verificar si este producto está pendiente de eliminación
                 if codigo in st.session_state.delete_confirm:
-                    # Mostrar botón de "Sí" y "No" en rojo
+                    # Mostrar botones "Sí" y "No"
                     with col6:
-                        # Botón "Sí" para confirmar eliminación
                         if st.button("Sí", key=f"confirmar_si_{codigo}"):
                             # Eliminar el ítem del pedido
                             index = next((i for i, item in enumerate(st.session_state.pedido) if item['Codigo'] == codigo), None)
@@ -356,7 +345,6 @@ def modulo_ventas():
                             # Remover del diccionario de confirmaciones
                             del st.session_state.delete_confirm[codigo]
     
-                        # Botón "No" para cancelar eliminación
                         if st.button("No", key=f"confirmar_no_{codigo}"):
                             # Cancelar la eliminación
                             del st.session_state.delete_confirm[codigo]
@@ -420,96 +408,8 @@ def modulo_ventas():
                         except Exception as e:
                             st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
 
-# Productos Module (External Link)
-def modulo_productos():
-    st.header("🔗 Acceder al Módulo de Productos")
-    st.markdown("[Abrir Módulo de Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)", unsafe_allow_html=True)
-
-# Convertidor de CSV Module (External Link)
-def modulo_convertidor_csv():
-    st.header("🔗 Acceder al Convertidor de CSV")
-    st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
-
-# Administracion Module
-def modulo_administracion():
-    st.header("⚙️ Administración")
-    st.write("Aquí puedes agregar funcionalidades de administración.")
-
-# Estadistica Module
-def modulo_estadistica():
-    st.header("📈 Estadísticas")
-    st.write("Aquí puedes agregar funcionalidades de estadísticas.")
-
-# ===============================
-# Funciones de Utilidad
-# ===============================
-
-# Función para convertir DataFrame a Excel en memoria usando openpyxl
-def convertir_a_excel(df):
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Hoja1')
-    excel_bytes = buffer.getvalue()
-    return excel_bytes
-
-# Función para agregar el footer
-def agregar_footer():
-    footer = """
-    <style>
-    .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: #f1f1f1;
-        color: #555;
-        text-align: center;
-        padding: 10px 0;
-        font-size: 14px;
-    }
-    </style>
-    <div class="footer">
-        Powered by VASCO.SORO
-    </div>
-    """
-    st.markdown(footer, unsafe_allow_html=True)
-
-# Función para asegurar que el valor es al menos el mínimo permitido
-def safe_value(value, min_value=0.0):
-    return max(value, min_value)
-
-# Función para aplicar color al stock y mostrar el título, cantidad y detalle
-def color_stock(stock):
-    if stock > 10:
-        return f'🟢 Stock\n**{stock} unidades**\n(Suficiente stock)'
-    elif stock > 0:
-        return f'🟡 Stock\n**{stock} unidades**\n(Poco stock)'
-    else:
-        return f'🔴 Stock\n**{stock} unidades**\n(Sin stock)'
-
-# ===============================
-# Navegación entre Módulos
-# ===============================
-
-st.sidebar.title("📚 Navegación")
-
-# Internal navigation
-seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas"])
-
-# External links
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Módulos Externos:**")
-st.sidebar.markdown("[📁 Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)")
-st.sidebar.markdown("[📁 Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)")
-
-# ===============================
-# Implementación de Módulos
-# ===============================
-
-if seccion == "Ventas":
-    modulo_ventas()
-
-elif seccion == "Equipo":
+# Equipo Module
+def modulo_equipo():
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
     if not verificar_acceso('Medio'):
         st.error("No tienes permisos para acceder a esta sección.")
@@ -581,12 +481,161 @@ elif seccion == "Equipo":
                             st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
                     else:
                         st.error("El nombre seleccionado no existe.")
+
+    # Administración Module
+def modulo_administracion():
+    st.header("⚙️ Administración")
+    st.write("Aquí puedes agregar funcionalidades de administración.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de administración.
+
+# Estadísticas Module
+def modulo_estadistica():
+    st.header("📈 Estadísticas")
+    st.write("Aquí puedes agregar funcionalidades de estadísticas.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de estadísticas.
+
+# Marketing Module
+def modulo_marketing():
+    st.header("📢 Marketing")
+    st.write("Aquí puedes agregar funcionalidades de marketing.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de marketing.
+
+# Logística Module
+def modulo_logistica():
+    st.header("🚚 Logística")
+    st.write("Aquí puedes agregar funcionalidades de logística.")
+    # Placeholder: Puedes expandir esta sección con funcionalidades específicas de logística.
+
+# Productos Module (External Link)
+def modulo_productos():
+    st.header("🔗 Acceder al Módulo de Productos")
+    st.markdown("[Abrir Módulo de Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)", unsafe_allow_html=True)
+
+# Convertidor de CSV Module (External Link)
+def modulo_convertidor_csv():
+    st.header("🔗 Acceder al Convertidor de CSV")
+    st.markdown("[Abrir Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)", unsafe_allow_html=True)
+
+# ===============================
+# Función de Autenticación con Autocompletado
+# ===============================
+
+def login():
+    st.sidebar.title("🔒 Iniciar Sesión")
     
+    # Campo de texto para ingresar el nombre
+    nombre_busqueda = st.sidebar.text_input(
+        "Escribe tu nombre",
+        placeholder="Comienza a escribir tu nombre...",
+        key="nombre_busqueda"
+    )
+    
+    # Filtrar los nombres que contienen la búsqueda (case insensitive)
+    if nombre_busqueda:
+        opciones_filtradas = st.session_state.df_equipo[
+            st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
+        ]['Nombre'].tolist()
+    else:
+        opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
+    
+    # Agregar una opción vacía al inicio
+    opciones_filtradas = [""] + opciones_filtradas
+    
+    # Selectbox con las opciones filtradas
+    nombre_seleccionado = st.sidebar.selectbox(
+        "Selecciona tu nombre",
+        opciones_filtradas,
+        key="nombre_seleccionado",
+        help="Selecciona tu nombre de la lista."
+    )
+    
+    # Si se selecciona un nombre, autenticar al usuario
+    if nombre_seleccionado:
+        usuario_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == nombre_seleccionado].iloc[0]
+        st.session_state.usuario = {
+            'Nombre': usuario_data['Nombre'],
+            'Rol': usuario_data['Rol'],
+            'Departamento': usuario_data['Departamento'],
+            'Nivel de Acceso': usuario_data['Nivel de Acceso']
+        }
+        st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
+    else:
+        st.sidebar.info("Por favor, escribe y selecciona tu nombre para iniciar sesión.")
+
+# ===============================
+# Función para Verificar Acceso
+# ===============================
+
+def verificar_acceso(nivel_requerido):
+    niveles = {
+        'Bajo': 1,
+        'Medio': 2,
+        'Alto': 3,
+        'Super Admin': 4
+    }
+    if st.session_state.usuario:
+        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
+        if niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0):
+            return True
+    return False
+
+# ===============================
+# Configuración de la Página
+# ===============================
+
+st.set_page_config(page_title="🛒 Módulo de Ventas", layout="wide")
+
+# Título de la Aplicación
+st.title("🐻 Módulo de Ventas 🛒")
+
+# Sidebar para Inicio de Sesión
+login()
+
+# Si el usuario no está autenticado, detener la ejecución
+if not st.session_state.usuario:
+    st.stop()
+
+# Mostrar información del usuario en la parte superior
+st.markdown(f"### Usuario: **{st.session_state.usuario['Nombre']}**")
+st.markdown(f"### Rol: **{st.session_state.usuario['Rol']}**")
+st.markdown("---")
+
+# ===============================
+# Navegación entre Módulos
+# ===============================
+
+st.sidebar.title("📚 Navegación")
+
+# Internal navigation
+seccion = st.sidebar.radio("Ir a", ["Ventas", "Equipo", "Administración", "Estadísticas", "Marketing", "Logística"])
+
+# External links
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Módulos Externos:**")
+st.sidebar.markdown("[📁 Productos](https://soopbeta-kz8btpqlcn4wo434nf7kkb.streamlit.app/)")
+st.sidebar.markdown("[📁 Convertidor de CSV](https://soopbeta-jx7y7l6efyfjwfv4vbvk3a.streamlit.app/)")
+
+# ===============================
+# Implementación de Módulos
+# ===============================
+
+if seccion == "Ventas":
+    modulo_ventas()
+
+elif seccion == "Equipo":
+    modulo_equipo()
+
 elif seccion == "Administración":
     modulo_administracion()
 
 elif seccion == "Estadísticas":
     modulo_estadistica()
+
+elif seccion == "Marketing":
+    modulo_marketing()
+
+elif seccion == "Logística":
+    modulo_logistica()
 
 # ===============================
 # Opciones de Logout
