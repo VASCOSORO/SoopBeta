@@ -534,6 +534,7 @@ def login():
     if nombre_busqueda:
         opciones_filtradas = st.session_state.df_equipo[
             st.session_state.df_equipo['Nombre'].str.contains(nombre_busqueda, case=False, na=False)
+         placeholder="Comienza a escribir tu nombre..."
         ]['Nombre'].tolist()
     else:
         opciones_filtradas = st.session_state.df_equipo['Nombre'].tolist()
