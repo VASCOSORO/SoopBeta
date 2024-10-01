@@ -140,7 +140,7 @@ def login():
 
     with col2:
         # Mostrar la imagen centrada
-        st.image(logo_path, width=100)  # Ajustar el tamaño de la imagen si es necesario
+        st.image(logo_path, width=140)  # Ajustar el tamaño de la imagen si es necesario
 
 
     st.sidebar.title("🔒 Iniciar Sesión")
