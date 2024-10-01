@@ -274,8 +274,12 @@ def guardar_pedido_excel(file_path, order_data):
         st.error(f"Error al guardar el pedido: {e}")
 
 # ===============================
-# Módulo Equipo Corregido
+# Módulo Equipo
 # ===============================
+
+import streamlit as st
+import pandas as pd
+from PIL import Image
 
 def modulo_equipo():
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
@@ -383,7 +387,78 @@ def modulo_equipo():
         st.markdown("---")
         
         # Formulario para modificar un miembro del equipo
+        with st.expander("Modificar Miembro"):
+            with st.form("form_modificar"):
+                miembro_modificar = st.selectbox(
+                    "Selecciona el nombre a modificar",
+                    st.session_state.df_equipo['Nombre'].unique().tolist()
+                )
+                miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_modificar].iloc[0]
+                
+                col_form1, col_form2 = st.columns(2)
+                
+                with col_form1:
+                    nombre = st.text_input("Nombre", value=miembro_data['Nombre'])
+                    rol = st.selectbox("Rol", [
+                        'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                        'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
+                    ], index=['Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
+                              'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'].index(miembro_data['Rol']))
+                    departamento = st.selectbox("Departamento", [
+                        'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
+                    ], index=['Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'].index(miembro_data['Departamento']))
+                    nivel_acceso = st.selectbox("Nivel de Acceso", [
+                        'Bajo', 'Medio', 'Alto', 'Super Admin'
+                    ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']))
+                    avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'])
 
+                with col_form2:
+                    estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
+                    # Modificar accesos a módulos
+                    acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
+                    acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
+                    acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
+                    acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
+
+                submit_modificar = st.form_submit_button("Modificar")
+                
+                if submit_modificar:
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'] = nombre
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Rol'] = rol
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Departamento'] = departamento
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nivel de Acceso'] = nivel_acceso
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Estado'] = estado
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Ventas'] = acceso_ventas
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Logística'] = acceso_logistica
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Administración'] = acceso_administracion
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Marketing'] = acceso_marketing
+                    st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
+                    st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
+                    # Guardar los cambios en Excel
+                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+    
+        st.markdown("---")
+        
+        # Formulario para eliminar un miembro del equipo
+        with st.expander("Eliminar Miembro"):
+            with st.form("form_eliminar"):
+                nombre_eliminar = st.selectbox(
+                    "Selecciona el nombre a eliminar",
+                    st.session_state.df_equipo['Nombre'].unique().tolist()
+                )
+                submit_eliminar = st.form_submit_button("Eliminar")
+                
+                if submit_eliminar:
+                    if nombre_eliminar in st.session_state.df_equipo['Nombre'].values:
+                        if nombre_eliminar == st.session_state.usuario['Nombre']:
+                            st.error("No puedes eliminarte a ti mismo.")
+                        else:
+                            st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
+                            st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
+                            # Guardar los cambios en Excel
+                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                    else:
+                        st.error("El nombre seleccionado no existe.")
 
 # ===============================
 # Módulo Ventas
