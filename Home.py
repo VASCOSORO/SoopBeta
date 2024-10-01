@@ -119,22 +119,9 @@ if 'delete_confirm' not in st.session_state:
 
 import streamlit as st
 
-import streamlit as st
-
-import streamlit as st
-
-import streamlit as st
-
 # ===============================
-# Función de Autenticación con Autocompletado y Logo Centrado
+# Función de Autenticación con Autocompletado y Logo Centrado Mejorado
 # ===============================
-
-def login():
-    # Ruta de la imagen que has subido recientemente
-    logo_path = '/mnt/data/image.png'  # Usar la ruta correcta del archivo subido
-
-    # Mostrar el logo en la parte superior de la barra lateral con tamaño reducido
-    st.sidebar.image(logo_path, width=100)  # Ajusta el ancho de la imagen según sea necesario
 
     st.sidebar.title("🔒 Iniciar Sesión")
 
