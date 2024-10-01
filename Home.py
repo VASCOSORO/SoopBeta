@@ -119,24 +119,13 @@ if 'delete_confirm' not in st.session_state:
 
 import streamlit as st
 
-import streamlit as st
-
 # ===============================
-# Función de Autenticación con Autocompletado y Logo Centrado
+# Función de Autenticación con Autocompletado y Logo
 # ===============================
 
 def login():
-    # Mostrar el logo centrado usando la imagen que has subido
-    logo_path = '/mnt/data/image.png'  # Ruta del archivo que has subido
-
-    logo_html = f"""
-    <div style="text-align: center;">
-        <img src="{logo_path}" style="width: 100px;">
-    </div>
-    """
-    
-    # Mostrar el logo centrado usando markdown
-    st.sidebar.markdown(logo_html, unsafe_allow_html=True)
+    # Mostrar el logo en la parte superior de la barra lateral con tamaño reducido
+    st.sidebar.image("logomundo.png", width=230)  # Ajusta el ancho de la imagen al 50% (puedes ajustar según sea necesario)
 
     st.sidebar.title("🔒 Iniciar Sesión")
 
@@ -195,7 +184,7 @@ def convertir_a_excel(df):
 # Título de la Aplicación (esto es parte original del código)
 # ===============================
 
-st.title("Soop de Mundo Peluche🐻")
+st.title("🐻Soop de Mundo Peluche🧸")
 
 # Sidebar para Inicio de Sesión
 login()
