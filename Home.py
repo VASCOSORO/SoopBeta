@@ -291,12 +291,40 @@ if 'df_equipo' not in st.session_state:
         st.session_state.df_equipo = pd.DataFrame(columns=['Nombre', 'Rol', 'Departamento', 'Nivel de Acceso', 'Avatar', 'Estado'])
 
 # ===============================
-# Módulo Equipo
+# Módulo Equipo con datos ficticios
 # ===============================
 
 import streamlit as st
 import pandas as pd
 from PIL import Image
+
+# Inicializar df_equipo en session_state con datos ficticios si no existe
+if 'df_equipo' not in st.session_state:
+    data_equipo = {
+        'Nombre': ['Joni', 'Eduardo', 'Sofi', 'Vasco'],
+        'Rol': ['Presidente', 'Gerente General', 'Vendedora', 'Super Admin'],
+        'Departamento': ['Dirección', 'Depósito', 'Ventas', 'Dirección'],
+        'Nivel de Acceso': ['Alto', 'Medio', 'Bajo', 'Super Admin'],
+        'Avatar': ['https://via.placeholder.com/150'] * 4,
+        'Estado': ['Activo', 'Inactivo', 'Activo', 'Activo'],
+        'Acceso Ventas': [True, True, True, True],
+        'Acceso Logística': [True, True, False, True],
+        'Acceso Administración': [True, False, False, True],
+        'Acceso Marketing': [False, True, True, True],
+    }
+    st.session_state.df_equipo = pd.DataFrame(data_equipo)
+
+# Simular el usuario logueado como Super Admin
+if 'usuario' not in st.session_state:
+    st.session_state.usuario = {'Nombre': 'Vasco', 'Rol': 'Super Admin', 'Nivel de Acceso': 'Super Admin'}
+
+# Verificar el nivel de acceso necesario para ver el módulo de equipo
+def verificar_acceso(nivel_requerido):
+    niveles = {'Bajo': 1, 'Medio': 2, 'Alto': 3, 'Super Admin': 4}
+    if st.session_state.usuario:
+        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
+        return niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0)
+    return False
 
 def modulo_equipo():
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
@@ -398,8 +426,7 @@ def modulo_equipo():
                         }
                         st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
                         st.success(f"Miembro {nombre} agregado exitosamente.")
-                        # Guardar los cambios en Excel
-                        st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                        # Aquí no guardamos en Excel ya que son datos ficticios
     
         st.markdown("---")
         
@@ -451,8 +478,6 @@ def modulo_equipo():
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Acceso Marketing'] = acceso_marketing
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
                     st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
-                    # Guardar los cambios en Excel
-                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
     
         st.markdown("---")
         
@@ -472,11 +497,8 @@ def modulo_equipo():
                         else:
                             st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
                             st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
-                            # Guardar los cambios en Excel
-                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
-                    else:
-                        st.error("El nombre seleccionado no existe.")
-
+    
+modulo_equipo()
 # ===============================
 # Módulo Ventas
 # ===============================
