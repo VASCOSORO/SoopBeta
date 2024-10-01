@@ -499,6 +499,7 @@ def modulo_equipo():
                             st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
     
 modulo_equipo()
+
 # ===============================
 # Módulo Ventas
 # ===============================
