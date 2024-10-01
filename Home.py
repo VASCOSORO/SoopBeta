@@ -125,14 +125,15 @@ import streamlit as st
 
 def login():
     # Ruta de la imagen que acabas de subir
-    logo_path = "logomundo.png"  # Asegúrate de que la ruta es correcta
+    logo_path = '/mnt/data/image.png'  # Asegúrate de que la ruta es correcta
 
-    # Crear tres columnas para centrar la imagen en la barra lateral
-    col1, col2, col3 = st.sidebar.columns([1, 2, 1])  # La columna del medio es más grande
-
-    with col2:
-        # Mostrar la imagen centrada
-        st.image(logo_path, width=100)  # Ajustar el tamaño de la imagen si es necesario
+    # Mostrar la imagen en la barra lateral, utilizando un contenedor HTML para centrarla
+    logo_html = f"""
+    <div style="display: flex; justify-content: center; align-items: center; padding-bottom: 20px;">
+        <img src="{logo_path}" style="width: 100px;">
+    </div>
+    """
+    st.sidebar.markdown(logo_html, unsafe_allow_html=True)
 
 
     st.sidebar.title("🔒 Iniciar Sesión")
