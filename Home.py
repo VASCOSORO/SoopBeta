@@ -825,16 +825,17 @@ def modulo_administracion():
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
 
-    # Layout de caja total con el "ojito" para ocultar/mostrar
-    mostrar_caja = st.session_state.get('mostrar_caja', True)  # Valor por defecto True
-    if st.button("👁️" if mostrar_caja else "🙈"):
-        st.session_state['mostrar_caja'] = not mostrar_caja
-        mostrar_caja = st.session_state['mostrar_caja']
-
-    col_admin, col_caja = st.columns([2, 1])
+    # Layout con tres columnas: 1) Administración, 2) Icono de ojo, 3) Caja total
+    col_admin, col_ojo, col_caja = st.columns([2, 1, 1])
 
     with col_admin:
         st.subheader("💰 Administración")
+
+    with col_ojo:
+        mostrar_caja = st.session_state.get('mostrar_caja', True)  # Valor por defecto True
+        if st.button("👁️" if mostrar_caja else "🙈"):
+            st.session_state['mostrar_caja'] = not mostrar_caja
+            mostrar_caja = st.session_state['mostrar_caja']
 
     with col_caja:
         if mostrar_caja:
@@ -842,8 +843,13 @@ def modulo_administracion():
             color_caja = "red" if caja_actual < 0 else "green"
             st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
 
-        # Mostrar último ingreso y egreso subrayados en sus respectivos colores
+    # Segunda fila con último ingreso y egreso
+    col_admin2, col_ingreso, col_egreso = st.columns([2, 1, 1])
+
+    with col_ingreso:
         st.write(f"<span style='color:green; text-decoration: underline;'><strong>Último Ingreso:</strong> ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}</span>", unsafe_allow_html=True)
+
+    with col_egreso:
         st.write(f"<span style='color:red; text-decoration: underline;'><strong>Último Egreso:</strong> ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}</span>", unsafe_allow_html=True)
 
     st.markdown("---")
@@ -959,7 +965,6 @@ def modulo_administracion():
                             st.success("Stock de productos actualizado exitosamente.")
                         except Exception as e:
                             st.error(f"Error al actualizar el stock de productos: {e}")
-
 # ===============================
 # Módulo Estadísticas
 # ===============================
