@@ -273,10 +273,6 @@ def guardar_pedido_excel(file_path, order_data):
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
 
-# ===============================
-# Módulo Equipo
-# ===============================
-
 import streamlit as st
 import pandas as pd
 from PIL import Image
@@ -284,8 +280,12 @@ from PIL import Image
 def modulo_equipo():
     # Verificar si el DataFrame de equipo existe
     if 'df_equipo' not in st.session_state or st.session_state.df_equipo.empty:
-        st.error("No se han encontrado datos del equipo. Asegúrate de cargar los datos correctamente.")
-        return
+        try:
+            # Intentar cargar los datos desde el archivo Excel
+            st.session_state.df_equipo = pd.read_excel('EquipoDeTrabajo.xlsx')
+        except FileNotFoundError:
+            st.error("No se han encontrado datos del equipo. Asegúrate de cargar los datos correctamente.")
+            return
     
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
     if not verificar_acceso('Medio'):
@@ -387,7 +387,10 @@ def modulo_equipo():
                         st.session_state.df_equipo = st.session_state.df_equipo.append(nuevo_miembro, ignore_index=True)
                         st.success(f"Miembro {nombre} agregado exitosamente.")
                         # Guardar los cambios en Excel
-                        st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                        try:
+                            st.session_state.df_equipo.to_excel('EquipoDeTrabajo.xlsx', index=False)
+                        except Exception as e:
+                            st.error(f"Error al guardar el archivo de equipo: {e}")
     
         st.markdown("---")
         
@@ -440,7 +443,10 @@ def modulo_equipo():
                     st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Avatar'] = avatar_url
                     st.success(f"Miembro {miembro_modificar} modificado exitosamente.")
                     # Guardar los cambios en Excel
-                    st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                    try:
+                        st.session_state.df_equipo.to_excel('EquipoDeTrabajo.xlsx', index=False)
+                    except Exception as e:
+                        st.error(f"Error al guardar el archivo de equipo: {e}")
     
         st.markdown("---")
         
@@ -461,9 +467,13 @@ def modulo_equipo():
                             st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
                             st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
                             # Guardar los cambios en Excel
-                            st.session_state.df_equipo.to_excel('equipo.xlsx', index=False)
+                            try:
+                                st.session_state.df_equipo.to_excel('EquipoDeTrabajo.xlsx', index=False)
+                            except Exception as e:
+                                st.error(f"Error al guardar el archivo de equipo: {e}")
                     else:
                         st.error("El nombre seleccionado no existe.")
+
 
 # ===============================
 # Módulo Ventas
