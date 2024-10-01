@@ -124,8 +124,8 @@ import streamlit as st
 # ===============================
 
 def login():
-    # Mostrar el logo en la parte superior de la barra lateral
-    st.sidebar.image("logomundo.png", use_column_width=True)  # Esto agrega el logo en la barra lateral
+    # Mostrar el logo en la parte superior de la barra lateral con tamaño reducido
+    st.sidebar.image("logomundo.png", width=100)  # Ajusta el ancho de la imagen al 50% (puedes ajustar según sea necesario)
 
     st.sidebar.title("🔒 Iniciar Sesión")
 
