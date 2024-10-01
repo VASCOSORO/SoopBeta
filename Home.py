@@ -117,11 +117,16 @@ if 'df_administracion' not in st.session_state:
 if 'delete_confirm' not in st.session_state:
     st.session_state.delete_confirm = {}
 
+import streamlit as st
+
 # ===============================
-# Función de Autenticación con Autocompletado
+# Función de Autenticación con Autocompletado y Logo
 # ===============================
 
 def login():
+    # Mostrar el logo en la parte superior de la barra lateral
+    st.sidebar.image("logomundo.png", use_column_width=True)  # Esto agrega el logo en la barra lateral
+
     st.sidebar.title("🔒 Iniciar Sesión")
 
     # Selectbox con las opciones de nombres disponibles
@@ -134,7 +139,7 @@ def login():
 
     # Solo mostrar el campo de contraseña y el botón si se selecciona un nombre
     if nombre_seleccionado:
-        # Campo de contraseña (ahora opcional)
+        # Campo de contraseña (opcional)
         st.sidebar.text_input("Contraseña", type="password", key="password")
         
         # Botón para iniciar sesión
