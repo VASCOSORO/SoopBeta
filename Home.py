@@ -287,11 +287,8 @@ def modulo_equipo():
             st.error("No se han encontrado datos del equipo. Asegúrate de cargar los datos correctamente.")
             return
     
-    # Verificar el nivel de acceso necesario para ver el módulo de equipo
-    if not verificar_acceso('Medio'):
-        st.error("No tienes permisos para acceder a esta sección.")
-        return
-    
+    # No se usará verificación de acceso por ahora
+
     st.header("👥 Equipo de Trabajo")
 
     # Añadir columnas de acceso y otras si no existen
