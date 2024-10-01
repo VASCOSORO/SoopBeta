@@ -125,7 +125,7 @@ import streamlit as st
 
 def login():
     # Ruta de la imagen que acabas de subir
-    logo_path = "logomundo.png"  # Asegúrate de que la ruta es correcta
+    logo_path = logomundo.png  # Asegúrate de que la ruta es correcta
 
     # Crear tres columnas para centrar la imagen en la barra lateral
     col1, col2, col3 = st.sidebar.columns([1, 2, 1])  # La columna del medio es más grande
