@@ -558,7 +558,7 @@ def modulo_ventas():
             }
             credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')  # Asumiendo que 'Estado Credito' existe
             color_credito = opciones_credito.get(credito_cliente, '🟡')  # Valor por defecto si no coincide
-            st.write(f"**.** {color_credito} {credito_cliente}")
+            st.write(f"**..** {color_credito} {credito_cliente}")
 
         with col3:
             forma_pago = st.selectbox(
