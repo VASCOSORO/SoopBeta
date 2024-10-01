@@ -282,10 +282,15 @@ import pandas as pd
 from PIL import Image
 
 def modulo_equipo():
+    # Verificar si el DataFrame de equipo existe
+    if 'df_equipo' not in st.session_state or st.session_state.df_equipo.empty:
+        st.error("No se han encontrado datos del equipo. Asegúrate de cargar los datos correctamente.")
+        return
+    
     # Verificar el nivel de acceso necesario para ver el módulo de equipo
     if not verificar_acceso('Medio'):
         st.error("No tienes permisos para acceder a esta sección.")
-        st.stop()
+        return
     
     st.header("👥 Equipo de Trabajo")
 
