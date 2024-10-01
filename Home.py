@@ -123,6 +123,17 @@ import streamlit as st
 # Función de Autenticación con Autocompletado y Logo Centrado Mejorado
 # ===============================
 
+def login():
+    # Código HTML para centrar la imagen
+    logo_html = """
+    <div style="text-align: center;">
+        <img src="logomundo.png" style="width: 100px;">
+    </div>
+    """
+    
+    # Mostrar el logo centrado usando markdown
+    st.sidebar.markdown(logo_html, unsafe_allow_html=True)
+
     st.sidebar.title("🔒 Iniciar Sesión")
 
     # Selectbox con las opciones de nombres disponibles
