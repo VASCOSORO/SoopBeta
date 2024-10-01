@@ -128,12 +128,21 @@ import streamlit as st
 import streamlit as st
 
 # ===============================
-# Función de Autenticación con Autocompletado y Logo
+# Función de Autenticación con Autocompletado y Logo Centrado
 # ===============================
 
 def login():
-    # Mostrar el logo en la parte superior de la barra lateral con tamaño reducido
-    st.sidebar.image("logomundo.png", width=100); justify-content: center # Ajusta el ancho de la imagen al 50% (puedes ajustar según sea necesario)
+    # Usar HTML para centrar la imagen en la barra lateral
+    logo_path = "logomundo.png"  # Asegúrate de que esta ruta es correcta en tu entorno
+
+    logo_html = f"""
+    <div style="display: flex; justify-content: center;">
+        <img src="{logo_path}" style="width: 100px;">
+    </div>
+    """
+
+    # Mostrar la imagen centrada usando HTML
+    st.sidebar.markdown(logo_html, unsafe_allow_html=True)
 
     st.sidebar.title("🔒 Iniciar Sesión")
 
