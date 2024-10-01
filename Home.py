@@ -121,14 +121,17 @@ import streamlit as st
 
 import streamlit as st
 
+import streamlit as st
+
 # ===============================
 # Función de Autenticación con Autocompletado y Logo Centrado
 # ===============================
 
 def login():
-    # Mostrar el logo centrado usando la imagen que has subido
-    logo_path = '/mnt/data/image.png'  # Ruta del archivo que has subido
+    # Usar la imagen de "logomundo.png"
+    logo_path = 'logomundo.png'  # Ruta del archivo logomundo.png
 
+    # Código HTML para centrar la imagen
     logo_html = f"""
     <div style="text-align: center;">
         <img src="{logo_path}" style="width: 100px;">
