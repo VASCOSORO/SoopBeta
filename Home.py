@@ -125,9 +125,9 @@ import streamlit as st
 
 def login():
     # Código HTML para centrar la imagen
-    logo_html = logomundo.png
+    logo_html = """
     <div style="text-align: center;">
-        <img src="logomundo.png" style="width: 100px;">
+        <img src=logomundo.png style="width: 100px;">
     </div>
     """
     
