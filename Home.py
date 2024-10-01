@@ -333,8 +333,70 @@ def modulo_equipo():
         st.subheader("🔧 Gestionar Equipo")
         # Aquí iría el código para agregar, modificar o eliminar miembros
 
-# Luego llama a la función
+import streamlit as st
+import pandas as pd
+
+# Definir la función para verificar el acceso
+def verificar_acceso(nivel_requerido):
+    niveles = {'Bajo': 1, 'Medio': 2, 'Alto': 3, 'Super Admin': 4}
+    if 'usuario' in st.session_state:
+        usuario_nivel = st.session_state.usuario['Nivel de Acceso']
+        return niveles.get(usuario_nivel, 0) >= niveles.get(nivel_requerido, 0)
+    return False
+
+# Inicializar df_equipo en session_state si no existe
+if 'df_equipo' not in st.session_state:
+    try:
+        st.session_state.df_equipo = pd.read_excel('equipo.xlsx')
+    except FileNotFoundError:
+        st.session_state.df_equipo = pd.DataFrame(columns=['Nombre', 'Rol', 'Departamento', 'Nivel de Acceso', 'Avatar', 'Estado'])
+
+# Definir la función modulo_equipo
+def modulo_equipo():
+    if not verificar_acceso('Medio'):
+        st.error("No tienes permisos para acceder a esta sección.")
+        st.stop()
+
+    st.header("👥 Equipo de Trabajo")
+
+    # Asegurar que las columnas necesarias existan
+    columnas_necesarias = ['Avatar', 'Estado', 'Acceso Ventas', 'Acceso Logística', 'Acceso Administración', 'Acceso Marketing']
+    for columna in columnas_necesarias:
+        if columna not in st.session_state.df_equipo.columns:
+            if columna == 'Avatar':
+                st.session_state.df_equipo['Avatar'] = 'https://via.placeholder.com/150'
+            elif columna == 'Estado':
+                st.session_state.df_equipo['Estado'] = 'Activo'
+            else:
+                st.session_state.df_equipo[columna] = False
+
+    # Mostrar la ficha de un miembro seleccionado
+    miembro_seleccionado = st.selectbox(
+        "Seleccionar Miembro del Equipo", 
+        [""] + st.session_state.df_equipo['Nombre'].unique().tolist()
+    )
+
+    if miembro_seleccionado:
+        miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_seleccionado].iloc[0]
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.image(miembro_data['Avatar'], width=100)
+        with col2:
+            st.subheader(miembro_data['Nombre'])
+            st.write(f"**Rol:** {miembro_data['Rol']}")
+            st.write(f"**Departamento:** {miembro_data['Departamento']}")
+            st.write(f"**Nivel de Acceso:** {miembro_data['Nivel de Acceso']}")
+            estado = "Activo" if miembro_data['Estado'] == 'Activo' else "Inactivo"
+            st.write(f"**Estado:** {estado}")
+
+    # Gestión solo para Super Admin
+    if st.session_state.usuario['Nivel de Acceso'] == 'Super Admin':
+        st.subheader("🔧 Gestionar Equipo")
+        # Aquí iría el código para agregar, modificar o eliminar miembros
+
+# Llamar a la función modulo_equipo
 modulo_equipo()
+
 # ===============================
 # Módulo Ventas
 # ===============================
