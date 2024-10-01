@@ -970,47 +970,56 @@ def modulo_administracion():
 import pandas as pd
 import streamlit as st
 
+import pandas as pd
+import streamlit as st
+
 # ===============================
 # Módulo Estadísticas Adaptado
 # ===============================
 def modulo_estadistica():
     st.header("📈 Módulo Estadísticas Mejorado 📊")
 
-    # Cargar los datos del archivo Excel
-    df = pd.read_excel('archivo_modificado_pedidos_20240930_235701.xlsx')
-    df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
+    # Incluir un cargador de archivo para permitir la carga de Excel
+    archivo_excel = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
 
-    # Agrupar ventas por vendedor y estado (envíos parciales, rechazados, etc.)
-    st.subheader("📅 Segmentación de Ventas por Mes y Estado")
+    if archivo_excel is not None:
+        # Cargar los datos del archivo Excel subido
+        df = pd.read_excel(archivo_excel)
+        df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
 
-    # Selección de mes y año
-    meses_unicos = df['Fecha'].dt.to_period('M').unique().tolist()
-    mes_seleccionado = st.selectbox("Seleccionar un Mes", meses_unicos)
+        # Agrupar ventas por vendedor y estado (envíos parciales, rechazados, etc.)
+        st.subheader("📅 Segmentación de Ventas por Mes y Estado")
 
-    # Filtrar por mes seleccionado
-    df_mes_filtrado = df[df['Fecha'].dt.to_period('M') == mes_seleccionado]
+        # Selección de mes y año
+        meses_unicos = df['Fecha'].dt.to_period('M').unique().tolist()
+        mes_seleccionado = st.selectbox("Seleccionar un Mes", meses_unicos)
 
-    # Ventas separadas por estados: Enviadas parciales, rechazadas, completadas
-    st.subheader("🔍 Segmentación por Estado de Pedido")
-    estado_seleccionado = st.selectbox("Seleccionar un Estado", ['Procesado / Enviado', 'Rechazado', 'Procesado / Enviado Parcial'])
+        # Filtrar por mes seleccionado
+        df_mes_filtrado = df[df['Fecha'].dt.to_period('M') == mes_seleccionado]
 
-    # Filtrar los pedidos según el estado seleccionado
-    df_estado_filtrado = df_mes_filtrado[df_mes_filtrado['Status'] == estado_seleccionado]
+        # Ventas separadas por estados: Enviadas parciales, rechazadas, completadas
+        st.subheader("🔍 Segmentación por Estado de Pedido")
+        estado_seleccionado = st.selectbox("Seleccionar un Estado", ['Procesado / Enviado', 'Rechazado', 'Procesado / Enviado Parcial'])
 
-    # Gráfico de ventas por vendedor basado en estado seleccionado
-    ventas_por_vendedor = df_estado_filtrado.groupby('Vendedor')['Total'].sum()
-    st.bar_chart(ventas_por_vendedor)
+        # Filtrar los pedidos según el estado seleccionado
+        df_estado_filtrado = df_mes_filtrado[df_mes_filtrado['Status'] == estado_seleccionado]
 
-    st.markdown("---")
+        # Gráfico de ventas por vendedor basado en estado seleccionado
+        ventas_por_vendedor = df_estado_filtrado.groupby('Vendedor')['Total'].sum()
+        st.bar_chart(ventas_por_vendedor)
 
-    # Gráfico de ventas por vendedor en general (sin importar estado)
-    st.subheader("📊 Ventas Totales por Vendedor en el Mes")
-    ventas_vendedor_mes = df_mes_filtrado.groupby('Vendedor')['Total'].sum()
-    st.bar_chart(ventas_vendedor_mes)
+        st.markdown("---")
 
-    # Productividad del equipo basado en el mes seleccionado
-    st.subheader("👥 Productividad del Equipo en el Mes")
-    st.table(ventas_vendedor_mes)
+        # Gráfico de ventas por vendedor en general (sin importar estado)
+        st.subheader("📊 Ventas Totales por Vendedor en el Mes")
+        ventas_vendedor_mes = df_mes_filtrado.groupby('Vendedor')['Total'].sum()
+        st.bar_chart(ventas_vendedor_mes)
+
+        # Productividad del equipo basado en el mes seleccionado
+        st.subheader("👥 Productividad del Equipo en el Mes")
+        st.table(ventas_vendedor_mes)
+    else:
+        st.info("Por favor, carga un archivo Excel para ver las estadísticas.")
 
 # ===============================
 # Importaciones necesarias
