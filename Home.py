@@ -125,16 +125,15 @@ import streamlit as st
 
 import streamlit as st
 
+import streamlit as st
+
 # ===============================
-# Función de Autenticación con Autocompletado y Logo Centrado
+# Función de Autenticación con Autocompletado y Logo
 # ===============================
 
 def login():
-    # Ruta de la imagen que has subido recientemente
-    logo_path = '/mnt/data/image.png'  # Usar la ruta correcta del archivo subido
-
     # Mostrar el logo en la parte superior de la barra lateral con tamaño reducido
-    st.sidebar.image(logo_path, width=100)  # Ajusta el ancho de la imagen según sea necesario
+    st.sidebar.image("logomundo.png", width=100)  # Ajusta el ancho de la imagen al 50% (puedes ajustar según sea necesario)
 
     st.sidebar.title("🔒 Iniciar Sesión")
 
@@ -162,6 +161,7 @@ def login():
             st.sidebar.success(f"Bienvenido, {usuario_data['Nombre']} ({usuario_data['Rol']})")
     else:
         st.sidebar.info("Por favor, selecciona tu nombre para iniciar sesión.")
+
 
 # ===============================
 # Función para verificar nivel de acceso (función faltante)
