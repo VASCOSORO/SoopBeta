@@ -117,25 +117,11 @@ if 'df_administracion' not in st.session_state:
 if 'delete_confirm' not in st.session_state:
     st.session_state.delete_confirm = {}
 
-import streamlit as st
-
 # ===============================
-# Función de Autenticación con Autocompletado y Logo Centrado
+# Función de Autenticación con Autocompletado
 # ===============================
 
 def login():
-    # Ruta de la imagen que acabas de subir
-    logo_path = '/mnt/data/image.png'  # Asegúrate de que la ruta es correcta
-
-    # Mostrar la imagen en la barra lateral, utilizando un contenedor HTML para centrarla
-    logo_html = f"""
-    <div style="display: flex; justify-content: center; align-items: center; padding-bottom: 20px;">
-        <img src="{logo_path}" style="width: 100px;">
-    </div>
-    """
-    st.sidebar.markdown(logo_html, unsafe_allow_html=True)
-
-
     st.sidebar.title("🔒 Iniciar Sesión")
 
     # Selectbox con las opciones de nombres disponibles
@@ -148,7 +134,7 @@ def login():
 
     # Solo mostrar el campo de contraseña y el botón si se selecciona un nombre
     if nombre_seleccionado:
-        # Campo de contraseña (opcional)
+        # Campo de contraseña (ahora opcional)
         st.sidebar.text_input("Contraseña", type="password", key="password")
         
         # Botón para iniciar sesión
@@ -193,7 +179,7 @@ def convertir_a_excel(df):
 # Título de la Aplicación (esto es parte original del código)
 # ===============================
 
-st.title("Soop de Mundo Peluche🐻")
+st.title("🐻Soop de Mundo Peluche🧸")
 
 # Sidebar para Inicio de Sesión
 login()
@@ -839,34 +825,23 @@ def modulo_administracion():
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
 
-    # Sincronizar el estado de mostrar_caja con el ícono del ojo
-    if 'mostrar_caja' not in st.session_state:
-        st.session_state['mostrar_caja'] = True  # Por defecto, mostrar la caja
+    # Layout de caja total con el "ojito" para ocultar/mostrar
+    mostrar_caja = st.checkbox("Mostrar Caja Actual", value=True)
 
-    col_admin, col_ojo, col_caja = st.columns([2, 1, 1])
+    col_admin, col_caja = st.columns([2, 1])
 
     with col_admin:
         st.subheader("💰 Administración")
 
-    with col_ojo:
-        # Usar un checkbox con el ícono del ojo para alternar la visibilidad de la caja
-        mostrar_caja = st.checkbox("👁️", value=st.session_state['mostrar_caja'])
-        st.session_state['mostrar_caja'] = mostrar_caja
-
     with col_caja:
-        if st.session_state['mostrar_caja']:
+        if mostrar_caja:
             # Mostrar caja en verde o rojo si es negativa
             color_caja = "red" if caja_actual < 0 else "green"
             st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
 
-    # Segunda fila con último ingreso y egreso
-    col_admin2, col_ingreso, col_egreso = st.columns([2, 1, 1])
-
-    with col_ingreso:
-        st.write(f"<span style='color:green; text-decoration: underline;'><strong>Último Ingreso:</strong> ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}</span>", unsafe_allow_html=True)
-
-    with col_egreso:
-        st.write(f"<span style='color:red; text-decoration: underline;'><strong>Último Egreso:</strong> ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}</span>", unsafe_allow_html=True)
+        # Mostrar último ingreso y egreso debajo de la caja
+        st.write(f"**Último Ingreso:** ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}")
+        st.write(f"**Último Egreso:** ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}")
 
     st.markdown("---")
 
@@ -981,59 +956,85 @@ def modulo_administracion():
                             st.success("Stock de productos actualizado exitosamente.")
                         except Exception as e:
                             st.error(f"Error al actualizar el stock de productos: {e}")
-import pandas as pd
-import streamlit as st
-
-import pandas as pd
-import streamlit as st
-
 # ===============================
-# Módulo Estadísticas Adaptado
+# Módulo Estadísticas
 # ===============================
+
 def modulo_estadistica():
-    st.header("📈 Módulo Estadísticas Mejorado 📊")
+    st.header("📈Modulo Estadistics📊")
 
-    # Incluir un cargador de archivo para permitir la carga de Excel
-    archivo_excel = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
+    # Datos reales del archivo Excel
+    df = pd.read_excel('archivo_modificado_pedidos_20240930_194115.xlsx')
+    df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
 
-    if archivo_excel is not None:
-        # Cargar los datos del archivo Excel subido
-        df = pd.read_excel(archivo_excel)
-        df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
+    # Agrupando las ventas por día y sumando los totales
+    ventas_por_dia = df.groupby(df['Fecha'].dt.day_name())['Total'].sum().reindex(
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    )
 
-        # Agrupar ventas por vendedor y estado (envíos parciales, rechazados, etc.)
-        st.subheader("📅 Segmentación de Ventas por Mes y Estado")
+    # Traducción manual de los días de la semana
+    traduccion_dias = {
+        'Monday': 'lunes',
+        'Tuesday': 'martes',
+        'Wednesday': 'miércoles',
+        'Thursday': 'jueves',
+        'Friday': 'viernes',
+        'Saturday': 'sábado',
+        'Sunday': 'domingo'
+    }
+    ventas_por_dia.index = ventas_por_dia.index.map(traduccion_dias)
 
-        # Selección de mes y año
-        meses_unicos = df['Fecha'].dt.to_period('M').unique().tolist()
-        mes_seleccionado = st.selectbox("Seleccionar un Mes", meses_unicos)
+    # Agrupando las ventas por vendedor
+    ventas_por_vendedor = df.groupby('Vendedor')['Total'].sum()
 
-        # Filtrar por mes seleccionado
-        df_mes_filtrado = df[df['Fecha'].dt.to_period('M') == mes_seleccionado]
+    # Adaptando las métricas para el día de ventas (asumiendo que el último día es el actual)
+    ventas_dia_real = df[df['Fecha'].dt.date == df['Fecha'].max().date()]['Total'].sum()
 
-        # Ventas separadas por estados: Enviadas parciales, rechazadas, completadas
-        st.subheader("🔍 Segmentación por Estado de Pedido")
-        estado_seleccionado = st.selectbox("Seleccionar un Estado", ['Procesado / Enviado', 'Rechazado', 'Procesado / Enviado Parcial'])
+    # Total de ingresos (ventas totales)
+    total_ingresos_real = df['Total'].sum()
 
-        # Filtrar los pedidos según el estado seleccionado
-        df_estado_filtrado = df_mes_filtrado[df_mes_filtrado['Status'] == estado_seleccionado]
+    # Tarjetas Resumidas
+    col1, col2, col3 = st.columns(3)
 
-        # Gráfico de ventas por vendedor basado en estado seleccionado
-        ventas_por_vendedor = df_estado_filtrado.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_por_vendedor)
+    # Ventas del Día (dato real)
+    with col1:
+        st.metric(label="Ventas del Día", value=f"${ventas_dia_real:,.2f}")
 
-        st.markdown("---")
+    # Total de Ingresos (real)
+    with col2:
+        st.metric(label="Total de Ingresos", value=f"${total_ingresos_real:,.2f}")
 
-        # Gráfico de ventas por vendedor en general (sin importar estado)
-        st.subheader("📊 Ventas Totales por Vendedor en el Mes")
-        ventas_vendedor_mes = df_mes_filtrado.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_vendedor_mes)
+    # Total de Egresos (mantener ficticio, ya que no hay datos de egresos)
+    total_egresos_ficticio = 4500  # Un dato arbitrario para mostrar
+    with col3:
+        st.metric(label="Total de Egresos", value=f"${total_egresos_ficticio:,.2f}")
 
-        # Productividad del equipo basado en el mes seleccionado
-        st.subheader("👥 Productividad del Equipo en el Mes")
-        st.table(ventas_vendedor_mes)
+    st.markdown("---")
+
+    # Gráfico de ventas por día de la semana (real)
+    st.subheader("📅 Ventas por Día de la Semana")
+    st.bar_chart(ventas_por_dia)
+
+    st.markdown("---")
+
+    # Seleccionar un día y mostrar las ventas por vendedor para ese día
+    st.subheader("🔍 Ventas por Día y Vendedor")
+    dias_unicos = ventas_por_dia.index.tolist()
+    dia_seleccionado = st.selectbox("Seleccionar un día", dias_unicos)
+
+    # Filtrar por día seleccionado
+    ventas_filtradas_dia = df[df['Fecha'].dt.day_name().map(traduccion_dias) == dia_seleccionado]
+    if not ventas_filtradas_dia.empty:
+        ventas_vendedor_dia = ventas_filtradas_dia.groupby('Vendedor')['Total'].sum()
+        st.bar_chart(ventas_vendedor_dia)
     else:
-        st.info("Por favor, carga un archivo Excel para ver las estadísticas.")
+        st.info(f"No hay datos de ventas para el día {dia_seleccionado}.")
+
+    st.markdown("---")
+
+    # Productividad del equipo (real)
+    st.subheader("👥Productividad del Equipo📈")
+    st.table(ventas_por_vendedor)
 
 # ===============================
 # Importaciones necesarias
