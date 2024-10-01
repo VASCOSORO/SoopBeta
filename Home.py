@@ -969,8 +969,6 @@ def modulo_estadistica():
                               '05/03/24 09:47', '06/07/24 13:18', '05/06/23 10:33', '29/11/22 11:53', '13/08/24 11:14', 
                               '05/09/24 13:10', '01/08/24 09:30']
     }
-    
-    # Asegurar que todas las listas tengan la misma longitud para evitar errores
     df_usuarios = pd.DataFrame(usuarios)
     st.table(df_usuarios)
 
