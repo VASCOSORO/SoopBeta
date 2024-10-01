@@ -835,9 +835,9 @@ def modulo_administracion():
         st.subheader("💰 Administración")
 
     with col_ojo:
-        # El botón de ojo cambia el estado con un solo clic
-        if st.button("👁️" if st.session_state['mostrar_caja'] else "🙈"):
-            st.session_state['mostrar_caja'] = not st.session_state['mostrar_caja']
+        # Usar un checkbox con el ícono del ojo para alternar la visibilidad de la caja
+        mostrar_caja = st.checkbox("👁️", value=st.session_state['mostrar_caja'])
+        st.session_state['mostrar_caja'] = mostrar_caja
 
     with col_caja:
         if st.session_state['mostrar_caja']:
@@ -967,7 +967,6 @@ def modulo_administracion():
                             st.success("Stock de productos actualizado exitosamente.")
                         except Exception as e:
                             st.error(f"Error al actualizar el stock de productos: {e}")
-
 # ===============================
 # Módulo Estadísticas
 # ===============================
