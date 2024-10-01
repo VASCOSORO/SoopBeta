@@ -119,9 +119,24 @@ if 'delete_confirm' not in st.session_state:
 
 import streamlit as st
 
+import streamlit as st
+
 # ===============================
-# Función de Autenticación con Autocompletado y Logo Centrado Mejorado
+# Función de Autenticación con Autocompletado y Logo Centrado
 # ===============================
+
+def login():
+    # Mostrar el logo centrado usando la imagen que has subido
+    logo_path = '/mnt/data/image.png'  # Ruta del archivo que has subido
+
+    logo_html = f"""
+    <div style="text-align: center;">
+        <img src="{logo_path}" style="width: 100px;">
+    </div>
+    """
+    
+    # Mostrar el logo centrado usando markdown
+    st.sidebar.markdown(logo_html, unsafe_allow_html=True)
 
     st.sidebar.title("🔒 Iniciar Sesión")
 
