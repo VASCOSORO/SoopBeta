@@ -120,14 +120,14 @@ if 'delete_confirm' not in st.session_state:
 import streamlit as st
 
 # ===============================
-# Función de Autenticación con Autocompletado y Logo Centrado
+# Función de Autenticación con Autocompletado y Logo Centrado Mejorado
 # ===============================
 
 def login():
     # Código HTML para centrar la imagen
     logo_html = """
-    <div style="display: flex; justify-content: center;">
-        <img src="logomundo.png" width="100">
+    <div style="text-align: center;">
+        <img src="logomundo.png" style="width: 100px;">
     </div>
     """
     
