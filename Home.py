@@ -826,7 +826,10 @@ def modulo_administracion():
         return  # Detener la ejecución del módulo
 
     # Layout de caja total con el "ojito" para ocultar/mostrar
-    mostrar_caja = st.checkbox("Mostrar Caja Actual", value=True)
+    mostrar_caja = st.session_state.get('mostrar_caja', True)  # Valor por defecto True
+    if st.button("👁️" if mostrar_caja else "🙈"):
+        st.session_state['mostrar_caja'] = not mostrar_caja
+        mostrar_caja = st.session_state['mostrar_caja']
 
     col_admin, col_caja = st.columns([2, 1])
 
@@ -839,9 +842,9 @@ def modulo_administracion():
             color_caja = "red" if caja_actual < 0 else "green"
             st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
 
-        # Mostrar último ingreso y egreso debajo de la caja
-        st.write(f"**Último Ingreso:** ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}")
-        st.write(f"**Último Egreso:** ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}")
+        # Mostrar último ingreso y egreso subrayados en sus respectivos colores
+        st.write(f"<span style='color:green; text-decoration: underline;'><strong>Último Ingreso:</strong> ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}</span>", unsafe_allow_html=True)
+        st.write(f"<span style='color:red; text-decoration: underline;'><strong>Último Egreso:</strong> ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}</span>", unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -956,6 +959,7 @@ def modulo_administracion():
                             st.success("Stock de productos actualizado exitosamente.")
                         except Exception as e:
                             st.error(f"Error al actualizar el stock de productos: {e}")
+
 # ===============================
 # Módulo Estadísticas
 # ===============================
