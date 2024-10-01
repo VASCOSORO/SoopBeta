@@ -825,20 +825,22 @@ def modulo_administracion():
         st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
         return  # Detener la ejecución del módulo
 
-    # Layout con tres columnas: 1) Administración, 2) Icono de ojo, 3) Caja total
+    # Sincronizar el estado de mostrar_caja con el ícono del ojo
+    if 'mostrar_caja' not in st.session_state:
+        st.session_state['mostrar_caja'] = True  # Por defecto, mostrar la caja
+
     col_admin, col_ojo, col_caja = st.columns([2, 1, 1])
 
     with col_admin:
         st.subheader("💰 Administración")
 
     with col_ojo:
-        mostrar_caja = st.session_state.get('mostrar_caja', True)  # Valor por defecto True
-        if st.button("👁️" if mostrar_caja else "🙈"):
-            st.session_state['mostrar_caja'] = not mostrar_caja
-            mostrar_caja = st.session_state['mostrar_caja']
+        # El botón de ojo cambia el estado con un solo clic
+        if st.button("👁️" if st.session_state['mostrar_caja'] else "🙈"):
+            st.session_state['mostrar_caja'] = not st.session_state['mostrar_caja']
 
     with col_caja:
-        if mostrar_caja:
+        if st.session_state['mostrar_caja']:
             # Mostrar caja en verde o rojo si es negativa
             color_caja = "red" if caja_actual < 0 else "green"
             st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
@@ -965,6 +967,7 @@ def modulo_administracion():
                             st.success("Stock de productos actualizado exitosamente.")
                         except Exception as e:
                             st.error(f"Error al actualizar el stock de productos: {e}")
+
 # ===============================
 # Módulo Estadísticas
 # ===============================
