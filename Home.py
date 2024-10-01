@@ -184,7 +184,7 @@ def convertir_a_excel(df):
 # Título de la Aplicación (esto es parte original del código)
 # ===============================
 
-st.title("🐻Soop de Mundo Peluche🧸")
+st.title("Soop de Mundo Peluche🐻")
 
 # Sidebar para Inicio de Sesión
 login()
