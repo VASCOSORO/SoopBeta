@@ -540,7 +540,7 @@ def modulo_ventas():
     with col_header:
         st.header("🎐 Crear Pedido")
     with col_button:
-        if st.button("➕"):
+        if st.button("➕", key="btn_agregar_cliente"):
             st.session_state['mostrar_formulario_cliente'] = True
 
     # Inicializar el pedido y variables en session_state si no existen
@@ -600,14 +600,17 @@ def modulo_ventas():
             elif cancelar_nuevo_cliente:
                 st.session_state['mostrar_formulario_cliente'] = False
 
-    # Colocamos el buscador de cliente
-    if 'cliente_seleccionado' not in st.session_state:
-        st.session_state['cliente_seleccionado'] = ''
-    cliente_seleccionado = st.selectbox(
-        "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
-        key='cliente_seleccionado',
-        help="Escribí el nombre del cliente o seleccioná uno de la lista."
-    )
+    # Colocamos el buscador de cliente y vendedor asignado en la misma línea
+    col_cliente, col_vendedor = st.columns(2)
+
+    with col_cliente:
+        if 'cliente_seleccionado' not in st.session_state:
+            st.session_state['cliente_seleccionado'] = ''
+        cliente_seleccionado = st.selectbox(
+            "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
+            key='cliente_seleccionado',
+            help="Escribí el nombre del cliente o seleccioná uno de la lista."
+        )
 
     if cliente_seleccionado != "":
         # Obtener datos del cliente seleccionado
@@ -615,7 +618,8 @@ def modulo_ventas():
             st.session_state.df_clientes['Nombre'] == cliente_seleccionado
         ].iloc[0]
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-        vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+        with col_vendedor:
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
         # Mostrar descuento
         st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
@@ -646,7 +650,7 @@ def modulo_ventas():
         # Desplegable para las notas del cliente con opción de editar
         with st.expander("🔖 Notas del Cliente", expanded=False):
             st.write(cliente_data.get('Notas', ''))
-            if st.button("Editar Notas"):
+            if st.button("Editar Notas", key="btn_editar_notas"):
                 st.session_state['editar_notas_cliente'] = True
 
         if st.session_state.get('editar_notas_cliente', False):
@@ -949,7 +953,6 @@ def modulo_ventas():
 
 # Llamada a la función principal del módulo
 modulo_ventas()
-
 
 
 
