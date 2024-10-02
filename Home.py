@@ -829,6 +829,26 @@ def modulo_ventas():
         # Insertar una línea horizontal negra para separar las secciones
         st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
 
+# Inicialización de session_state (esto debería estar en otro lugar de tu aplicación)
+if 'df_clientes' not in st.session_state:
+    # Cargar los datos de clientes desde un archivo existente o crear un DataFrame vacío
+    if os.path.exists('archivo_modificado_clientes.xlsx'):
+        st.session_state.df_clientes = pd.read_excel('archivo_modificado_clientes.xlsx')
+    else:
+        st.session_state.df_clientes = pd.DataFrame(columns=[
+            'Nombre', 'Dirección', 'Instagram', 'Teléfono', 'Referido',
+            'Descuento', 'Estado Credito', 'Forma Pago', 'Notas',
+            'Vendedores', 'Fecha Modificado'
+        ])
+
+if 'df_equipo' not in st.session_state:
+    # Definir la lista de vendedores
+    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
+    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
+
+# Llamar al módulo de ventas
+modulo_ventas()
+
 
         # Insertar una línea horizontal negra para separar las secciones
         st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
