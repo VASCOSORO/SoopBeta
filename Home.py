@@ -478,11 +478,14 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1.2.4
+# Módulo Ventas 2.1.2.3
 # ===============================
 
 import streamlit as st
 import pandas as pd
+import requests
+from PIL import Image
+from io import BytesIO
 from datetime import datetime
 import os
 
@@ -593,12 +596,9 @@ def modulo_ventas():
                         index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
                     )
                     notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''))
-
-                    # Definir la lista de vendedores
-                    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-                    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
-
+                    
                     # Manejo seguro de 'Vendedores'
+                    vendedores_list = st.session_state.df_equipo['Nombre'].tolist()
                     vendedores_cliente = cliente_data.get('Vendedores', 'No asignado')
                     if isinstance(vendedores_cliente, str):
                         vendedores_split = [v.strip() for v in vendedores_cliente.split(',')]
@@ -609,16 +609,12 @@ def modulo_ventas():
                     if vendedor_principal not in vendedores_list:
                         vendedor_principal = 'No asignado'
 
-                    # Crear un HTML para mostrar los vendedores con estilos
-                    st.markdown("**Vendedores:**")
-                    for vendedor in vendedores_list:
-                        if vendedor == vendedor_principal:
-                            st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
-
-                    # Nota: No es posible deshabilitar opciones en st.selectbox, así que solo mostramos los vendedores con estilos
-
+                    vendedor_asignado = st.selectbox(
+                        "Vendedor Asignado",
+                        vendedores_list,
+                        index=vendedores_list.index(vendedor_principal) if vendedor_principal in vendedores_list else 0
+                    )
+                    
                     col_submit, col_cancel = st.columns(2)
                     submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios")
                     cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar")
@@ -667,7 +663,7 @@ def modulo_ventas():
                             st.session_state.df_clientes.loc[
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Vendedores'
-                            ] = vendedor_principal  # Mantener solo el principal
+                            ] = vendedor_asignado
                             st.session_state.df_clientes.loc[
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Fecha Modificado'
@@ -700,18 +696,8 @@ def modulo_ventas():
                     estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'])
                     forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
                     notas_cliente = st.text_area("Notas del Cliente")
-
-                    # Definir la lista de vendedores
-                    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-                    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
-
-                    # Mostrar los vendedores con estilos
-                    st.markdown("**Vendedores:**")
-                    for vendedor in vendedores_list:
-                        st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
-
-                    # Nota: No es posible deshabilitar opciones en st.selectbox, así que solo mostramos los vendedores con estilos
-
+                    vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
+                    
                     col_submit, col_cancel = st.columns(2)
                     submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
                     cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
@@ -730,7 +716,7 @@ def modulo_ventas():
                                 'Estado Credito': estado_credito,
                                 'Forma Pago': forma_pago,
                                 'Notas': notas_cliente.strip(),
-                                'Vendedores': 'Sofi',  # Asignar un vendedor predeterminado o permitir selección
+                                'Vendedores': vendedor_asignado,
                                 'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             }
                             st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
@@ -752,17 +738,14 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", [v.strip() for v in vendedores], index=0, disabled=True)
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", [v.strip() for v in vendedores], index=0)
 
     # Mostramos los demás campos si se selecciona un cliente
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Mostrar descuento en una fila de columnas debajo de la columna del lápiz
-        st.markdown("<br>", unsafe_allow_html=True)  # Añadir espacio
-        descuento_col1, descuento_col2 = st.columns(2)
-        with descuento_col1:
-            st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
+        # Mostrar descuento
+        st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
 
         # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
         col1, col2, col3 = st.columns(3)
@@ -784,50 +767,8 @@ def modulo_ventas():
             forma_pago = st.selectbox(
                 "💳 Forma de Pago",
                 ["CC", "Contado", "Depósito/Transferencia"],
-                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
-                disabled=True  # Deshabilitar para evitar cambios desde esta sección
+                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
             )
-
-        # Desplegable para las notas del cliente con opción de editar
-        with st.expander("🔖 Notas del Cliente", expanded=False):
-            st.write(cliente_data.get('Notas', ''))
-            if st.button("Editar Notas"):
-                st.session_state['editar_notas_cliente'] = True
-
-        if st.session_state.get('editar_notas_cliente', False):
-            with st.form("form_editar_notas"):
-                nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''))
-                submit_nuevas_notas = st.form_submit_button("Guardar Notas")
-                cancelar_editar_notas = st.form_submit_button("Cancelar")
-
-                if submit_nuevas_notas:
-                    st.session_state.df_clientes.loc[
-                        st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 
-                        'Notas'
-                    ] = nuevas_notas
-                    st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
-                    st.success("Notas actualizadas exitosamente.")
-                    st.session_state['editar_notas_cliente'] = False
-                elif cancelar_editar_notas:
-                    st.session_state['editar_notas_cliente'] = False
-
-        # Mostrar datos extra del cliente
-        with st.expander("📋 Ver datos extra del cliente"):
-            st.write(f"**Dirección:** {cliente_data.get('Dirección', 'No disponible')}")
-            st.write(f"**Instagram:** {cliente_data.get('Instagram', 'No disponible')}")
-            st.write(f"**Número de Teléfono:** {cliente_data.get('Teléfono', 'No disponible')}")
-            st.write(f"**Referido:** {cliente_data.get('Referido', 'No')}")
-
-        # Mostrar pedidos anteriores del cliente dentro de un expander
-        with st.expander("📜 Pedidos Anteriores"):
-            pedidos_cliente = obtener_pedidos_cliente(cliente_seleccionado)
-            if not pedidos_cliente.empty:
-                st.table(pedidos_cliente[['Fecha', 'Hora', 'Vendedor', 'Items']])
-            else:
-                st.info("El cliente no tiene pedidos anteriores.")
-
-        # Insertar una línea horizontal negra para separar las secciones
-        st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
 
         # Desplegable para las notas del cliente con opción de editar
         with st.expander("🔖 Notas del Cliente", expanded=False):
