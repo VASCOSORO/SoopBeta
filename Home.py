@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1
+# Módulo Ventas 2.1.5
 # ===============================
 
 import streamlit as st
@@ -563,19 +563,47 @@ def modulo_ventas():
                 st.session_state['mostrar_formulario_cliente'] = True
 
         # Mostrar formulario para agregar nuevo cliente si se ha presionado el botón
-        if st.session_state.get('mostrar_formulario_cliente', False):
-            st.subheader("Agregar Nuevo Cliente")
+        if st.session_state.get('mostrar_formulario_cliente', False) or cliente_seleccionado:
+            st.subheader("Agregar o Editar Cliente")
+
+            if cliente_seleccionado:
+                # Obtener datos del cliente seleccionado
+                cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+                nombre_cliente = cliente_data['Nombre']
+                direccion_cliente = cliente_data['Dirección']
+                instagram_cliente = cliente_data['Instagram']
+                telefono_cliente = cliente_data['Teléfono']
+                referido = cliente_data['Referido'] == 'Sí'
+                descuento_cliente = cliente_data['Descuento']
+                estado_credito = cliente_data['Estado Credito']
+                forma_pago = cliente_data['Forma Pago']
+                notas_cliente = cliente_data['Notas']
+                vendedor_asignado = cliente_data['Vendedores']
+            else:
+                # Si es nuevo cliente, dejar los campos vacíos
+                nombre_cliente = ""
+                direccion_cliente = ""
+                instagram_cliente = ""
+                telefono_cliente = ""
+                referido = False
+                descuento_cliente = 0
+                estado_credito = 'Pagos regulares'
+                forma_pago = 'Contado'
+                notas_cliente = ""
+                vendedor_asignado = ""
+
             with st.form("form_nuevo_cliente"):
-                nombre_cliente = st.text_input("Nombre del Cliente")
-                direccion_cliente = st.text_input("Dirección")
-                instagram_cliente = st.text_input("Instagram")
-                telefono_cliente = st.text_input("Número de Teléfono")
-                referido = st.checkbox("Referido")
-                descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0)
-                estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'])
-                forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
-                notas_cliente = st.text_area("Notas del Cliente")
-                vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
+                nombre_cliente = st.text_input("Nombre del Cliente", value=nombre_cliente)
+                direccion_cliente = st.text_input("Dirección", value=direccion_cliente)
+                instagram_cliente = st.text_input("Instagram", value=instagram_cliente)
+                telefono_cliente = st.text_input("Número de Teléfono", value=telefono_cliente)
+                referido = st.checkbox("Referido", value=referido)
+                descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=descuento_cliente)
+                estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(estado_credito))
+                forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], index=["CC", "Contado", "Depósito/Transferencia"].index(forma_pago))
+                notas_cliente = st.text_area("Notas del Cliente", value=notas_cliente)
+                vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(), index=st.session_state.df_equipo['Nombre'].tolist().index(vendedor_asignado) if vendedor_asignado else 0)
+                
                 col_submit, col_cancel = st.columns(2)
                 submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
                 cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
@@ -597,11 +625,16 @@ def modulo_ventas():
                             'Vendedores': vendedor_asignado,
                             'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         }
-                        st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
+                        # Si el cliente ya existe, lo actualizamos, de lo contrario lo agregamos
+                        if cliente_seleccionado:
+                            st.session_state.df_clientes.update(pd.DataFrame([nuevo_cliente]))
+                        else:
+                            st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
+
                         # Guardar en Excel
                         try:
                             st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
-                            st.success("Cliente agregado exitosamente.")
+                            st.success("Cliente guardado exitosamente.")
                             # Actualizar la lista de clientes en el selectbox
                             st.session_state['mostrar_formulario_cliente'] = False
                             # Seleccionar automáticamente el nuevo cliente
@@ -610,13 +643,13 @@ def modulo_ventas():
                             st.error(f"Error al guardar el cliente: {e}")
                 elif cancelar_nuevo_cliente:
                     st.session_state['mostrar_formulario_cliente'] = False
-                    # No es necesario llamar a st.experimental_rerun()
 
     with col2:
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
             vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+
 
     # Mostramos los demás campos si se selecciona un cliente
     if cliente_seleccionado != "":
