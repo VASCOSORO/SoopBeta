@@ -1262,12 +1262,6 @@ def modulo_administracion():
 import pandas as pd
 import streamlit as st
 
-import pandas as pd
-import streamlit as st
-
-
-import pandas as pd
-import streamlit as st
 
 # ===============================
 # Módulo Estadísticas Adaptado 2.0
