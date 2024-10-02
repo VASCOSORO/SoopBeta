@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1.2.2
+# Módulo Ventas 2.1.2.3
 # ===============================
 
 import streamlit as st
@@ -553,7 +553,8 @@ def modulo_ventas():
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        col_cliente, col_agregar, col_editar = st.columns([5, 1, 1])
+        # Reducimos a dos columnas: una para el selectbox y otra para el botón dinámico
+        col_cliente, col_button = st.columns([5, 1])
         with col_cliente:
             if 'cliente_seleccionado' not in st.session_state:
                 st.session_state['cliente_seleccionado'] = ''
@@ -562,14 +563,13 @@ def modulo_ventas():
                 key='cliente_seleccionado',
                 help="Escribí el nombre del cliente o seleccioná uno de la lista."
             )
-        with col_agregar:
-            if st.button("➕"):
-                st.session_state['mostrar_formulario_cliente'] = True
-                st.session_state['editar_cliente'] = False  # Asegurar que no está en modo edición
-
-        with col_editar:
-            if cliente_seleccionado:
-                if st.button("✏️"):  # Botón de lápiz para editar
+        with col_button:
+            if cliente_seleccionado == "":
+                if st.button("➕"):
+                    st.session_state['mostrar_formulario_cliente'] = True
+                    st.session_state['editar_cliente'] = False  # Asegurar que no está en modo edición
+            else:
+                if st.button("✏️"):
                     st.session_state['editar_cliente'] = True
                     st.session_state['mostrar_formulario_cliente'] = True
 
