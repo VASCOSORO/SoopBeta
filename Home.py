@@ -316,7 +316,8 @@ def modulo_equipo():
     miembro_seleccionado = st.selectbox(
         "Seleccionar Miembro del Equipo",
         [""] + st.session_state.df_equipo['Nombre'].unique().tolist(),
-        help="Selecciona un miembro para ver su información detallada."
+        help="Selecciona un miembro para ver su información detallada.",
+        key="miembro_selectbox"
     )
 
     if miembro_seleccionado:
@@ -342,13 +343,13 @@ def modulo_equipo():
             st.markdown("**Accesos:**")
             col_acceso1, col_acceso2, col_acceso3, col_acceso4 = st.columns(4)
             with col_acceso1:
-                st.checkbox("Ventas", value=bool(miembro_data['Acceso Ventas']), disabled=True)
+                st.checkbox("Ventas", value=bool(miembro_data['Acceso Ventas']), disabled=True, key=f"ventas_{miembro_seleccionado}")
             with col_acceso2:
-                st.checkbox("Logística", value=bool(miembro_data['Acceso Logística']), disabled=True)
+                st.checkbox("Logística", value=bool(miembro_data['Acceso Logística']), disabled=True, key=f"logistica_{miembro_seleccionado}")
             with col_acceso3:
-                st.checkbox("Administración", value=bool(miembro_data['Acceso Administración']), disabled=True)
+                st.checkbox("Administración", value=bool(miembro_data['Acceso Administración']), disabled=True, key=f"administracion_{miembro_seleccionado}")
             with col_acceso4:
-                st.checkbox("Marketing", value=bool(miembro_data['Acceso Marketing']), disabled=True)
+                st.checkbox("Marketing", value=bool(miembro_data['Acceso Marketing']), disabled=True, key=f"marketing_{miembro_seleccionado}")
 
         st.markdown("---")
 
@@ -362,27 +363,27 @@ def modulo_equipo():
                 col_form1, col_form2 = st.columns(2)
 
                 with col_form1:
-                    nombre = st.text_input("Nombre", help="Ingrese el nombre completo del miembro.")
+                    nombre = st.text_input("Nombre", help="Ingrese el nombre completo del miembro.", key="agregar_nombre")
                     rol = st.selectbox("Rol", [
                         'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
                         'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
-                    ])
+                    ], key="agregar_rol")
                     departamento = st.selectbox("Departamento", [
                         'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
-                    ])
+                    ], key="agregar_departamento")
                     nivel_acceso = st.selectbox("Nivel de Acceso", [
                         'Bajo', 'Medio', 'Alto', 'Super Admin'
-                    ])
+                    ], key="agregar_nivel_acceso")
 
                 with col_form2:
-                    estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0)
+                    estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0, key="agregar_estado")
                     # Asignación de accesos a módulos
-                    acceso_ventas = st.checkbox("Acceso a Ventas")
-                    acceso_logistica = st.checkbox("Acceso a Logística")
-                    acceso_administracion = st.checkbox("Acceso a Administración")
-                    acceso_marketing = st.checkbox("Acceso a Marketing")
+                    acceso_ventas = st.checkbox("Acceso a Ventas", key="agregar_acceso_ventas")
+                    acceso_logistica = st.checkbox("Acceso a Logística", key="agregar_acceso_logistica")
+                    acceso_administracion = st.checkbox("Acceso a Administración", key="agregar_acceso_administracion")
+                    acceso_marketing = st.checkbox("Acceso a Marketing", key="agregar_acceso_marketing")
 
-                avatar_url = st.text_input("URL del Avatar (opcional)", help="Ingrese la URL de la imagen de avatar.")
+                avatar_url = st.text_input("URL del Avatar (opcional)", help="Ingrese la URL de la imagen de avatar.", key="agregar_avatar")
 
                 submit = st.form_submit_button("Agregar")
 
@@ -420,7 +421,8 @@ def modulo_equipo():
                 miembro_modificar = st.selectbox(
                     "Selecciona el nombre a modificar",
                     st.session_state.df_equipo['Nombre'].unique().tolist(),
-                    help="Selecciona un miembro para modificar su información."
+                    help="Selecciona un miembro para modificar su información.",
+                    key="modificar_selectbox"
                 )
                 if miembro_modificar:
                     miembro_data = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] == miembro_modificar].iloc[0]
@@ -428,28 +430,33 @@ def modulo_equipo():
                     col_form1, col_form2 = st.columns(2)
 
                     with col_form1:
-                        nombre = st.text_input("Nombre", value=miembro_data['Nombre'])
+                        nombre = st.text_input("Nombre", value=miembro_data['Nombre'], key="modificar_nombre")
                         rol = st.selectbox("Rol", [
                             'Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
                             'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'
                         ], index=['Presidente', 'Gerente General', 'Jefe de Depósito', 'Armar Pedidos',
-                                  'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'].index(miembro_data['Rol']))
+                                  'Vendedora', 'Fotógrafa y Catalogador', 'Super Admin'].index(miembro_data['Rol']),
+                            key="modificar_rol")
                         departamento = st.selectbox("Departamento", [
                             'Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'
-                        ], index=['Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'].index(miembro_data['Departamento']))
+                        ], index=['Dirección', 'Depósito', 'Ventas', 'Marketing', 'Logística'].index(miembro_data['Departamento']),
+                            key="modificar_departamento")
                         nivel_acceso = st.selectbox("Nivel de Acceso", [
                             'Bajo', 'Medio', 'Alto', 'Super Admin'
-                        ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']))
+                        ], index=['Bajo', 'Medio', 'Alto', 'Super Admin'].index(miembro_data['Nivel de Acceso']),
+                            key="modificar_nivel_acceso")
 
                     with col_form2:
-                        estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], index=0 if miembro_data['Estado'] == 'Activo' else 1)
+                        estado = st.radio("Estado del Miembro", ['Activo', 'Inactivo'], 
+                                          index=0 if miembro_data['Estado'] == 'Activo' else 1, 
+                                          key="modificar_estado")
                         # Modificar accesos a módulos
-                        acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'])
-                        acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'])
-                        acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'])
-                        acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'])
+                        acceso_ventas = st.checkbox("Acceso a Ventas", value=miembro_data['Acceso Ventas'], key="modificar_acceso_ventas")
+                        acceso_logistica = st.checkbox("Acceso a Logística", value=miembro_data['Acceso Logística'], key="modificar_acceso_logistica")
+                        acceso_administracion = st.checkbox("Acceso a Administración", value=miembro_data['Acceso Administración'], key="modificar_acceso_administracion")
+                        acceso_marketing = st.checkbox("Acceso a Marketing", value=miembro_data['Acceso Marketing'], key="modificar_acceso_marketing")
 
-                    avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'], help="Ingrese la URL de la imagen de avatar.")
+                    avatar_url = st.text_input("URL del Avatar", value=miembro_data['Avatar'], help="Ingrese la URL de la imagen de avatar.", key="modificar_avatar")
 
                     submit_modificar = st.form_submit_button("Modificar")
 
@@ -485,7 +492,8 @@ def modulo_equipo():
                 nombre_eliminar = st.selectbox(
                     "Selecciona el nombre a eliminar",
                     st.session_state.df_equipo['Nombre'].unique().tolist(),
-                    help="Selecciona un miembro para eliminar de manera permanente."
+                    help="Selecciona un miembro para eliminar de manera permanente.",
+                    key="eliminar_selectbox"
                 )
                 submit_eliminar = st.form_submit_button("Eliminar")
 
@@ -494,7 +502,7 @@ def modulo_equipo():
                         if nombre_eliminar == st.session_state.usuario.get('Nombre'):
                             st.error("No puedes eliminarte a ti mismo.")
                         else:
-                            confirmar = st.checkbox(f"Confirmo que quiero eliminar a {nombre_eliminar}")
+                            confirmar = st.checkbox(f"Confirmo que quiero eliminar a {nombre_eliminar}", key="confirmar_eliminar")
                             if confirmar:
                                 st.session_state.df_equipo = st.session_state.df_equipo[st.session_state.df_equipo['Nombre'] != nombre_eliminar]
                                 st.success(f"Miembro {nombre_eliminar} eliminado exitosamente.")
@@ -508,29 +516,29 @@ def modulo_equipo():
                     else:
                         st.error("El nombre seleccionado no existe.")
 
-    # Inicialización de session_state (esto debería estar en otro lugar de tu aplicación)
-    if 'df_clientes' not in st.session_state:
-        # Cargar los datos de clientes desde un archivo existente o crear un DataFrame vacío
-        if os.path.exists('archivo_modificado_clientes.xlsx'):
-            st.session_state.df_clientes = pd.read_excel('archivo_modificado_clientes.xlsx')
-        else:
-            st.session_state.df_clientes = pd.DataFrame(columns=[
-                'Nombre', 'Dirección', 'Instagram', 'Teléfono', 'Referido',
-                'Descuento', 'Estado Credito', 'Forma Pago', 'Notas',
-                'Vendedores', 'Fecha Modificado'
-            ])
+# Inicialización de session_state (esto debería estar en otro lugar de tu aplicación)
+if 'df_clientes' not in st.session_state:
+    # Cargar los datos de clientes desde un archivo existente o crear un DataFrame vacío
+    if os.path.exists('archivo_modificado_clientes.xlsx'):
+        st.session_state.df_clientes = pd.read_excel('archivo_modificado_clientes.xlsx')
+    else:
+        st.session_state.df_clientes = pd.DataFrame(columns=[
+            'Nombre', 'Dirección', 'Instagram', 'Teléfono', 'Referido',
+            'Descuento', 'Estado Credito', 'Forma Pago', 'Notas',
+            'Vendedores', 'Fecha Modificado'
+        ])
 
-    if 'df_equipo' not in st.session_state:
-        # Definir la lista de vendedores
-        vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-        st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
+if 'df_equipo' not in st.session_state:
+    # Definir la lista de vendedores
+    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
+    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
 
-    if 'usuario' not in st.session_state:
-        # Simulación de usuario actual; en una implementación real, esto debería gestionarse mediante autenticación
-        st.session_state.usuario = {'Nombre': 'Super Admin', 'Nivel de Acceso': 'Super Admin'}
+if 'usuario' not in st.session_state:
+    # Simulación de usuario actual; en una implementación real, esto debería gestionarse mediante autenticación
+    st.session_state.usuario = {'Nombre': 'Super Admin', 'Nivel de Acceso': 'Super Admin'}
 
-    # Llamar al módulo de equipo
-    modulo_equipo()
+# Llamar al módulo de equipo una sola vez, fuera de la definición de la función
+modulo_equipo()
 
 
 
