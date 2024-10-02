@@ -1267,7 +1267,7 @@ import streamlit as st
 # Módulo Estadísticas Adaptado 2.0
 # ===============================
 
-def modulo_estadistica():
+def modulo_estadistica_leads():
     st.header("📈 Módulo Estadísticas Mejorado 📊")
 
     # Incluir un cargador de archivo para permitir la carga de Excel
