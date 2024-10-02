@@ -874,7 +874,10 @@ def modulo_ventas():
                     st.table(pedidos_cliente[['Fecha', 'Hora', 'Vendedor', 'Items']])
                 else:
                     st.info("El cliente no tiene pedidos anteriores.")
-
+                    
+        # Insertar una línea horizontal negra para separar las secciones
+        st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
+        
             # Rubros del cliente: Ficticios en un desplegable
             rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]
             rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
