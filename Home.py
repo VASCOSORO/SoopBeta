@@ -951,7 +951,6 @@ def modulo_ventas():
 
 
 
-
    
 # ===============================
 # Módulo Administración
