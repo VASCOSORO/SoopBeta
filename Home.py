@@ -565,13 +565,19 @@ def modulo_ventas():
             st.subheader("Agregar Nuevo Cliente")
             with st.form("form_nuevo_cliente"):
                 nombre_cliente = st.text_input("Nombre del Cliente")
+                nombre_comercio = st.text_input("Nombre del Comercio")
+                instagram_cliente = st.text_input("Instagram")
                 whatsapp_cliente = st.text_input("Número de WhatsApp")
                 descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0)
                 estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'])
                 forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
+                rubro_cliente = st.text_input("Rubro")
+                viene_recomendado = st.checkbox("Viene recomendado")
                 notas_cliente = st.text_area("Notas del Cliente")
                 vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
-                submit_nuevo_cliente = st.form_submit_button("Guardar Cliente")
+                col_submit, col_cancel = st.columns(2)
+                submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
+                cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
 
                 if submit_nuevo_cliente:
                     if nombre_cliente.strip() == "":
@@ -579,10 +585,14 @@ def modulo_ventas():
                     else:
                         nuevo_cliente = {
                             'Nombre': nombre_cliente.strip(),
+                            'Nombre Comercio': nombre_comercio.strip(),
+                            'Instagram': instagram_cliente.strip(),
                             'WhatsApp': whatsapp_cliente.strip(),
                             'Descuento': descuento_cliente,
                             'Estado Credito': estado_credito,
                             'Forma Pago': forma_pago,
+                            'Rubro': rubro_cliente.strip(),
+                            'Viene Recomendado': 'Sí' if viene_recomendado else 'No',
                             'Notas': notas_cliente.strip(),
                             'Vendedores': vendedor_asignado,
                             'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -597,6 +607,9 @@ def modulo_ventas():
                             st.experimental_rerun()
                         except Exception as e:
                             st.error(f"Error al guardar el cliente: {e}")
+                elif cancelar_nuevo_cliente:
+                    st.session_state['mostrar_formulario_cliente'] = False
+                    st.experimental_rerun()
         else:
             st.session_state['mostrar_formulario_cliente'] = False
 
@@ -655,7 +668,11 @@ def modulo_ventas():
 
         # Mostrar datos extra del cliente
         with st.expander("📋 Ver datos extra del cliente"):
+            st.write(f"**Nombre del Comercio:** {cliente_data.get('Nombre Comercio', 'No disponible')}")
+            st.write(f"**Instagram:** {cliente_data.get('Instagram', 'No disponible')}")
             st.write(f"**Número de WhatsApp:** {cliente_data.get('WhatsApp', 'No disponible')}")
+            st.write(f"**Rubro:** {cliente_data.get('Rubro', 'No disponible')}")
+            st.write(f"**Viene Recomendado:** {cliente_data.get('Viene Recomendado', 'No')}")
 
         # Mostrar pedidos anteriores del cliente
         st.subheader("📜 Pedidos Anteriores")
@@ -910,6 +927,7 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     else:
         st.info("No hay productos en el pedido actual.")
+
 
 
    
