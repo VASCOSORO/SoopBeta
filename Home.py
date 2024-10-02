@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1.3
+# Módulo Ventas 2.1.2.4
 # ===============================
 
 import streamlit as st
@@ -503,7 +503,7 @@ def guardar_pedido_excel(archivo, order_data):
             'Vendedor': order_data['vendedor'],
             'Fecha': order_data['fecha'],
             'Hora': order_data['hora'],
-            'Items': ', '.join([str(item) for item in order_data['items']])  # Convertir lista a string
+            'Items': [str(item) for item in order_data['items']]
         }
 
         # Añadir el nuevo pedido al DataFrame existente
@@ -602,36 +602,23 @@ def modulo_ventas():
                     vendedores_cliente = cliente_data.get('Vendedores', 'No asignado')
                     if isinstance(vendedores_cliente, str):
                         vendedores_split = [v.strip() for v in vendedores_cliente.split(',')]
+                        vendedor_principal = vendedores_split[0] if vendedores_split else 'No asignado'
                     else:
-                        vendedores_split = ['No asignado']
+                        vendedor_principal = 'No asignado'
 
-                    # Selección múltiple de vendedores con posibilidad de eliminar
-                    st.markdown("**Vendedores Asignados:**")
-                    if vendedores_split == ['No asignado']:
-                        assigned_vendedores = []
-                    else:
-                        assigned_vendedores = vendedores_split
+                    if vendedor_principal not in vendedores_list:
+                        vendedor_principal = 'No asignado'
 
-                    # Mostrar vendedores asignados con botón para eliminar
-                    for vendedor in assigned_vendedores:
-                        col_vend, col_remove = st.columns([4, 1])
-                        with col_vend:
+                    # Crear un HTML para mostrar los vendedores con estilos
+                    st.markdown("**Vendedores:**")
+                    for vendedor in vendedores_list:
+                        if vendedor == vendedor_principal:
                             st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                        with col_remove:
-                            if st.button("❌", key=f"remove_{vendedor}"):
-                                assigned_vendedores.remove(vendedor)
-                    
-                    # Seleccionar nuevos vendedores para agregar
-                    vendedores_disponibles = [v for v in vendedores_list if v not in assigned_vendedores]
-                    nuevo_vendedor = st.selectbox("Agregar Vendedor:", [""] + vendedores_disponibles, key="nuevo_vendedor")
+                        else:
+                            st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
 
-                    if st.button("Agregar Vendedor") and nuevo_vendedor != "":
-                        assigned_vendedores.append(nuevo_vendedor)
+                    # Nota: No es posible deshabilitar opciones en st.selectbox, así que solo mostramos los vendedores con estilos
 
-                    # Actualizar la lista de vendedores seleccionados
-                    selected_vendedores = assigned_vendedores
-
-                    # Botones de guardar y cancelar
                     col_submit, col_cancel = st.columns(2)
                     submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios")
                     cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar")
@@ -677,12 +664,10 @@ def modulo_ventas():
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Notas'
                             ] = notas_cliente.strip()
-                            # Actualizar vendedores como cadena separada por comas
-                            vendedores_str = ', '.join(selected_vendedores) if selected_vendedores else 'No asignado'
                             st.session_state.df_clientes.loc[
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Vendedores'
-                            ] = vendedores_str
+                            ] = vendedor_principal  # Mantener solo el principal
                             st.session_state.df_clientes.loc[
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Fecha Modificado'
@@ -720,37 +705,13 @@ def modulo_ventas():
                     vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
                     st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
 
-                    # Asignar el vendedor actual (por defecto 'Sofi' o según tu lógica)
-                    current_vendedor = 'Sofi'  # Esto debería ser dinámico según quien esté usando la app
-                    selected_vendedores = [current_vendedor]
-
-                    # Mostrar vendedores asignados con colores
-                    st.markdown("**Vendedores Asignados:**")
-                    col_vend, col_remove = st.columns([4, 1])
-                    for vendedor in selected_vendedores:
-                        col_vend, col_remove = st.columns([4, 1])
-                        with col_vend:
-                            st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                        with col_remove:
-                            if st.button("❌", key=f"remove_{vendedor}"):
-                                selected_vendedores.remove(vendedor)
-
-                    # Botón para agregar vendedores
-                    vendedores_disponibles = [v for v in vendedores_list if v not in selected_vendedores]
-                    nuevo_vendedor = st.selectbox("Agregar Vendedor:", [""] + vendedores_disponibles, key="nuevo_vendedor_add")
-
-                    if st.button("Agregar Vendedor") and nuevo_vendedor != "":
-                        selected_vendedores.append(nuevo_vendedor)
-
-                    # Mostrar vendedores asignados con colores
-                    st.markdown("**Vendedores Disponibles:**")
+                    # Mostrar los vendedores con estilos
+                    st.markdown("**Vendedores:**")
                     for vendedor in vendedores_list:
-                        if vendedor in selected_vendedores:
-                            st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
 
-                    # Botones de guardar y cancelar
+                    # Nota: No es posible deshabilitar opciones en st.selectbox, así que solo mostramos los vendedores con estilos
+
                     col_submit, col_cancel = st.columns(2)
                     submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
                     cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
@@ -769,7 +730,7 @@ def modulo_ventas():
                                 'Estado Credito': estado_credito,
                                 'Forma Pago': forma_pago,
                                 'Notas': notas_cliente.strip(),
-                                'Vendedores': ', '.join(selected_vendedores),
+                                'Vendedores': 'Sofi',  # Asignar un vendedor predeterminado o permitir selección
                                 'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             }
                             st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
@@ -791,16 +752,7 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedores_asignados = [v.strip() for v in vendedores if v.strip() != 'No asignado']
-
-            # Mostrar todos los vendedores con colores
-            st.markdown("**Vendedores Asignados:**")
-            vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-            for vendedor in vendedores_list:
-                if vendedor in vendedores_asignados:
-                    st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
+            vendedor_seleccionado = st.selectbox("Vendedores", [v.strip() for v in vendedores], index=0, disabled=True)
 
     # Mostramos los demás campos si se selecciona un cliente
     if cliente_seleccionado != "":
