@@ -478,11 +478,14 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1.2.4
+# Módulo Ventas 2.1.2.3
 # ===============================
 
 import streamlit as st
 import pandas as pd
+import requests
+from PIL import Image
+from io import BytesIO
 from datetime import datetime
 import os
 
@@ -593,12 +596,9 @@ def modulo_ventas():
                         index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
                     )
                     notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''))
-
-                    # Definir la lista de vendedores
-                    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-                    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
-
+                    
                     # Manejo seguro de 'Vendedores'
+                    vendedores_list = st.session_state.df_equipo['Nombre'].tolist()
                     vendedores_cliente = cliente_data.get('Vendedores', 'No asignado')
                     if isinstance(vendedores_cliente, str):
                         vendedores_split = [v.strip() for v in vendedores_cliente.split(',')]
@@ -609,16 +609,12 @@ def modulo_ventas():
                     if vendedor_principal not in vendedores_list:
                         vendedor_principal = 'No asignado'
 
-                    # Crear un HTML para mostrar los vendedores con estilos
-                    st.markdown("**Vendedores:**")
-                    for vendedor in vendedores_list:
-                        if vendedor == vendedor_principal:
-                            st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
-
-                    # Nota: No es posible deshabilitar opciones en st.selectbox, así que solo mostramos los vendedores con estilos
-
+                    vendedor_asignado = st.selectbox(
+                        "Vendedor Asignado",
+                        vendedores_list,
+                        index=vendedores_list.index(vendedor_principal) if vendedor_principal in vendedores_list else 0
+                    )
+                    
                     col_submit, col_cancel = st.columns(2)
                     submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios")
                     cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar")
@@ -667,7 +663,7 @@ def modulo_ventas():
                             st.session_state.df_clientes.loc[
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Vendedores'
-                            ] = vendedor_principal  # Mantener solo el principal
+                            ] = vendedor_asignado
                             st.session_state.df_clientes.loc[
                                 st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
                                 'Fecha Modificado'
@@ -700,18 +696,8 @@ def modulo_ventas():
                     estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'])
                     forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
                     notas_cliente = st.text_area("Notas del Cliente")
-
-                    # Definir la lista de vendedores
-                    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-                    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
-
-                    # Mostrar los vendedores con estilos
-                    st.markdown("**Vendedores:**")
-                    for vendedor in vendedores_list:
-                        st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
-
-                    # Nota: No es posible deshabilitar opciones en st.selectbox, así que solo mostramos los vendedores con estilos
-
+                    vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
+                    
                     col_submit, col_cancel = st.columns(2)
                     submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
                     cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
@@ -730,7 +716,7 @@ def modulo_ventas():
                                 'Estado Credito': estado_credito,
                                 'Forma Pago': forma_pago,
                                 'Notas': notas_cliente.strip(),
-                                'Vendedores': 'Sofi',  # Asignar un vendedor predeterminado o permitir selección
+                                'Vendedores': vendedor_asignado,
                                 'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             }
                             st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
@@ -752,17 +738,14 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedores", [v.strip() for v in vendedores], index=0, disabled=True)
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", [v.strip() for v in vendedores], index=0)
 
     # Mostramos los demás campos si se selecciona un cliente
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Mostrar descuento centrado
-        st.markdown("<br>", unsafe_allow_html=True)  # Añadir espacio
-        col_desc1, col_desc2, col_desc3 = st.columns(3)
-        with col_desc2:
-            st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
+        # Mostrar descuento
+        st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
 
         # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
         col1, col2, col3 = st.columns(3)
@@ -784,8 +767,7 @@ def modulo_ventas():
             forma_pago = st.selectbox(
                 "💳 Forma de Pago",
                 ["CC", "Contado", "Depósito/Transferencia"],
-                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
-                disabled=True  # Deshabilitar para evitar cambios desde esta sección
+                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
             )
 
         # Desplegable para las notas del cliente con opción de editar
@@ -828,32 +810,6 @@ def modulo_ventas():
 
         # Insertar una línea horizontal negra para separar las secciones
         st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
-
-# Inicialización de session_state (esto debería estar en otro lugar de tu aplicación)
-if 'df_clientes' not in st.session_state:
-    # Cargar los datos de clientes desde un archivo existente o crear un DataFrame vacío
-    if os.path.exists('archivo_modificado_clientes.xlsx'):
-        st.session_state.df_clientes = pd.read_excel('archivo_modificado_clientes.xlsx')
-    else:
-        st.session_state.df_clientes = pd.DataFrame(columns=[
-            'Nombre', 'Dirección', 'Instagram', 'Teléfono', 'Referido',
-            'Descuento', 'Estado Credito', 'Forma Pago', 'Notas',
-            'Vendedores', 'Fecha Modificado'
-        ])
-
-if 'df_equipo' not in st.session_state:
-    # Definir la lista de vendedores
-    vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
-    st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
-
-# Llamar al módulo de ventas
-modulo_ventas()
-
-
-        # Insertar una línea horizontal negra para separar las secciones
-        st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
-
-        
         # Rubros del cliente: Ficticios en un desplegable
         rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]
         rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
