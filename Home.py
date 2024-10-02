@@ -184,7 +184,7 @@ def convertir_a_excel(df):
 # Título de la Aplicación (esto es parte original del código)
 # ===============================
 
-st.title("🐻Soop de Mundo Peluche🕶️")
+st.title("🐻Soop de Mundo Peluche🕶️2.0")
 
 # Sidebar para Inicio de Sesión
 login()
@@ -548,6 +548,16 @@ def modulo_ventas():
         st.session_state.mostrar_formulario_cliente = False
     if 'mostrar_formulario_editar_cliente' not in st.session_state:
         st.session_state.mostrar_formulario_editar_cliente = False
+    if 'editar_notas_cliente' not in st.session_state:
+        st.session_state.editar_notas_cliente = False
+
+    # Asegurarse de que los DataFrames están en session_state
+    if 'df_clientes' not in st.session_state:
+        st.session_state.df_clientes = pd.read_excel('archivo_modificado_clientes.xlsx')
+    if 'df_equipo' not in st.session_state:
+        st.session_state.df_equipo = pd.read_excel('equipo.xlsx')
+    if 'df_productos' not in st.session_state:
+        st.session_state.df_productos = pd.read_excel('productos.xlsx')
 
     # Colocamos el buscador de cliente y botón para agregar nuevo cliente o editar
     col1, col2 = st.columns([2, 1])
@@ -665,13 +675,13 @@ def modulo_ventas():
                     st.session_state['mostrar_formulario_editar_cliente'] = False
 
     with col2:
-        if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
+        if cliente_seleccionado != "" and not st.session_state.get('mostrar_formulario_editar_cliente', False):
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0, key="vendedor_seleccionado")
 
     # Mostramos los demás campos si se selecciona un cliente y no se está en modo edición
-    if cliente_seleccionado != "" and not st.session_state.get('mostrar_formulario_editar_cliente', False):
+    if cliente_seleccionado != "" and not st.session_state.get('mostrar_formulario_editar_cliente', False) and not st.session_state.get('mostrar_formulario_cliente', False):
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
         # Mostrar descuento
@@ -697,7 +707,8 @@ def modulo_ventas():
             forma_pago = st.selectbox(
                 "💳 Forma de Pago",
                 ["CC", "Contado", "Depósito/Transferencia"],
-                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
+                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
+                key="forma_pago_cliente_seleccionado"
             )
 
         # Desplegable para las notas del cliente con opción de editar
@@ -708,12 +719,12 @@ def modulo_ventas():
 
         if st.session_state.get('editar_notas_cliente', False):
             with st.form("form_editar_notas"):
-                nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''))
-                submit_nuevas_notas = st.form_submit_button("Guardar Notas")
+                nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''), key="nuevas_notas_cliente")
+                submit_nuevas_notas = st.form_submit_button("Guardar Notas", key="submit_nuevas_notas")
 
                 if submit_nuevas_notas:
                     index_cliente = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].index[0]
-                    st.session_state.df_clientes.at[index_cliente, 'Notas'] = nuevas_notas
+                    st.session_state.df_clientes.at[index_cliente, 'Notas'] = nuevas_notas.strip()
                     st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
                     st.success("Notas actualizadas exitosamente.")
                     st.session_state['editar_notas_cliente'] = False
@@ -730,6 +741,8 @@ def modulo_ventas():
         # Aquí continúa el código para manejar productos y pedidos
         # Asegúrate de que todos los widgets tengan claves únicas
 
+        # ... [Aquí debes insertar el resto del código que maneja productos y el pedido actual, asegurándote de que todas las claves sean únicas]
+
     # Si no hay cliente seleccionado
     elif cliente_seleccionado == "" and not st.session_state.get('mostrar_formulario_cliente', False):
         st.info("Por favor, selecciona un cliente para continuar.")
@@ -738,7 +751,6 @@ def modulo_ventas():
 
 # Llamada a la función principal del módulo
 modulo_ventas()
-
 
 
 
