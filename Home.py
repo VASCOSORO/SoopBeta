@@ -535,31 +535,32 @@ def obtener_pedidos_cliente(cliente_nombre):
         return pd.DataFrame()
 
 def modulo_ventas():
-    # CSS to adjust the spacing between the header and the button
+    # CSS para ajustar el espacio entre el encabezado y el botón
     st.markdown("""
         <style>
-        .header-button-container {
+        .header-button {
             display: flex;
             align-items: center;
         }
-        .header-button-container h1 {
+        .header-button h1 {
             margin: 0;
-            padding-right: 5px;
+            padding: 0;
         }
-        .header-button-container .stButton {
-            margin-top: 0px;
+        .header-button .stButton {
+            margin-left: 10px;
+            margin-top: 0;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # Header with the '+' button immediately after 'Crear Pedido'
-    st.markdown('<div class="header-button-container">', unsafe_allow_html=True)
-    st.header("🎐 Crear Pedido", anchor=False)
+    # Encabezado con el botón '+' inmediatamente después de 'Crear Pedido'
+    st.markdown('<div class="header-button">', unsafe_allow_html=True)
+    st.header('🎐 Crear Pedido', anchor=False)
     if st.button("➕", key="btn_agregar_cliente"):
         st.session_state['mostrar_formulario_cliente'] = True
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Initialize session_state variables if they don't exist
+    # Inicializar variables en session_state si no existen
     if 'pedido' not in st.session_state:
         st.session_state.pedido = []
     if 'delete_confirm' not in st.session_state:
@@ -567,7 +568,7 @@ def modulo_ventas():
     if 'editar_cantidad' not in st.session_state:
         st.session_state.editar_cantidad = {}
 
-    # Show the form to add a new client if the button is pressed
+    # Mostrar formulario para agregar nuevo cliente si se ha presionado el botón
     if st.session_state.get('mostrar_formulario_cliente', False):
         st.subheader("Agregar Nuevo Cliente")
         with st.form("form_nuevo_cliente"):
@@ -616,7 +617,7 @@ def modulo_ventas():
             elif cancelar_nuevo_cliente:
                 st.session_state['mostrar_formulario_cliente'] = False
 
-    # Place 'Buscar cliente' and 'Vendedor asignado' on the same line
+    # Colocamos el buscador de cliente y vendedor asignado en la misma línea
     col_cliente, col_vendedor = st.columns(2)
 
     with col_cliente:
@@ -970,6 +971,7 @@ def modulo_ventas():
 
 # Llamada a la función principal del módulo
 modulo_ventas()
+
 
 
 # ===============================
