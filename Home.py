@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas
+# Módulo Ventas 2.1
 # ===============================
 
 import streamlit as st
