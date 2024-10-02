@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1
+# Módulo Ventas 2.1.1
 # ===============================
 
 import streamlit as st
@@ -535,7 +535,7 @@ def obtener_pedidos_cliente(cliente_nombre):
         return pd.DataFrame()
 
 def modulo_ventas():
-    st.header("🎐 Crear Pedido")
+    st.header("🎐 Crear Pedido 2.1.1")
 
     # Inicializar el pedido y variables en session_state si no existen
     if 'pedido' not in st.session_state:
@@ -580,177 +580,184 @@ def modulo_ventas():
                 if st.button("✏️", key="btn_editar_cliente"):
                     st.session_state['mostrar_formulario_editar_cliente'] = True
 
-        # Mostrar formulario para agregar nuevo cliente si se ha presionado el botón
-        if st.session_state.get('mostrar_formulario_cliente', False):
-            st.subheader("Agregar Nuevo Cliente")
-            with st.form("form_nuevo_cliente"):
-                nombre_cliente = st.text_input("Nombre del Cliente", key="nombre_cliente_nuevo")
-                direccion_cliente = st.text_input("Dirección", key="direccion_cliente_nuevo")
-                instagram_cliente = st.text_input("Instagram", key="instagram_cliente_nuevo")
-                telefono_cliente = st.text_input("Número de Teléfono", key="telefono_cliente_nuevo")
-                referido = st.checkbox("Referido", key="referido_cliente_nuevo")
-                descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0, key="descuento_cliente_nuevo")
-                estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], key="estado_credito_cliente_nuevo")
-                forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], key="forma_pago_cliente_nuevo")
-                notas_cliente = st.text_area("Notas del Cliente", key="notas_cliente_nuevo")
-                vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(), key="vendedor_asignado_cliente_nuevo")
-                col_submit, col_cancel = st.columns(2)
-                submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente", key="submit_nuevo_cliente")
-                cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar", key="cancelar_nuevo_cliente")
+    # Mostrar formulario para agregar nuevo cliente si se ha presionado el botón
+    if st.session_state.get('mostrar_formulario_cliente', False):
+        st.subheader("Agregar Nuevo Cliente")
+        with st.form("form_nuevo_cliente"):
+            nombre_cliente = st.text_input("Nombre del Cliente", key="nombre_cliente_nuevo")
+            direccion_cliente = st.text_input("Dirección", key="direccion_cliente_nuevo")
+            instagram_cliente = st.text_input("Instagram", key="instagram_cliente_nuevo")
+            telefono_cliente = st.text_input("Número de Teléfono", key="telefono_cliente_nuevo")
+            referido = st.checkbox("Referido", key="referido_cliente_nuevo")
+            descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0, key="descuento_cliente_nuevo")
+            estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], key="estado_credito_cliente_nuevo")
+            forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], key="forma_pago_cliente_nuevo")
+            notas_cliente = st.text_area("Notas del Cliente", key="notas_cliente_nuevo")
+            vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(), key="vendedor_asignado_cliente_nuevo")
+            col_submit, col_cancel = st.columns(2)
+            submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente", key="submit_nuevo_cliente")
+            cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar", key="cancelar_nuevo_cliente")
 
-                if submit_nuevo_cliente:
-                    if nombre_cliente.strip() == "":
-                        st.error("El nombre del cliente no puede estar vacío.")
-                    else:
-                        nuevo_cliente = {
-                            'Nombre': nombre_cliente.strip(),
-                            'Dirección': direccion_cliente.strip(),
-                            'Instagram': instagram_cliente.strip(),
-                            'Teléfono': telefono_cliente.strip(),
-                            'Referido': 'Sí' if referido else 'No',
-                            'Descuento': descuento_cliente,
-                            'Estado Credito': estado_credito,
-                            'Forma Pago': forma_pago,
-                            'Notas': notas_cliente.strip(),
-                            'Vendedores': vendedor_asignado,
-                            'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }
-                        st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
-                        # Guardar en Excel
-                        try:
-                            st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
-                            st.success("Cliente agregado exitosamente.")
-                            # Actualizar la lista de clientes en el selectbox
-                            st.session_state['mostrar_formulario_cliente'] = False
-                            # Seleccionar automáticamente el nuevo cliente
-                            st.session_state['cliente_seleccionado'] = nombre_cliente.strip()
-                        except Exception as e:
-                            st.error(f"Error al guardar el cliente: {e}")
-                elif cancelar_nuevo_cliente:
-                    st.session_state['mostrar_formulario_cliente'] = False
-
-        # Mostrar formulario para editar cliente si se ha presionado el botón
-        if st.session_state.get('mostrar_formulario_editar_cliente', False):
-            st.subheader("Editar Cliente")
-            cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
-            with st.form("form_editar_cliente"):
-                nombre_cliente = st.text_input("Nombre del Cliente", value=cliente_data['Nombre'], key="nombre_cliente_editar")
-                direccion_cliente = st.text_input("Dirección", value=cliente_data.get('Dirección', ''), key="direccion_cliente_editar")
-                instagram_cliente = st.text_input("Instagram", value=cliente_data.get('Instagram', ''), key="instagram_cliente_editar")
-                telefono_cliente = st.text_input("Número de Teléfono", value=cliente_data.get('Teléfono', ''), key="telefono_cliente_editar")
-                referido = st.checkbox("Referido", value=(cliente_data.get('Referido', 'No') == 'Sí'), key="referido_cliente_editar")
-                descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=int(cliente_data.get('Descuento', 0)), key="descuento_cliente_editar")
-                estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares')), key="estado_credito_cliente_editar")
-                forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')), key="forma_pago_cliente_editar")
-                notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''), key="notas_cliente_editar")
-                vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(), index=st.session_state.df_equipo['Nombre'].tolist().index(cliente_data.get('Vendedores', st.session_state.df_equipo['Nombre'].tolist()[0])), key="vendedor_asignado_cliente_editar")
-                col_submit, col_cancel = st.columns(2)
-                submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios", key="submit_editar_cliente")
-                cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar", key="cancelar_editar_cliente")
-
-                if submit_editar_cliente:
-                    # Actualizar los datos del cliente
-                    index_cliente = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].index[0]
-                    st.session_state.df_clientes.at[index_cliente, 'Nombre'] = nombre_cliente.strip()
-                    st.session_state.df_clientes.at[index_cliente, 'Dirección'] = direccion_cliente.strip()
-                    st.session_state.df_clientes.at[index_cliente, 'Instagram'] = instagram_cliente.strip()
-                    st.session_state.df_clientes.at[index_cliente, 'Teléfono'] = telefono_cliente.strip()
-                    st.session_state.df_clientes.at[index_cliente, 'Referido'] = 'Sí' if referido else 'No'
-                    st.session_state.df_clientes.at[index_cliente, 'Descuento'] = descuento_cliente
-                    st.session_state.df_clientes.at[index_cliente, 'Estado Credito'] = estado_credito
-                    st.session_state.df_clientes.at[index_cliente, 'Forma Pago'] = forma_pago
-                    st.session_state.df_clientes.at[index_cliente, 'Notas'] = notas_cliente.strip()
-                    st.session_state.df_clientes.at[index_cliente, 'Vendedores'] = vendedor_asignado
-                    st.session_state.df_clientes.at[index_cliente, 'Fecha Modificado'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    # Si el nombre ha cambiado, actualizar 'cliente_seleccionado'
-                    st.session_state['cliente_seleccionado'] = nombre_cliente.strip()
+            if submit_nuevo_cliente:
+                if nombre_cliente.strip() == "":
+                    st.error("El nombre del cliente no puede estar vacío.")
+                else:
+                    nuevo_cliente = {
+                        'Nombre': nombre_cliente.strip(),
+                        'Dirección': direccion_cliente.strip(),
+                        'Instagram': instagram_cliente.strip(),
+                        'Teléfono': telefono_cliente.strip(),
+                        'Referido': 'Sí' if referido else 'No',
+                        'Descuento': descuento_cliente,
+                        'Estado Credito': estado_credito,
+                        'Forma Pago': forma_pago,
+                        'Notas': notas_cliente.strip(),
+                        'Vendedores': vendedor_asignado,
+                        'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
                     # Guardar en Excel
                     try:
                         st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
-                        st.success("Cliente actualizado exitosamente.")
-                        st.session_state['mostrar_formulario_editar_cliente'] = False
+                        st.success("Cliente agregado exitosamente.")
+                        # Actualizar la lista de clientes en el selectbox
+                        st.session_state['mostrar_formulario_cliente'] = False
+                        # Seleccionar automáticamente el nuevo cliente
+                        st.session_state['cliente_seleccionado'] = nombre_cliente.strip()
                     except Exception as e:
-                        st.error(f"Error al actualizar el cliente: {e}")
-                elif cancelar_editar_cliente:
-                    st.session_state['mostrar_formulario_editar_cliente'] = False
+                        st.error(f"Error al guardar el cliente: {e}")
+            elif cancelar_nuevo_cliente:
+                st.session_state['mostrar_formulario_cliente'] = False
 
-    with col2:
-        if cliente_seleccionado != "" and not st.session_state.get('mostrar_formulario_editar_cliente', False):
-            cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
-            vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0, key="vendedor_seleccionado")
-
-    # Mostramos los demás campos si se selecciona un cliente y no se está en modo edición
-    if cliente_seleccionado != "" and not st.session_state.get('mostrar_formulario_editar_cliente', False) and not st.session_state.get('mostrar_formulario_cliente', False):
+    # Mostrar formulario para editar cliente si se ha presionado el botón
+    elif st.session_state.get('mostrar_formulario_editar_cliente', False):
+        st.subheader("Editar Cliente")
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+        with st.form("form_editar_cliente"):
+            nombre_cliente = st.text_input("Nombre del Cliente", value=cliente_data['Nombre'], key="nombre_cliente_editar")
+            direccion_cliente = st.text_input("Dirección", value=cliente_data.get('Dirección', ''), key="direccion_cliente_editar")
+            instagram_cliente = st.text_input("Instagram", value=cliente_data.get('Instagram', ''), key="instagram_cliente_editar")
+            telefono_cliente = st.text_input("Número de Teléfono", value=cliente_data.get('Teléfono', ''), key="telefono_cliente_editar")
+            referido = st.checkbox("Referido", value=(cliente_data.get('Referido', 'No') == 'Sí'), key="referido_cliente_editar")
+            descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=int(cliente_data.get('Descuento', 0)), key="descuento_cliente_editar")
+            estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'],
+                                          index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares')),
+                                          key="estado_credito_cliente_editar")
+            forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"],
+                                      index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
+                                      key="forma_pago_cliente_editar")
+            notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''), key="notas_cliente_editar")
+            vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(),
+                                             index=st.session_state.df_equipo['Nombre'].tolist().index(cliente_data.get('Vendedores', st.session_state.df_equipo['Nombre'].tolist()[0])),
+                                             key="vendedor_asignado_cliente_editar")
+            col_submit, col_cancel = st.columns(2)
+            submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios", key="submit_editar_cliente")
+            cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar", key="cancelar_editar_cliente")
 
-        # Mostrar descuento
-        st.write(f"**D%:** {cliente_data.get('Descuento', 0)}%")
-
-        # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.write(f"**ÚC:** {cliente_data.get('Fecha Modificado', 'N/A')}")
-
-        with col2:
-            opciones_credito = {
-                'Buen pagador': '🟢',
-                'Pagos regulares': '🟡',
-                'Mal pagador': '🔴'
-            }
-            credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')
-            color_credito = opciones_credito.get(credito_cliente, '🟡')
-            st.write(f"**Estado de Crédito:** {color_credito} {credito_cliente}")
-
-        with col3:
-            forma_pago = st.selectbox(
-                "💳 Forma de Pago",
-                ["CC", "Contado", "Depósito/Transferencia"],
-                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
-                key="forma_pago_cliente_seleccionado"
-            )
-
-        # Desplegable para las notas del cliente con opción de editar
-        with st.expander("🔖 Notas del Cliente", expanded=False):
-            st.write(cliente_data.get('Notas', ''))
-            if st.button("Editar Notas", key="btn_editar_notas"):
-                st.session_state['editar_notas_cliente'] = True
-
-        if st.session_state.get('editar_notas_cliente', False):
-            with st.form("form_editar_notas"):
-                nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''), key="nuevas_notas_cliente")
-                submit_nuevas_notas = st.form_submit_button("Guardar Notas", key="submit_nuevas_notas")
-
-                if submit_nuevas_notas:
-                    index_cliente = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].index[0]
-                    st.session_state.df_clientes.at[index_cliente, 'Notas'] = nuevas_notas.strip()
+            if submit_editar_cliente:
+                # Actualizar los datos del cliente
+                index_cliente = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].index[0]
+                st.session_state.df_clientes.at[index_cliente, 'Nombre'] = nombre_cliente.strip()
+                st.session_state.df_clientes.at[index_cliente, 'Dirección'] = direccion_cliente.strip()
+                st.session_state.df_clientes.at[index_cliente, 'Instagram'] = instagram_cliente.strip()
+                st.session_state.df_clientes.at[index_cliente, 'Teléfono'] = telefono_cliente.strip()
+                st.session_state.df_clientes.at[index_cliente, 'Referido'] = 'Sí' if referido else 'No'
+                st.session_state.df_clientes.at[index_cliente, 'Descuento'] = descuento_cliente
+                st.session_state.df_clientes.at[index_cliente, 'Estado Credito'] = estado_credito
+                st.session_state.df_clientes.at[index_cliente, 'Forma Pago'] = forma_pago
+                st.session_state.df_clientes.at[index_cliente, 'Notas'] = notas_cliente.strip()
+                st.session_state.df_clientes.at[index_cliente, 'Vendedores'] = vendedor_asignado
+                st.session_state.df_clientes.at[index_cliente, 'Fecha Modificado'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # Si el nombre ha cambiado, actualizar 'cliente_seleccionado'
+                st.session_state['cliente_seleccionado'] = nombre_cliente.strip()
+                # Guardar en Excel
+                try:
                     st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
-                    st.success("Notas actualizadas exitosamente.")
-                    st.session_state['editar_notas_cliente'] = False
+                    st.success("Cliente actualizado exitosamente.")
+                    st.session_state['mostrar_formulario_editar_cliente'] = False
+                except Exception as e:
+                    st.error(f"Error al actualizar el cliente: {e}")
+            elif cancelar_editar_cliente:
+                st.session_state['mostrar_formulario_editar_cliente'] = False
 
-        # Mostrar datos extra del cliente
-        with st.expander("📋 Ver datos extra del cliente"):
-            st.write(f"**Dirección:** {cliente_data.get('Dirección', 'No disponible')}")
-            st.write(f"**Instagram:** {cliente_data.get('Instagram', 'No disponible')}")
-            st.write(f"**Número de Teléfono:** {cliente_data.get('Teléfono', 'No disponible')}")
-            st.write(f"**Referido:** {cliente_data.get('Referido', 'No')}")
+    else:
+        with col2:
+            if cliente_seleccionado != "":
+                cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+                vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
+                vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0, key="vendedor_seleccionado")
 
-        # El resto del código permanece igual, incluyendo la sección de pedidos y productos
+        # Mostramos los demás campos si se selecciona un cliente y no se está en modo edición
+        if cliente_seleccionado != "":
+            cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Aquí continúa el código para manejar productos y pedidos
-        # Asegúrate de que todos los widgets tengan claves únicas
+            # Mostrar descuento
+            st.write(f"**D%:** {cliente_data.get('Descuento', 0)}%")
 
-        # ... [Aquí debes insertar el resto del código que maneja productos y el pedido actual, asegurándote de que todas las claves sean únicas]
+            # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
+            col1, col2, col3 = st.columns(3)
 
-    # Si no hay cliente seleccionado
-    elif cliente_seleccionado == "" and not st.session_state.get('mostrar_formulario_cliente', False):
+            with col1:
+                st.write(f"**ÚC:** {cliente_data.get('Fecha Modificado', 'N/A')}")
+
+            with col2:
+                opciones_credito = {
+                    'Buen pagador': '🟢',
+                    'Pagos regulares': '🟡',
+                    'Mal pagador': '🔴'
+                }
+                credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')
+                color_credito = opciones_credito.get(credito_cliente, '🟡')
+                st.write(f"**Estado de Crédito:** {color_credito} {credito_cliente}")
+
+            with col3:
+                forma_pago = st.selectbox(
+                    "💳 Forma de Pago",
+                    ["CC", "Contado", "Depósito/Transferencia"],
+                    index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
+                    key="forma_pago_cliente_seleccionado"
+                )
+
+            # Desplegable para las notas del cliente con opción de editar
+            with st.expander("🔖 Notas del Cliente", expanded=False):
+                st.write(cliente_data.get('Notas', ''))
+                if st.button("Editar Notas", key="btn_editar_notas"):
+                    st.session_state['editar_notas_cliente'] = True
+
+            if st.session_state.get('editar_notas_cliente', False):
+                with st.form("form_editar_notas"):
+                    nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''), key="nuevas_notas_cliente")
+                    submit_nuevas_notas = st.form_submit_button("Guardar Notas", key="submit_nuevas_notas")
+
+                    if submit_nuevas_notas:
+                        index_cliente = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].index[0]
+                        st.session_state.df_clientes.at[index_cliente, 'Notas'] = nuevas_notas.strip()
+                        st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
+                        st.success("Notas actualizadas exitosamente.")
+                        st.session_state['editar_notas_cliente'] = False
+
+            # Mostrar datos extra del cliente
+            with st.expander("📋 Ver datos extra del cliente"):
+                st.write(f"**Dirección:** {cliente_data.get('Dirección', 'No disponible')}")
+                st.write(f"**Instagram:** {cliente_data.get('Instagram', 'No disponible')}")
+                st.write(f"**Número de Teléfono:** {cliente_data.get('Teléfono', 'No disponible')}")
+                st.write(f"**Referido:** {cliente_data.get('Referido', 'No')}")
+
+            # Aquí continúa el código para manejar productos y pedidos
+            # Asegúrate de que todos los widgets tengan claves únicas
+
+            # ... [Aquí debes insertar el resto del código que maneja productos y el pedido actual, asegurándote de que todas las claves sean únicas]
+
+    # Si no hay cliente seleccionado y no se está mostrando un formulario
+    if cliente_seleccionado == "" and not st.session_state.get('mostrar_formulario_cliente', False):
         st.info("Por favor, selecciona un cliente para continuar.")
 
     # Continuar con el resto del código de tu aplicación
+    # Asegúrate de añadir el resto del código para manejar los productos y el pedido actual
 
 # Llamada a la función principal del módulo
 modulo_ventas()
+
 
 
 
