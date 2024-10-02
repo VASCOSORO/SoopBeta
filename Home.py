@@ -580,6 +580,20 @@ def modulo_ventas():
                 if st.button("✏️", key='btn_editar_cliente'):
                     st.session_state['mostrar_formulario_editar_cliente'] = True
 
+    # Mostrar datos del cliente seleccionado
+    if cliente_seleccionado and not st.session_state.get('mostrar_formulario_cliente', False) and not st.session_state.get('mostrar_formulario_editar_cliente', False):
+        st.subheader(f"Información del Cliente: {cliente_seleccionado}")
+        cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
+        st.write(f"**Dirección:** {cliente_data.get('Dirección', '')}")
+        st.write(f"**Instagram:** {cliente_data.get('Instagram', '')}")
+        st.write(f"**Teléfono:** {cliente_data.get('Teléfono', '')}")
+        st.write(f"**Referido:** {cliente_data.get('Referido', '')}")
+        st.write(f"**Descuento (%):** {cliente_data.get('Descuento', 0)}")
+        st.write(f"**Estado de Crédito:** {cliente_data.get('Estado Credito', '')}")
+        st.write(f"**Forma de Pago:** {cliente_data.get('Forma Pago', '')}")
+        st.write(f"**Notas:** {cliente_data.get('Notas', '')}")
+        st.write(f"**Vendedor Asignado:** {cliente_data.get('Vendedores', '')}")
+
     # Mostrar formulario para agregar nuevo cliente
     if st.session_state.get('mostrar_formulario_cliente', False):
         st.subheader("Agregar Cliente")
@@ -871,6 +885,7 @@ def modulo_ventas():
 
 # Ejecutar el módulo de ventas
 modulo_ventas()
+
 
 
 # ===============================
