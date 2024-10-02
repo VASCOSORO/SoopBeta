@@ -1267,7 +1267,7 @@ import streamlit as st
 # Módulo Estadísticas Adaptado 2.0
 # ===============================
 
-def modulo_estadistica():
+def modulo_estadistica_leads():
     st.header("📈 Módulo Estadísticas Mejorado 📊")
 
     # Incluir un cargador de archivo para permitir la carga de Excel
@@ -1312,8 +1312,43 @@ def modulo_estadistica():
     else:
         st.info("Por favor, carga un archivo Excel para ver las estadísticas.")
 
-# Llamar a la función del módulo en la app de Streamlit
-modulo_estadistica()
+# ===============================
+# Nueva Sección - Reportes de Leads
+# ===============================
+
+def modulo_reportes_leads():
+    st.header("📊 Módulo de Reportes de Leads")
+
+    # Subir archivo CSV para los leads
+    archivo_csv = st.file_uploader("Subir archivo CSV de Leads", type=["csv"])
+
+    if archivo_csv is not None:
+        # Cargar el archivo CSV subido
+        df_leads = pd.read_csv(archivo_csv)
+        df_leads['Last Action At'] = pd.to_datetime(df_leads['Last Action At'], errors='coerce')
+
+        # Mostrar el total de leads por asesora
+        st.subheader("Total de Leads por Asesora en el Último Día")
+        ultimo_dia = df_leads['Last Action At'].dt.date.max()
+        leads_ultimo_dia = df_leads[df_leads['Last Action At'].dt.date == ultimo_dia]
+        leads_por_asesora_dia = leads_ultimo_dia['User Assigned'].value_counts()
+        st.table(leads_por_asesora_dia)
+
+        # Mostrar el total de leads por asesora en la última semana
+        st.subheader("Total de Leads por Asesora en la Última Semana")
+        ultima_semana = df_leads[df_leads['Last Action At'] >= pd.Timestamp.now() - pd.Timedelta(weeks=1)]
+        leads_por_asesora_semana = ultima_semana['User Assigned'].value_counts()
+        st.table(leads_por_asesora_semana)
+
+        # Mostrar el total de leads por asesora en el último mes
+        st.subheader("Total de Leads por Asesora en el Último Mes")
+        ultimo_mes = df_leads[df_leads['Last Action At'] >= pd.Timestamp.now() - pd.DateOffset(months=1)]
+        leads_por_asesora_mes = ultimo_mes['User Assigned'].value_counts()
+        st.table(leads_por_asesora_mes)
+    else:
+        st.info("Por favor, sube un archivo CSV para ver los reportes de leads.")
+
+
 
 
 # ===============================
