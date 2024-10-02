@@ -744,8 +744,10 @@ def modulo_ventas():
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Mostrar descuento
-        st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
+       # Mostrar descuento centrado
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
 
         # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
         col1, col2, col3 = st.columns(3)
