@@ -1012,6 +1012,115 @@ def modulo_ventas():
 
     # Ejecutar el módulo de ventas
     modulo_ventas()
+ # ----------------------------
+    # Sección para mostrar el pedido actual
+    # ----------------------------
+    st.header("🛒 Pedido Actual")
+
+    if st.session_state.pedido:
+        # Mostrar la tabla del pedido con la opción de eliminar ítems y editar cantidad
+        for idx, producto in enumerate(st.session_state.pedido):
+            codigo = producto['Codigo']
+            nombre = producto['Nombre']
+            cantidad = producto['Cantidad']
+            precio = producto['Precio']
+            importe = producto['Importe']
+            pendiente = producto.get('Pendiente', False)
+
+            # Crear columnas para mostrar el producto y los botones
+            col1, col2, col3, col4, col5, col6, col7 = st.columns([1, 2, 1, 1, 1, 1, 1])
+            col1.write(codigo)
+            col2.write(nombre)
+            if codigo in st.session_state.editar_cantidad:
+                nueva_cantidad = col3.number_input("Cantidad", min_value=1, value=cantidad, key=f"nueva_cantidad_{codigo}")
+                actualizar = col3.button("Actualizar", key=f"actualizar_{codigo}")
+                cancelar = col3.button("Cancelar", key=f"cancelar_{codigo}")
+                if actualizar:
+                    # Actualizar la cantidad en el pedido
+                    st.session_state.pedido[idx]['Cantidad'] = nueva_cantidad
+                    st.session_state.pedido[idx]['Importe'] = nueva_cantidad * precio
+                    st.session_state.editar_cantidad.pop(codigo)
+                elif cancelar:
+                    st.session_state.editar_cantidad.pop(codigo)
+            else:
+                col3.write(cantidad)
+            col4.write(f"${precio}")
+            col5.write(f"${importe}")
+
+            # Indicar si el producto está pendiente de obtener
+            if pendiente:
+                col6.write("⏳ Pendiente")
+            else:
+                col6.write("✔️")
+
+            # Botones de editar y eliminar
+            with col7:
+                editar, eliminar = st.columns(2)
+                if editar.button('✏️', key=f"editar_{codigo}"):
+                    st.session_state.editar_cantidad[codigo] = True
+                if eliminar.button('🗑️', key=f"eliminar_{codigo}"):
+                    # Remover el producto del pedido
+                    st.session_state.pedido.pop(idx)
+                    # Reponer el stock si corresponde
+                    if not pendiente:
+                        st.session_state.df_productos.loc[
+                            st.session_state.df_productos['Codigo'] == codigo, 'Stock'
+                        ] += cantidad
+                    break  # Salir del bucle para evitar errores de índice
+
+        # Calcular totales
+        pedido_df = pd.DataFrame(st.session_state.pedido)
+        total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
+        total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
+
+        # Mostrar total de ítems y total del pedido
+        col_items, col_total = st.columns([1, 1])
+
+        with col_items:
+            st.write(f"**Total de ítems:** {total_items}")
+
+        with col_total:
+            st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
+
+        # Botón para guardar pedido
+        col_guardar, _ = st.columns([2, 3])
+        with col_guardar:
+            if st.button("Guardar Pedido"):
+                if not st.session_state.pedido:
+                    st.warning("No hay ítems en el pedido para guardar.")
+                else:
+                    # Obtener fecha y hora actuales
+                    now = datetime.now()
+                    fecha_actual = now.strftime("%Y-%m-%d")
+                    hora_actual = now.strftime("%H:%M:%S")
+
+                    # Preparar datos del pedido
+                    order_data = {
+                        'cliente': cliente_seleccionado,
+                        'vendedor': vendedor_seleccionado,
+                        'fecha': fecha_actual,
+                        'hora': hora_actual,
+                        'items': st.session_state.pedido
+                    }
+
+                    # Guardar el pedido en la hoja 'Pedidos' de 'AdministracionSoop.xlsx'
+                    guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
+
+                    # Confirmar al usuario
+                    st.success("Pedido guardado exitosamente.", icon="✅")
+
+                    # Limpiar el pedido después de guardarlo
+                    st.session_state.pedido = []
+                    st.session_state.delete_confirm = {}
+
+                    # Guardar los cambios en el stock de productos
+                    try:
+                        st.session_state.df_productos.to_excel('archivo_modificado_productos.xlsx', index=False)
+                        st.success("Stock de productos actualizado correctamente.", icon="✅")
+                    except Exception as e:
+                        st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
+    else:
+        st.info("No hay productos en el pedido actual.")
 
 
 
