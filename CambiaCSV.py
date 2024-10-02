@@ -144,8 +144,8 @@ if uploaded_file_productos is not None:
         'Precio Jugueterias Face': 'Precio',       # Cambio de 'Precio Jugueterias Face' a 'Precio'
         'Costo FOB': 'Costo usd'                   # Cambio de 'Costo FOB' a 'Costo usd'
     }
-    columnas_a_eliminar = ['Precio 25 plus', 'Precio face+50', 'Precio BONUS']
-    columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento']
+    columnas_a_eliminar = ['Precio 25 plus', 'Precio face+50', 'Precio BONUS', 'Precio Mayorista', 'Precio Online', 'Precio face Dolar']
+    columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento', 'Columna']
     columnas_id = ['Id']
 
     procesar_archivo(
