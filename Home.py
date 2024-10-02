@@ -555,19 +555,19 @@ def modulo_ventas():
     if st.session_state.get('mostrar_formulario_cliente', False):
         st.subheader("Agregar Nuevo Cliente")
         with st.form("form_nuevo_cliente"):
-            nombre_cliente = st.text_input("Nombre del Cliente")
-            direccion_cliente = st.text_input("Dirección")
-            instagram_cliente = st.text_input("Instagram")
-            telefono_cliente = st.text_input("Número de Teléfono")
-            referido = st.checkbox("Referido")
-            descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0)
-            estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'])
-            forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
-            notas_cliente = st.text_area("Notas del Cliente")
-            vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
+            nombre_cliente = st.text_input("Nombre del Cliente", key="nombre_cliente")
+            direccion_cliente = st.text_input("Dirección", key="direccion_cliente")
+            instagram_cliente = st.text_input("Instagram", key="instagram_cliente")
+            telefono_cliente = st.text_input("Número de Teléfono", key="telefono_cliente")
+            referido = st.checkbox("Referido", key="referido_cliente")
+            descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0, key="descuento_cliente")
+            estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], key="estado_credito_cliente")
+            forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], key="forma_pago_cliente")
+            notas_cliente = st.text_area("Notas del Cliente", key="notas_cliente")
+            vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(), key="vendedor_asignado_cliente")
             col_submit, col_cancel = st.columns(2)
-            submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
-            cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
+            submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente", key="submit_nuevo_cliente")
+            cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar", key="cancelar_nuevo_cliente")
 
             if submit_nuevo_cliente:
                 if nombre_cliente.strip() == "":
@@ -619,7 +619,7 @@ def modulo_ventas():
         ].iloc[0]
         vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
         with col_vendedor:
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0, key="vendedor_seleccionado")
 
         # Mostrar descuento
         st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
@@ -644,7 +644,8 @@ def modulo_ventas():
             forma_pago = st.selectbox(
                 "💳 Forma de Pago",
                 ["CC", "Contado", "Depósito/Transferencia"],
-                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
+                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')),
+                key="forma_pago_cliente_seleccionado"
             )
 
         # Desplegable para las notas del cliente con opción de editar
@@ -655,8 +656,8 @@ def modulo_ventas():
 
         if st.session_state.get('editar_notas_cliente', False):
             with st.form("form_editar_notas"):
-                nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''))
-                submit_nuevas_notas = st.form_submit_button("Guardar Notas")
+                nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''), key="nuevas_notas_cliente")
+                submit_nuevas_notas = st.form_submit_button("Guardar Notas", key="submit_nuevas_notas")
 
                 if submit_nuevas_notas:
                     st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 'Notas'] = nuevas_notas
@@ -681,7 +682,7 @@ def modulo_ventas():
 
         # Rubros del cliente: Ficticios en un desplegable
         rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]
-        rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
+        rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos", key="rubros_seleccionados")
 
         # Lógica para filtrar productos por la columna 'Categorias'
         if rubros_seleccionados:
@@ -764,7 +765,7 @@ def modulo_ventas():
             st.markdown(f"**Disponible en Suc2:** {suc2_text}", unsafe_allow_html=True)
 
             # Checkbox para mostrar más detalles directamente
-            mostrar_mas = st.checkbox("Mostrar más detalles del producto")
+            mostrar_mas = st.checkbox("Mostrar más detalles del producto", key="mostrar_mas_detalles_producto")
 
             if mostrar_mas:
                 descripcion = producto_data.get('Descripcion', 'No disponible')
@@ -912,7 +913,7 @@ def modulo_ventas():
             # Botón para guardar pedido
             col_guardar, _ = st.columns([2, 3])
             with col_guardar:
-                if st.button("Guardar Pedido"):
+                if st.button("Guardar Pedido", key="guardar_pedido"):
                     if not st.session_state.pedido:
                         st.warning("No hay ítems en el pedido para guardar.")
                     else:
@@ -953,7 +954,6 @@ def modulo_ventas():
 
 # Llamada a la función principal del módulo
 modulo_ventas()
-
 
 
    
