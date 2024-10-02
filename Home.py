@@ -1088,6 +1088,8 @@ def modulo_ventas():
 # ===============================
 # Módulo Estadísticas Adaptado
 # ===============================
+
+
 def modulo_estadistica():
     st.header("📈 Módulo Estadísticas Mejorado 📊")
 
