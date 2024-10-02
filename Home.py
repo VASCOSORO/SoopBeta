@@ -278,6 +278,12 @@ def guardar_pedido_excel(file_path, order_data):
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
 
+
+# ===============================
+# Módulo Equipo 2.0
+# ===============================
+
+
 import streamlit as st
 import pandas as pd
 from PIL import Image
