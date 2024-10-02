@@ -1082,7 +1082,188 @@ def modulo_ventas():
     else:
         st.info("No hay productos en el pedido actual.")
 
+# ===============================
+# Módulo Administración
+# ===============================
 
+def modulo_administracion():
+    st.header("🗃️ Administración")
+
+    # Mostrar la caja actual en la parte superior, destacada y con último ingreso/egreso
+    try:
+        ingresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso']['Monto'].sum()
+        egresos = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso']['Monto'].sum()
+        caja_actual = ingresos - egresos
+
+        # Último ingreso y egreso
+        ultimo_ingreso = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Ingreso'].tail(1)
+        ultimo_egreso = st.session_state.df_administracion[st.session_state.df_administracion['Tipo'] == 'Egreso'].tail(1)
+
+        # Manejo seguro de ingreso y egreso vacíos
+        if not ultimo_ingreso.empty:
+            monto_ultimo_ingreso = ultimo_ingreso['Monto'].values[0]
+            moneda_ultimo_ingreso = "USD" if "USD" in ultimo_ingreso['Detalle'].values[0] else "ARS"
+        else:
+            monto_ultimo_ingreso = 0.0
+            moneda_ultimo_ingreso = "ARS"
+
+        if not ultimo_egreso.empty:
+            monto_ultimo_egreso = ultimo_egreso['Monto'].values[0]
+            moneda_ultimo_egreso = "USD" if "USD" in ultimo_egreso['Detalle'].values[0] else "ARS"
+        else:
+            monto_ultimo_egreso = 0.0
+            moneda_ultimo_egreso = "ARS"
+    except KeyError as e:
+        st.error(f"Falta la columna {e} en el DataFrame de administración. Revisa el archivo 'AdministracionSoop.xlsx'.")
+        return  # Detener la ejecución del módulo
+
+    # Sincronizar el estado de mostrar_caja con el ícono del ojo
+    if 'mostrar_caja' not in st.session_state:
+        st.session_state['mostrar_caja'] = True  # Por defecto, mostrar la caja
+
+    col_admin, col_ojo, col_caja = st.columns([2, 1, 1])
+
+    with col_admin:
+        st.subheader("💰 Administración")
+
+    with col_ojo:
+        # Usar un checkbox con el ícono del ojo para alternar la visibilidad de la caja
+        mostrar_caja = st.checkbox("👁️", value=st.session_state['mostrar_caja'])
+        st.session_state['mostrar_caja'] = mostrar_caja
+
+    with col_caja:
+        if st.session_state['mostrar_caja']:
+            # Mostrar caja en verde o rojo si es negativa
+            color_caja = "red" if caja_actual < 0 else "green"
+            st.write(f"<h2 style='color:{color_caja}; text-align: right;'>${caja_actual:,.2f}</h2>", unsafe_allow_html=True)
+
+    # Segunda fila con último ingreso y egreso
+    col_admin2, col_ingreso, col_egreso = st.columns([2, 1, 1])
+
+    with col_ingreso:
+        st.write(f"<span style='color:green; text-decoration: underline;'><strong>Último Ingreso:</strong> ${monto_ultimo_ingreso:,.2f} {moneda_ultimo_ingreso}</span>", unsafe_allow_html=True)
+
+    with col_egreso:
+        st.write(f"<span style='color:red; text-decoration: underline;'><strong>Último Egreso:</strong> ${monto_ultimo_egreso:,.2f} {moneda_ultimo_egreso}</span>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Registrar Ingreso (diseño con secciones desplegables)
+    with st.expander("📥 Registrar Ingreso"):
+        with st.form("form_registrar_ingreso"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                nombre_ingreso = st.text_input("Nombre del Ingreso")
+            with col2:
+                tipo_ingreso = st.selectbox("Tipo de Ingreso", ["Venta Cobrada", "Cobranza"])
+            with col3:
+                monto_ingreso = st.number_input("Monto Ingresado", min_value=0.0, step=100.0)
+
+            col4, col5 = st.columns(2)
+            with col4:
+                fecha_ingreso = st.date_input("Fecha de Ingreso")
+            with col5:
+                hora_ingreso = st.time_input("Hora de Ingreso")
+
+            # Cliente o cobrador según el tipo de ingreso
+            if tipo_ingreso == "Venta Cobrada":
+                cliente_ingreso = st.selectbox("Selecciona el Cliente", st.session_state.df_clientes['Nombre'].unique().tolist())
+            else:
+                cliente_ingreso = st.text_input("Nombre de quien realizó la Cobranza")
+
+            submit_ingreso = st.form_submit_button("Registrar Ingreso")
+
+            if submit_ingreso:
+                if nombre_ingreso.strip() == "":
+                    st.error("El nombre del ingreso no puede estar vacío.")
+                elif monto_ingreso <= 0:
+                    st.error("El monto debe ser mayor a cero.")
+                else:
+                    nuevo_ingreso = {
+                        'Tipo': 'Ingreso',
+                        'Nombre': nombre_ingreso.strip(),
+                        'Detalle': f"{tipo_ingreso} - {cliente_ingreso}",
+                        'Monto': monto_ingreso,
+                        'Fecha': fecha_ingreso.strftime("%Y-%m-%d"),
+                        'Hora': hora_ingreso.strftime("%H:%M:%S")
+                    }
+                    st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_ingreso, ignore_index=True)
+                    st.success(f"Ingreso '{nombre_ingreso}' registrado exitosamente.")
+                    st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
+
+    st.markdown("---")
+
+    # Registrar Egreso (diseño con secciones desplegables)
+    with st.expander("📤 Registrar Egreso"):
+        with st.form("form_registrar_egreso"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                nombre_egreso = st.text_input("Nombre del Egreso")
+            with col2:
+                tipo_egreso = st.selectbox("Tipo de Egreso", ["Gasto", "Proveedor"])
+            with col3:
+                monto_egreso = st.number_input("Monto Egresado", min_value=0.0, step=100.0)
+
+            col4, col5 = st.columns(2)
+            with col4:
+                fecha_egreso = st.date_input("Fecha de Egreso")
+            with col5:
+                hora_egreso = st.time_input("Hora de Egreso")
+
+            if tipo_egreso == "Proveedor":
+                proveedor = st.text_input("Nombre del Proveedor")
+                detalle_boleta = st.text_area("Detalle de la Boleta (Item por Item)")
+            else:
+                proveedor = st.text_input("Destino del Gasto")
+                detalle_boleta = st.text_area("Detalle del Gasto")
+
+            submit_egreso = st.form_submit_button("Registrar Egreso")
+
+            if submit_egreso:
+                if nombre_egreso.strip() == "":
+                    st.error("El nombre del egreso no puede estar vacío.")
+                elif monto_egreso <= 0:
+                    st.error("El monto debe ser mayor a cero.")
+                elif tipo_egreso == "Proveedor" and proveedor.strip() == "":
+                    st.error("El proveedor no puede estar vacío para un egreso a proveedor.")
+                else:
+                    detalle_completo = f"{tipo_egreso} - {proveedor} - {detalle_boleta.strip()}" if tipo_egreso == "Proveedor" else f"{tipo_egreso} - {proveedor} - {detalle_boleta.strip()}"
+                    nuevo_egreso = {
+                        'Tipo': 'Egreso',
+                        'Nombre': nombre_egreso.strip(),
+                        'Detalle': detalle_completo,
+                        'Monto': monto_egreso,
+                        'Fecha': fecha_egreso.strftime("%Y-%m-%d"),
+                        'Hora': hora_egreso.strftime("%H:%M:%S")
+                    }
+                    st.session_state.df_administracion = st.session_state.df_administracion.append(nuevo_egreso, ignore_index=True)
+                    st.success(f"Egreso '{nombre_egreso}' registrado exitosamente.")
+                    st.session_state.df_administracion.to_excel('AdministracionSoop.xlsx', index=False)
+                    
+                    # Si el egreso es a un proveedor, actualizar el stock de productos
+                    if tipo_egreso == "Proveedor":
+                        try:
+                            items = detalle_boleta.strip().split('\n')
+                            for item in items:
+                                if ':' in item:
+                                    codigo, cantidad = item.split(':')
+                                    codigo = codigo.strip()
+                                    cantidad = int(cantidad.strip())
+                                    if codigo in st.session_state.df_productos['Codigo'].values:
+                                        st.session_state.df_productos.loc[st.session_state.df_productos['Codigo'] == codigo, 'Stock'] += cantidad
+                                    else:
+                                        st.warning(f"Producto con código '{codigo}' no encontrado.")
+                            st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                            st.success("Stock de productos actualizado exitosamente.")
+                        except Exception as e:
+                            st.error(f"Error al actualizar el stock de productos: {e}")
+import pandas as pd
+import streamlit as st
+
+import pandas as pd
+import streamlit as st
 
 
 # ===============================
