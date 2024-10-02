@@ -487,12 +487,49 @@ from datetime import datetime
 import os
 
 def guardar_pedido_excel(archivo, order_data):
-    # [Función existente sin cambios]
-    pass
+    """
+    Función para guardar el pedido en un archivo Excel.
+    """
+    try:
+        # Cargar el archivo existente o crear uno nuevo si no existe
+        if os.path.exists(archivo):
+            df_pedidos = pd.read_excel(archivo, sheet_name='Pedidos')
+        else:
+            df_pedidos = pd.DataFrame(columns=['Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
+
+        # Preparar los datos del pedido
+        nuevo_pedido = {
+            'Cliente': order_data['cliente'],
+            'Vendedor': order_data['vendedor'],
+            'Fecha': order_data['fecha'],
+            'Hora': order_data['hora'],
+            'Items': [str(item) for item in order_data['items']]
+        }
+
+        # Añadir el nuevo pedido al DataFrame existente
+        df_pedidos = df_pedidos.append(nuevo_pedido, ignore_index=True)
+
+        # Guardar de vuelta en el archivo Excel
+        with pd.ExcelWriter(archivo, engine='openpyxl', mode='w') as writer:
+            df_pedidos.to_excel(writer, sheet_name='Pedidos', index=False)
+    except Exception as e:
+        st.error(f"Error al guardar el pedido: {e}")
 
 def obtener_pedidos_cliente(cliente_nombre):
-    # [Función existente sin cambios]
-    pass
+    """
+    Función para obtener los pedidos anteriores de un cliente.
+    """
+    archivo = 'AdministracionSoop.xlsx'
+    if os.path.exists(archivo):
+        try:
+            df_pedidos = pd.read_excel(archivo, sheet_name='Pedidos')
+            pedidos_cliente = df_pedidos[df_pedidos['Cliente'] == cliente_nombre]
+            return pedidos_cliente
+        except Exception as e:
+            st.error(f"Error al cargar los pedidos: {e}")
+            return pd.DataFrame()
+    else:
+        return pd.DataFrame()
 
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
@@ -539,8 +576,24 @@ def modulo_ventas():
                 st.subheader("✏️ Editar Cliente")
                 cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
                 with st.form("form_editar_cliente"):
-                    # [Campos del formulario existentes]
-                    
+                    nombre_cliente = st.text_input("Nombre del Cliente", value=cliente_data['Nombre'])
+                    direccion_cliente = st.text_input("Dirección", value=cliente_data.get('Dirección', ''))
+                    instagram_cliente = st.text_input("Instagram", value=cliente_data.get('Instagram', ''))
+                    telefono_cliente = st.text_input("Número de Teléfono", value=cliente_data.get('Teléfono', ''))
+                    referido = st.checkbox("Referido", value=(cliente_data.get('Referido', 'No') == 'Sí'))
+                    descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=cliente_data.get('Descuento', 0))
+                    estado_credito = st.selectbox(
+                        "Estado de Crédito",
+                        ['Buen pagador', 'Pagos regulares', 'Mal pagador'], 
+                        index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares'))
+                    )
+                    forma_pago = st.selectbox(
+                        "Forma de Pago",
+                        ["CC", "Contado", "Depósito/Transferencia"], 
+                        index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
+                    )
+                    notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''))
+
                     # Definir la lista de vendedores
                     vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
                     st.session_state.df_equipo = pd.DataFrame({'Nombre': vendedores_list})
