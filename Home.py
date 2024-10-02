@@ -873,11 +873,6 @@ def modulo_ventas():
 modulo_ventas()
 
 
-
-
-
-
-
 # ===============================
 # Módulo Estadísticas Adaptado
 # ===============================
