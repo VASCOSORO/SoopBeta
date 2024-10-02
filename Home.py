@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1.11
+# Módulo Ventas 2.1.12
 # ===============================
 
 import streamlit as st
@@ -494,9 +494,10 @@ def guardar_pedido_excel(archivo, order_data):
     Función para guardar el pedido en un archivo Excel.
     """
     try:
-        # Cargar el archivo existente o crear uno nuevo si no existe
+        # Cargar todas las hojas existentes
         if os.path.exists(archivo):
-            df_pedidos = pd.read_excel(archivo, sheet_name='Pedidos')
+            with pd.ExcelFile(archivo) as xls:
+                df_pedidos = pd.read_excel(xls, sheet_name='Pedidos')
         else:
             df_pedidos = pd.DataFrame(columns=['Cliente', 'Vendedor', 'Fecha', 'Hora', 'Items'])
 
@@ -512,8 +513,14 @@ def guardar_pedido_excel(archivo, order_data):
         # Añadir el nuevo pedido al DataFrame existente
         df_pedidos = df_pedidos.append(nuevo_pedido, ignore_index=True)
 
-        # Guardar de vuelta en el archivo Excel
-        with pd.ExcelWriter(archivo, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        # Guardar todas las hojas de vuelta en el archivo Excel
+        with pd.ExcelWriter(archivo, engine='openpyxl', mode='w') as writer:
+            if os.path.exists(archivo):
+                with pd.ExcelFile(archivo) as xls:
+                    for sheet in xls.sheet_names:
+                        if sheet != 'Pedidos':
+                            df_sheet = pd.read_excel(xls, sheet_name=sheet)
+                            df_sheet.to_excel(writer, sheet_name=sheet, index=False)
             df_pedidos.to_excel(writer, sheet_name='Pedidos', index=False)
     except Exception as e:
         st.error(f"Error al guardar el pedido: {e}")
@@ -557,32 +564,56 @@ def modulo_ventas():
 
     # Cargar DataFrames si no existen en session_state
     if 'df_clientes' not in st.session_state:
-        st.session_state.df_clientes = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Clientes')
+        try:
+            st.session_state.df_clientes = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Clientes')
+        except Exception as e:
+            st.error(f"Error al cargar los clientes: {e}")
+            st.stop()
     if 'df_equipo' not in st.session_state:
-        st.session_state.df_equipo = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Equipo')
+        try:
+            st.session_state.df_equipo = pd.read_excel('AdministracionSoop.xlsx', sheet_name='Equipo')
+        except Exception as e:
+            st.error(f"Error al cargar el equipo: {e}")
+            st.stop()
     if 'df_productos' not in st.session_state:
-        st.session_state.df_productos = pd.read_excel('Productos.xlsx')
+        try:
+            st.session_state.df_productos = pd.read_excel('Productos.xlsx')
+        except Exception as e:
+            st.error(f"Error al cargar los productos: {e}")
+            st.stop()
 
-    # Colocamos el buscador de cliente y botones para agregar/editar cliente
-    col1, col2 = st.columns([2, 1])
+    # Colocamos el buscador de cliente, botones para agregar/editar cliente y vendedor asignado
+    col1, col2, col3, col4 = st.columns([5, 1, 1, 3])
 
     with col1:
-        col_cliente, col_agregar, col_editar = st.columns([5, 1, 1])
-        with col_cliente:
-            if 'cliente_seleccionado' not in st.session_state:
-                st.session_state['cliente_seleccionado'] = ''
-            cliente_seleccionado = st.selectbox(
-                "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
-                key='cliente_seleccionado',
-                help="Escribí el nombre del cliente o seleccioná uno de la lista."
-            )
-        with col_agregar:
-            if st.button("➕"):
-                st.session_state['mostrar_formulario_cliente'] = True
-        with col_editar:
-            if cliente_seleccionado != '':
-                if st.button("✏️"):
-                    st.session_state['mostrar_formulario_editar_cliente'] = True
+        if 'cliente_seleccionado' not in st.session_state:
+            st.session_state['cliente_seleccionado'] = ''
+        cliente_seleccionado = st.selectbox(
+            "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
+            key='cliente_seleccionado',
+            help="Escribí el nombre del cliente o seleccioná uno de la lista."
+        )
+    with col2:
+        if st.button("➕"):
+            st.session_state['mostrar_formulario_cliente'] = True
+    with col3:
+        if cliente_seleccionado != '':
+            if st.button("✏️"):
+                st.session_state['mostrar_formulario_editar_cliente'] = True
+    with col4:
+        if cliente_seleccionado != "":
+            cliente_df = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado]
+            if not cliente_df.empty:
+                cliente_data = cliente_df.iloc[0]
+                vendedores = st.session_state.df_equipo['Nombre'].tolist()
+                vendedor_actual = cliente_data.get('Vendedores', vendedores[0])
+                if pd.isna(vendedor_actual) or vendedor_actual not in vendedores:
+                    vendedor_index = 0
+                else:
+                    vendedor_index = vendedores.index(vendedor_actual)
+                vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=vendedor_index)
+            else:
+                vendedor_seleccionado = st.selectbox("Vendedor asignado", st.session_state.df_equipo['Nombre'].tolist())
 
     # Mostrar formulario para agregar nuevo cliente
     if st.session_state.get('mostrar_formulario_cliente', False):
@@ -622,7 +653,14 @@ def modulo_ventas():
                     st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
                     # Guardar en Excel
                     try:
-                        with pd.ExcelWriter('AdministracionSoop.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                        with pd.ExcelWriter('AdministracionSoop.xlsx', engine='openpyxl', mode='w') as writer:
+                            # Escribir todas las hojas existentes excepto 'Clientes'
+                            with pd.ExcelFile('AdministracionSoop.xlsx') as xls:
+                                for sheet in xls.sheet_names:
+                                    if sheet != 'Clientes' and sheet != 'Pedidos':
+                                        df_sheet = pd.read_excel(xls, sheet_name=sheet)
+                                        df_sheet.to_excel(writer, sheet_name=sheet, index=False)
+                            # Escribir la hoja 'Clientes' actualizada
                             st.session_state.df_clientes.to_excel(writer, sheet_name='Clientes', index=False)
                         st.success("Cliente agregado exitosamente.")
                         st.session_state['mostrar_formulario_cliente'] = False
@@ -685,7 +723,12 @@ def modulo_ventas():
                     if nombre_cliente.strip() == "":
                         st.error("El nombre del cliente no puede estar vacío.")
                     else:
-                        st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, ['Nombre', 'Dirección', 'Instagram', 'Teléfono', 'Referido', 'Descuento', 'Estado Credito', 'Forma Pago', 'Notas', 'Vendedores', 'Fecha Modificado']] = [
+                        # Actualizar los datos del cliente
+                        st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, [
+                            'Nombre', 'Dirección', 'Instagram', 'Teléfono', 'Referido',
+                            'Descuento', 'Estado Credito', 'Forma Pago', 'Notas',
+                            'Vendedores', 'Fecha Modificado'
+                        ]] = [
                             nombre_cliente.strip(),
                             direccion_cliente.strip(),
                             instagram_cliente.strip(),
@@ -700,7 +743,14 @@ def modulo_ventas():
                         ]
                         # Guardar en Excel
                         try:
-                            with pd.ExcelWriter('AdministracionSoop.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                            with pd.ExcelWriter('AdministracionSoop.xlsx', engine='openpyxl', mode='w') as writer:
+                                # Escribir todas las hojas existentes excepto 'Clientes'
+                                with pd.ExcelFile('AdministracionSoop.xlsx') as xls:
+                                    for sheet in xls.sheet_names:
+                                        if sheet != 'Clientes' and sheet != 'Pedidos':
+                                            df_sheet = pd.read_excel(xls, sheet_name=sheet)
+                                            df_sheet.to_excel(writer, sheet_name=sheet, index=False)
+                                # Escribir la hoja 'Clientes' actualizada
                                 st.session_state.df_clientes.to_excel(writer, sheet_name='Clientes', index=False)
                             st.success("Cliente actualizado exitosamente.")
                             st.session_state['mostrar_formulario_editar_cliente'] = False
@@ -746,7 +796,8 @@ def modulo_ventas():
                 forma_pago = st.selectbox(
                     "💳 Forma de Pago",
                     forma_pago_options,
-                    index=forma_pago_index
+                    index=forma_pago_index,
+                    key='forma_pago_display'
                 )
 
             # Desplegable para las notas del cliente con opción de editar
@@ -765,7 +816,14 @@ def modulo_ventas():
                         st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 'Notas'] = nuevas_notas
                         # Guardar en Excel
                         try:
-                            with pd.ExcelWriter('AdministracionSoop.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                            with pd.ExcelWriter('AdministracionSoop.xlsx', engine='openpyxl', mode='w') as writer:
+                                # Escribir todas las hojas existentes excepto 'Clientes'
+                                with pd.ExcelFile('AdministracionSoop.xlsx') as xls:
+                                    for sheet in xls.sheet_names:
+                                        if sheet != 'Clientes' and sheet != 'Pedidos':
+                                            df_sheet = pd.read_excel(xls, sheet_name=sheet)
+                                            df_sheet.to_excel(writer, sheet_name=sheet, index=False)
+                                # Escribir la hoja 'Clientes' actualizada
                                 st.session_state.df_clientes.to_excel(writer, sheet_name='Clientes', index=False)
                             st.success("Notas actualizadas exitosamente.")
                             st.session_state['editar_notas_cliente'] = False
@@ -788,15 +846,6 @@ def modulo_ventas():
                     st.table(pedidos_cliente[['Fecha', 'Hora', 'Vendedor', 'Items']])
                 else:
                     st.info("El cliente no tiene pedidos anteriores.")
-
-            # Vendedor asignado
-            vendedores = st.session_state.df_equipo['Nombre'].tolist()
-            vendedor_asignado_value = cliente_data.get('Vendedores', vendedores[0])
-            if pd.isna(vendedor_asignado_value) or vendedor_asignado_value not in vendedores:
-                vendedor_index = 0
-            else:
-                vendedor_index = vendedores.index(vendedor_asignado_value)
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=vendedor_index)
 
             # Rubros del cliente: Ficticios en un desplegable
             rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]
@@ -886,7 +935,7 @@ def modulo_ventas():
                     st.markdown(f"**Disponible en Suc2:** {suc2_text}", unsafe_allow_html=True)
 
                     # Checkbox para mostrar más detalles directamente
-                    mostrar_mas = st.checkbox("Mostrar más detalles del producto")
+                    mostrar_mas = st.checkbox("Mostrar más detalles del producto", key=f"mostrar_mas_{producto_data['Codigo']}")
 
                     if mostrar_mas:
                         descripcion = producto_data.get('Descripcion', 'No disponible')
@@ -961,120 +1010,8 @@ def modulo_ventas():
                             except Exception as e:
                                 st.write("🔗 **Imagen no disponible o URL inválida.**")
 
-            # ----------------------------
-            # Sección para mostrar el pedido actual
-            # ----------------------------
-            st.header("🛒 Pedido Actual")
-
-            if st.session_state.pedido:
-                # Mostrar la tabla del pedido con la opción de eliminar ítems y editar cantidad
-                for idx, producto in enumerate(st.session_state.pedido):
-                    codigo = producto['Codigo']
-                    nombre = producto['Nombre']
-                    cantidad = producto['Cantidad']
-                    precio = producto['Precio']
-                    importe = producto['Importe']
-                    pendiente = producto.get('Pendiente', False)
-
-                    # Crear columnas para mostrar el producto y los botones
-                    col1, col2, col3, col4, col5, col6, col7 = st.columns([1, 2, 1, 1, 1, 1, 1])
-                    col1.write(codigo)
-                    col2.write(nombre)
-                    if codigo in st.session_state.editar_cantidad:
-                        nueva_cantidad = col3.number_input("Cantidad", min_value=1, value=cantidad, key=f"nueva_cantidad_{codigo}")
-                        actualizar = col3.button("Actualizar", key=f"actualizar_{codigo}")
-                        cancelar = col3.button("Cancelar", key=f"cancelar_{codigo}")
-                        if actualizar:
-                            # Actualizar la cantidad en el pedido
-                            st.session_state.pedido[idx]['Cantidad'] = nueva_cantidad
-                            st.session_state.pedido[idx]['Importe'] = nueva_cantidad * precio
-                            st.session_state.editar_cantidad.pop(codigo)
-                        elif cancelar:
-                            st.session_state.editar_cantidad.pop(codigo)
-                    else:
-                        col3.write(cantidad)
-                    col4.write(f"${precio}")
-                    col5.write(f"${importe}")
-
-                    # Indicar si el producto está pendiente de obtener
-                    if pendiente:
-                        col6.write("⏳ Pendiente")
-                    else:
-                        col6.write("✔️")
-
-                    # Botones de editar y eliminar
-                    with col7:
-                        editar, eliminar = st.columns(2)
-                        if editar.button('✏️', key=f"editar_{codigo}"):
-                            st.session_state.editar_cantidad[codigo] = True
-                        if eliminar.button('🗑️', key=f"eliminar_{codigo}"):
-                            # Remover el producto del pedido
-                            st.session_state.pedido.pop(idx)
-                            # Reponer el stock si corresponde
-                            if not pendiente:
-                                st.session_state.df_productos.loc[
-                                    st.session_state.df_productos['Codigo'] == codigo, 'Stock'
-                                ] += cantidad
-                            break  # Salir del bucle para evitar errores de índice
-
-                # Calcular totales
-                pedido_df = pd.DataFrame(st.session_state.pedido)
-                total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
-                total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
-
-                # Mostrar total de ítems y total del pedido
-                col_items, col_total = st.columns([1, 1])
-
-                with col_items:
-                    st.write(f"**Total de ítems:** {total_items}")
-
-                with col_total:
-                    st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
-
-                # Botón para guardar pedido
-                col_guardar, _ = st.columns([2, 3])
-                with col_guardar:
-                    if st.button("Guardar Pedido"):
-                        if not st.session_state.pedido:
-                            st.warning("No hay ítems en el pedido para guardar.")
-                        else:
-                            # Obtener fecha y hora actuales
-                            now = datetime.now()
-                            fecha_actual = now.strftime("%Y-%m-%d")
-                            hora_actual = now.strftime("%H:%M:%S")
-
-                            # Preparar datos del pedido
-                            order_data = {
-                                'cliente': cliente_seleccionado,
-                                'vendedor': vendedor_seleccionado,
-                                'fecha': fecha_actual,
-                                'hora': hora_actual,
-                                'items': st.session_state.pedido
-                            }
-
-                            # Guardar el pedido en la hoja 'Pedidos' de 'AdministracionSoop.xlsx'
-                            guardar_pedido_excel('AdministracionSoop.xlsx', order_data)
-
-                            # Confirmar al usuario
-                            st.success("Pedido guardado exitosamente.", icon="✅")
-
-                            # Limpiar el pedido después de guardarlo
-                            st.session_state.pedido = []
-                            st.session_state.delete_confirm = {}
-
-                            # Guardar los cambios en el stock de productos
-                            try:
-                                st.session_state.df_productos.to_excel('Productos.xlsx', index=False)
-                                st.success("Stock de productos actualizado correctamente.", icon="✅")
-                            except Exception as e:
-                                st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
-            else:
-                st.info("No hay productos en el pedido actual.")
-
-# Ejecutar el módulo de ventas
-modulo_ventas()
-
-
+    # Ejecutar el módulo de ventas
+    modulo_ventas()
 
 
 
