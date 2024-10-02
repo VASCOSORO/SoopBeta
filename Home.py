@@ -478,7 +478,7 @@ def modulo_equipo():
 
 
 # ===============================
-# Módulo Ventas 2.1.2.4
+# Módulo Ventas 2.1.3
 # ===============================
 
 import streamlit as st
@@ -605,21 +605,31 @@ def modulo_ventas():
                     else:
                         vendedores_split = ['No asignado']
 
-                    # Selección múltiple de vendedores
-                    selected_vendedores = st.multiselect(
-                        "Vendedores:",
-                        options=vendedores_list,
-                        default=vendedores_split if vendedores_split != ['No asignado'] else [],
-                        help="Selecciona los vendedores asignados al cliente."
-                    )
+                    # Selección múltiple de vendedores con posibilidad de eliminar
+                    st.markdown("**Vendedores Asignados:**")
+                    if vendedores_split == ['No asignado']:
+                        assigned_vendedores = []
+                    else:
+                        assigned_vendedores = vendedores_split
 
-                    # Visualizar vendedores con colores
-                    st.markdown("**Vendedores Disponibles:**")
-                    for vendedor in vendedores_list:
-                        if vendedor in selected_vendedores:
+                    # Mostrar vendedores asignados con botón para eliminar
+                    for vendedor in assigned_vendedores:
+                        col_vend, col_remove = st.columns([4, 1])
+                        with col_vend:
                             st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"<span style='color: gray;'>{vendedor}</span>", unsafe_allow_html=True)
+                        with col_remove:
+                            if st.button("❌", key=f"remove_{vendedor}"):
+                                assigned_vendedores.remove(vendedor)
+                    
+                    # Seleccionar nuevos vendedores para agregar
+                    vendedores_disponibles = [v for v in vendedores_list if v not in assigned_vendedores]
+                    nuevo_vendedor = st.selectbox("Agregar Vendedor:", [""] + vendedores_disponibles, key="nuevo_vendedor")
+
+                    if st.button("Agregar Vendedor") and nuevo_vendedor != "":
+                        assigned_vendedores.append(nuevo_vendedor)
+
+                    # Actualizar la lista de vendedores seleccionados
+                    selected_vendedores = assigned_vendedores
 
                     # Botones de guardar y cancelar
                     col_submit, col_cancel = st.columns(2)
@@ -714,7 +724,25 @@ def modulo_ventas():
                     current_vendedor = 'Sofi'  # Esto debería ser dinámico según quien esté usando la app
                     selected_vendedores = [current_vendedor]
 
-                    # Mostrar los vendedores con colores
+                    # Mostrar vendedores asignados con colores
+                    st.markdown("**Vendedores Asignados:**")
+                    col_vend, col_remove = st.columns([4, 1])
+                    for vendedor in selected_vendedores:
+                        col_vend, col_remove = st.columns([4, 1])
+                        with col_vend:
+                            st.markdown(f"<span style='color: green;'>{vendedor}</span>", unsafe_allow_html=True)
+                        with col_remove:
+                            if st.button("❌", key=f"remove_{vendedor}"):
+                                selected_vendedores.remove(vendedor)
+
+                    # Botón para agregar vendedores
+                    vendedores_disponibles = [v for v in vendedores_list if v not in selected_vendedores]
+                    nuevo_vendedor = st.selectbox("Agregar Vendedor:", [""] + vendedores_disponibles, key="nuevo_vendedor_add")
+
+                    if st.button("Agregar Vendedor") and nuevo_vendedor != "":
+                        selected_vendedores.append(nuevo_vendedor)
+
+                    # Mostrar vendedores asignados con colores
                     st.markdown("**Vendedores Disponibles:**")
                     for vendedor in vendedores_list:
                         if vendedor in selected_vendedores:
@@ -766,7 +794,7 @@ def modulo_ventas():
             vendedores_asignados = [v.strip() for v in vendedores if v.strip() != 'No asignado']
 
             # Mostrar todos los vendedores con colores
-            st.markdown("**Vendedores:**")
+            st.markdown("**Vendedores Asignados:**")
             vendedores_list = ['Sofi', 'Valenti', 'Joni', 'Johan', 'Emily', 'Marian', 'Aniel']
             for vendedor in vendedores_list:
                 if vendedor in vendedores_asignados:
