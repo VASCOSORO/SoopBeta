@@ -283,10 +283,10 @@ def guardar_pedido_excel(file_path, order_data):
 # Módulo Equipo 2.0
 # ===============================
 
-
 import streamlit as st
 import pandas as pd
 from PIL import Image
+import os
 
 def modulo_equipo():
     # Verificar si el DataFrame de equipo existe
@@ -297,8 +297,6 @@ def modulo_equipo():
         except FileNotFoundError:
             st.error("No se han encontrado datos del equipo. Asegúrate de cargar los datos correctamente.")
             return
-
-    # No se usará verificación de acceso por ahora
 
     st.header("👥 Equipo de Trabajo")
 
@@ -462,36 +460,16 @@ def modulo_equipo():
                             st.error("El nombre ya existe en el equipo.")
                         else:
                             # Actualizar los datos del miembro en el DataFrame
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'
-                            ] = nombre.strip()
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Rol'
-                            ] = rol
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Departamento'
-                            ] = departamento
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Nivel de Acceso'
-                            ] = nivel_acceso
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Estado'
-                            ] = estado
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Ventas'
-                            ] = acceso_ventas
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Logística'
-                            ] = acceso_logistica
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Administración'
-                            ] = acceso_administracion
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Marketing'
-                            ] = acceso_marketing
-                            st.session_state.df_equipo.loc[
-                                st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Avatar'
-                            ] = avatar_url
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == miembro_modificar, 'Nombre'] = nombre.strip()
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Rol'] = rol
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Departamento'] = departamento
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Nivel de Acceso'] = nivel_acceso
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Estado'] = estado
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Ventas'] = acceso_ventas
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Logística'] = acceso_logistica
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Administración'] = acceso_administracion
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Acceso Marketing'] = acceso_marketing
+                            st.session_state.df_equipo.loc[st.session_state.df_equipo['Nombre'] == nombre.strip(), 'Avatar'] = avatar_url
                             st.success(f"Miembro {nombre} modificado exitosamente.")
                             # Guardar los cambios en Excel
                             try:
@@ -527,6 +505,8 @@ def modulo_equipo():
                                     st.error(f"Error al guardar el archivo de equipo: {e}")
                             else:
                                 st.warning("Por favor, confirma la eliminación marcando la casilla.")
+                    else:
+                        st.error("El nombre seleccionado no existe.")
 
     # Inicialización de session_state (esto debería estar en otro lugar de tu aplicación)
     if 'df_clientes' not in st.session_state:
@@ -551,6 +531,7 @@ def modulo_equipo():
 
     # Llamar al módulo de equipo
     modulo_equipo()
+
 
 
 
