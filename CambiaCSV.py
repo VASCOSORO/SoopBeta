@@ -70,9 +70,9 @@ def procesar_archivo(
             if columnas_a_renombrar:
                 columnas_a_renombrar_final = {}
                 for original, nuevo in columnas_a_renombrar.items():
-                    # Crear un patrón regex para manejar mayúsculas/minúsculas
-                    pattern = re.compile(re.escape(original), re.IGNORECASE)
-                    matches = [col for col in df.columns if pattern.fullmatch(col)]
+                    # Crear un patrón regex para manejar mayúsculas/minúsculas y eliminar espacios adicionales
+                    pattern = re.compile(re.escape(original.strip()), re.IGNORECASE)
+                    matches = [col for col in df.columns if pattern.fullmatch(col.strip())]
                     for match in matches:
                         columnas_a_renombrar_final[match] = nuevo
                 if columnas_a_renombrar_final:
