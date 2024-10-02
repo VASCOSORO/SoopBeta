@@ -481,7 +481,6 @@ def modulo_equipo():
 # Módulo Ventas 2.1.2.2
 # ===============================
 
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -586,18 +585,36 @@ def modulo_ventas():
                     telefono_cliente = st.text_input("Número de Teléfono", value=cliente_data.get('Teléfono', ''))
                     referido = st.checkbox("Referido", value=(cliente_data.get('Referido', 'No') == 'Sí'))
                     descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=cliente_data.get('Descuento', 0))
-                    estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], 
-                                                  index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares')))
-                    forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], 
-                                              index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')))
+                    estado_credito = st.selectbox(
+                        "Estado de Crédito",
+                        ['Buen pagador', 'Pagos regulares', 'Mal pagador'], 
+                        index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares'))
+                    )
+                    forma_pago = st.selectbox(
+                        "Forma de Pago",
+                        ["CC", "Contado", "Depósito/Transferencia"], 
+                        index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
+                    )
                     notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''))
+                    
+                    # Manejo seguro de 'Vendedores'
+                    vendedores_list = st.session_state.df_equipo['Nombre'].tolist()
+                    vendedores_cliente = cliente_data.get('Vendedores', 'No asignado')
+                    if isinstance(vendedores_cliente, str):
+                        vendedores_split = [v.strip() for v in vendedores_cliente.split(',')]
+                        vendedor_principal = vendedores_split[0] if vendedores_split else 'No asignado'
+                    else:
+                        vendedor_principal = 'No asignado'
+
+                    if vendedor_principal not in vendedores_list:
+                        vendedor_principal = 'No asignado'
+
                     vendedor_asignado = st.selectbox(
                         "Vendedor Asignado",
-                        st.session_state.df_equipo['Nombre'].tolist(),
-                        index=st.session_state.df_equipo['Nombre'].tolist().index(cliente_data.get('Vendedores', 'No asignado').split(',')[0].strip()) 
-                        if cliente_data.get('Vendedores', 'No asignado').split(',')[0].strip() in st.session_state.df_equipo['Nombre'].tolist() 
-                        else 0
+                        vendedores_list,
+                        index=vendedores_list.index(vendedor_principal) if vendedor_principal in vendedores_list else 0
                     )
+                    
                     col_submit, col_cancel = st.columns(2)
                     submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios")
                     cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar")
@@ -607,17 +624,50 @@ def modulo_ventas():
                             st.error("El nombre del cliente no puede estar vacío.")
                         else:
                             # Actualizar los datos del cliente en el DataFrame
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 'Nombre'] = nombre_cliente.strip()
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Dirección'] = direccion_cliente.strip()
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Instagram'] = instagram_cliente.strip()
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Teléfono'] = telefono_cliente.strip()
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Referido'] = 'Sí' if referido else 'No'
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Descuento'] = descuento_cliente
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Estado Credito'] = estado_credito
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Forma Pago'] = forma_pago
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Notas'] = notas_cliente.strip()
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Vendedores'] = vendedor_asignado
-                            st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 'Fecha Modificado'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 
+                                'Nombre'
+                            ] = nombre_cliente.strip()
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Dirección'
+                            ] = direccion_cliente.strip()
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Instagram'
+                            ] = instagram_cliente.strip()
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Teléfono'
+                            ] = telefono_cliente.strip()
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Referido'
+                            ] = 'Sí' if referido else 'No'
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Descuento'
+                            ] = descuento_cliente
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Estado Credito'
+                            ] = estado_credito
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Forma Pago'
+                            ] = forma_pago
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Notas'
+                            ] = notas_cliente.strip()
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Vendedores'
+                            ] = vendedor_asignado
+                            st.session_state.df_clientes.loc[
+                                st.session_state.df_clientes['Nombre'] == nombre_cliente.strip(), 
+                                'Fecha Modificado'
+                            ] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             
                             # Guardar en Excel
                             try:
@@ -647,6 +697,7 @@ def modulo_ventas():
                     forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
                     notas_cliente = st.text_area("Notas del Cliente")
                     vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
+                    
                     col_submit, col_cancel = st.columns(2)
                     submit_nuevo_cliente = col_submit.form_submit_button("Guardar Cliente")
                     cancelar_nuevo_cliente = col_cancel.form_submit_button("Cancelar")
@@ -687,7 +738,7 @@ def modulo_ventas():
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
             cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
-            vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
+            vendedor_seleccionado = st.selectbox("Vendedor asignado", [v.strip() for v in vendedores], index=0)
 
     # Mostramos los demás campos si se selecciona un cliente
     if cliente_seleccionado != "":
@@ -729,11 +780,17 @@ def modulo_ventas():
             with st.form("form_editar_notas"):
                 nuevas_notas = st.text_area("Editar Notas del Cliente", value=cliente_data.get('Notas', ''))
                 submit_nuevas_notas = st.form_submit_button("Guardar Notas")
+                cancelar_editar_notas = st.form_submit_button("Cancelar")
 
                 if submit_nuevas_notas:
-                    st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 'Notas'] = nuevas_notas
+                    st.session_state.df_clientes.loc[
+                        st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 
+                        'Notas'
+                    ] = nuevas_notas
                     st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
                     st.success("Notas actualizadas exitosamente.")
+                    st.session_state['editar_notas_cliente'] = False
+                elif cancelar_editar_notas:
                     st.session_state['editar_notas_cliente'] = False
 
         # Mostrar datos extra del cliente
@@ -753,7 +810,6 @@ def modulo_ventas():
 
         # Insertar una línea horizontal negra para separar las secciones
         st.markdown("<hr style='border: 1px solid black;'>", unsafe_allow_html=True)
-
         # Rubros del cliente: Ficticios en un desplegable
         rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]
         rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
