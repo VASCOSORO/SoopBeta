@@ -600,7 +600,7 @@ def modulo_ventas():
                         st.session_state.df_clientes = st.session_state.df_clientes.append(nuevo_cliente, ignore_index=True)
                         # Guardar en Excel
                         try:
-                            st.session_state.df_clientes.to_excel('archivo_modificado_clientes_20240928_200050.xlsx', index=False)
+                            st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
                             st.success("Cliente agregado exitosamente.")
                             # Actualizar la lista de clientes en el selectbox
                             st.session_state['mostrar_formulario_cliente'] = False
@@ -661,7 +661,7 @@ def modulo_ventas():
 
                 if submit_nuevas_notas:
                     st.session_state.df_clientes.loc[st.session_state.df_clientes['Nombre'] == cliente_seleccionado, 'Notas'] = nuevas_notas
-                    st.session_state.df_clientes.to_excel('archivo_modificado_clientes_20240928_200050.xlsx', index=False)
+                    st.session_state.df_clientes.to_excel('archivo_modificado_clientes.xlsx', index=False)
                     st.success("Notas actualizadas exitosamente.")
                     st.session_state['editar_notas_cliente'] = False
 
@@ -737,7 +737,7 @@ def modulo_ventas():
             producto_data = productos_filtrados[productos_filtrados['Codigo'] == st.session_state.selected_codigo].iloc[0]
 
             # Mostrar detalles del producto
-            col_prod1, col_prod2, col_prod3, col_prod4, col_prod5 = st.columns([2, 1, 1, 1, 1])
+            col_prod1, col_prod2, col_prod3 = st.columns([2, 1, 1])
 
             with col_prod1:
                 st.write(f"**Código:** {producto_data['Codigo']}")
@@ -756,19 +756,23 @@ def modulo_ventas():
                     color = 'green'
                 st.markdown(f"<span style='color:{color}'>**Stock:** {stock}</span>", unsafe_allow_html=True)
 
-            with col_prod4:
-                ensuc = producto_data.get('EnSuc', False)
-                ensuc_text = 'Sí' if ensuc else 'No'
-                st.write(f"**EnSuc.:** {ensuc_text}")
+            # Mostrar disponibilidad en Suc2
+            suc2 = producto_data.get('Suc2', False)
+            if suc2:
+                suc2_text = "<span style='color:green'><strong>Sí</strong></span>"
+            else:
+                suc2_text = "<span style='color:red'><strong>No</strong></span>"
+            st.markdown(f"**Disponible en Suc2:** {suc2_text}", unsafe_allow_html=True)
 
-            with col_prod5:
-                suc2 = producto_data.get('Suc2', False)
-                # Aquí aplicamos el color según disponibilidad en Suc2
-                if suc2:
-                    suc2_text = "<span style='color:green'><strong>Sí</strong></span>"
-                else:
-                    suc2_text = "<span style='color:red'><strong>No</strong></span>"
-                st.markdown(f"**Suc2:** {suc2_text}", unsafe_allow_html=True)
+            # Checkbox para mostrar más detalles
+            mostrar_mas = st.checkbox("Mostrar más detalles del producto")
+
+            if mostrar_mas:
+                with st.expander("Detalles del Producto"):
+                    descripcion = producto_data.get('Descripcion', 'No disponible')
+                    categorias = producto_data.get('Categorias', 'No disponible')
+                    st.write(f"**Descripción:** {descripcion}")
+                    st.write(f"**Categorías:** {categorias}")
 
             # Dividir en dos columnas para cantidad e imagen
             col_izq, col_der = st.columns([2, 1])
@@ -828,7 +832,7 @@ def modulo_ventas():
                         st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
             with col_der:
-                if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
+                if pd.notna(producto_data.get('imagen', '')) and producto_data['imagen'] != '':
                     try:
                         response = requests.get(producto_data['imagen'], timeout=5)
                         response.raise_for_status()
@@ -865,7 +869,6 @@ def modulo_ventas():
                     st.session_state.pedido[idx]['Cantidad'] = nueva_cantidad
                     st.session_state.pedido[idx]['Importe'] = nueva_cantidad * precio
                     st.session_state.editar_cantidad.pop(codigo)
-                    # No es necesario llamar a st.experimental_rerun()
                 elif cancelar:
                     st.session_state.editar_cantidad.pop(codigo)
             else:
@@ -892,7 +895,6 @@ def modulo_ventas():
                         st.session_state.df_productos.loc[
                             st.session_state.df_productos['Codigo'] == codigo, 'Stock'
                         ] += cantidad
-                    # No es necesario llamar a st.experimental_rerun()
                     break  # Salir del bucle para evitar errores de índice
 
         # Calcular totales
@@ -942,12 +944,13 @@ def modulo_ventas():
 
                     # Guardar los cambios en el stock de productos
                     try:
-                        st.session_state.df_productos.to_excel('archivo_modificado_productos_20240928_201237.xlsx', index=False)
+                        st.session_state.df_productos.to_excel('archivo_modificado_productos.xlsx', index=False)
                         st.success("Stock de productos actualizado correctamente.", icon="✅")
                     except Exception as e:
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     else:
         st.info("No hay productos en el pedido actual.")
+
 
 
 
