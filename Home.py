@@ -697,24 +697,31 @@ def modulo_ventas():
         # Sección de productos
         st.header("🔍 Buscador de Productos 🕶️")
 
-        # Buscador por código y nombre
+        # Buscador por código y nombre como selectbox
         col_codigo, col_nombre = st.columns([1, 2])
 
         with col_codigo:
-            codigo_buscado = st.text_input("Buscar por Código", "")
-            if codigo_buscado.strip() != "":
-                productos_filtrados = productos_filtrados[productos_filtrados['Codigo'].astype(str).str.contains(codigo_buscado.strip())]
+            codigo_lista = [""] + productos_filtrados['Codigo'].astype(str).unique().tolist()
+            codigo_buscado = st.selectbox("Buscar por Código", codigo_lista, key="buscador_codigo")
+            if codigo_buscado:
+                producto_data = productos_filtrados[productos_filtrados['Codigo'] == codigo_buscado].iloc[0]
+                producto_buscado = producto_data['Nombre']
+            else:
+                producto_buscado = None
 
         with col_nombre:
-            producto_buscado = st.selectbox(
-                "Buscar producto por Nombre",
-                [""] + productos_filtrados['Nombre'].unique().tolist(),
-                help="Escribí el nombre del producto o seleccioná uno de la lista."
-            )
+            nombre_lista = [""] + productos_filtrados['Nombre'].unique().tolist()
+            if 'producto_buscado' in locals() and producto_buscado:
+                producto_buscado = st.selectbox("Buscar producto por Nombre", nombre_lista, index=nombre_lista.index(producto_buscado), key="buscador_nombre")
+            else:
+                producto_buscado = st.selectbox("Buscar producto por Nombre", nombre_lista, key="buscador_nombre")
+            if producto_buscado:
+                producto_data = productos_filtrados[productos_filtrados['Nombre'] == producto_buscado].iloc[0]
+                codigo_buscado = producto_data['Codigo']
+                # Actualizar el selectbox de código
+                st.session_state.buscador_codigo = codigo_buscado
 
         if producto_buscado:
-            producto_data = productos_filtrados[productos_filtrados['Nombre'] == producto_buscado].iloc[0]
-
             # Mostrar detalles del producto
             col_prod1, col_prod2, col_prod3, col_prod4, col_prod5 = st.columns([2, 1, 1, 1, 1])
 
@@ -920,6 +927,7 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     else:
         st.info("No hay productos en el pedido actual.")
+
 
 
 
