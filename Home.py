@@ -751,7 +751,7 @@ def modulo_ventas():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.write(f"**Última compra:** {cliente_data.get('Fecha Modificado', 'N/A')}")
+            st.write(f"**ÚC:** {cliente_data.get('Fecha Modificado', 'N/A')}")
 
         with col2:
             opciones_credito = {
@@ -761,7 +761,7 @@ def modulo_ventas():
             }
             credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')
             color_credito = opciones_credito.get(credito_cliente, '🟡')
-            st.write(f"**Estado de Crédito:** {color_credito} {credito_cliente}")
+            st.write(f"**.ec.** {color_credito} {credito_cliente}")
 
         with col3:
             forma_pago = st.selectbox(
