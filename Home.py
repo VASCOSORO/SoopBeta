@@ -763,8 +763,12 @@ def modulo_ventas():
 
             with col_prod5:
                 suc2 = producto_data.get('Suc2', False)
-                suc2_text = 'Sí' if suc2 else 'No'
-                st.write(f"**Suc2:** {suc2_text}")
+                # Aquí aplicamos el color según disponibilidad en Suc2
+                if suc2:
+                    suc2_text = "<span style='color:green'><strong>Sí</strong></span>"
+                else:
+                    suc2_text = "<span style='color:red'><strong>No</strong></span>"
+                st.markdown(f"**Suc2:** {suc2_text}", unsafe_allow_html=True)
 
             # Dividir en dos columnas para cantidad e imagen
             col_izq, col_der = st.columns([2, 1])
@@ -840,7 +844,7 @@ def modulo_ventas():
 
     if st.session_state.pedido:
         # Mostrar la tabla del pedido con la opción de eliminar ítems y editar cantidad
-        for producto in st.session_state.pedido.copy():
+        for idx, producto in enumerate(st.session_state.pedido):
             codigo = producto['Codigo']
             nombre = producto['Nombre']
             cantidad = producto['Cantidad']
@@ -854,13 +858,15 @@ def modulo_ventas():
             col2.write(nombre)
             if codigo in st.session_state.editar_cantidad:
                 nueva_cantidad = col3.number_input("Cantidad", min_value=1, value=cantidad, key=f"nueva_cantidad_{codigo}")
-                if col3.button("Actualizar", key=f"actualizar_{codigo}"):
+                actualizar = col3.button("Actualizar", key=f"actualizar_{codigo}")
+                cancelar = col3.button("Cancelar", key=f"cancelar_{codigo}")
+                if actualizar:
                     # Actualizar la cantidad en el pedido
-                    producto['Cantidad'] = nueva_cantidad
-                    producto['Importe'] = nueva_cantidad * precio
+                    st.session_state.pedido[idx]['Cantidad'] = nueva_cantidad
+                    st.session_state.pedido[idx]['Importe'] = nueva_cantidad * precio
                     st.session_state.editar_cantidad.pop(codigo)
-                    st.experimental_rerun()
-                if col3.button("Cancelar", key=f"cancelar_{codigo}"):
+                    # No es necesario llamar a st.experimental_rerun()
+                elif cancelar:
                     st.session_state.editar_cantidad.pop(codigo)
             else:
                 col3.write(cantidad)
@@ -880,13 +886,14 @@ def modulo_ventas():
                     st.session_state.editar_cantidad[codigo] = True
                 if eliminar.button('🗑️', key=f"eliminar_{codigo}"):
                     # Remover el producto del pedido
-                    st.session_state.pedido.remove(producto)
+                    st.session_state.pedido.pop(idx)
                     # Reponer el stock si corresponde
                     if not pendiente:
                         st.session_state.df_productos.loc[
                             st.session_state.df_productos['Codigo'] == codigo, 'Stock'
                         ] += cantidad
-                    st.experimental_rerun()
+                    # No es necesario llamar a st.experimental_rerun()
+                    break  # Salir del bucle para evitar errores de índice
 
         # Calcular totales
         pedido_df = pd.DataFrame(st.session_state.pedido)
@@ -941,8 +948,6 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     else:
         st.info("No hay productos en el pedido actual.")
-
-
 
 
 
