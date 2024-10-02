@@ -1348,18 +1348,7 @@ def modulo_reportes_leads():
     else:
         st.info("Por favor, sube un archivo CSV para ver los reportes de leads.")
 
-# ===============================
-# Ejecución del Módulo
-# ===============================
 
-if __name__ == "__main__":
-    st.sidebar.title("📊 Panel de Control")
-    opciones = st.sidebar.radio("Seleccionar Módulo", ["Módulo Estadísticas", "Módulo Reportes de Leads"])
-
-    if opciones == "Módulo Estadísticas":
-        modulo_estadistica()
-    elif opciones == "Módulo Reportes de Leads":
-        modulo_reportes_leads()
 
 
 # ===============================
