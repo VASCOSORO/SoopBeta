@@ -697,31 +697,43 @@ def modulo_ventas():
         # Sección de productos
         st.header("🔍 Buscador de Productos 🕶️")
 
+        # Inicializar variables en session_state
+        if 'selected_codigo' not in st.session_state:
+            st.session_state.selected_codigo = ''
+        if 'selected_nombre' not in st.session_state:
+            st.session_state.selected_nombre = ''
+
+        # Funciones de devolución de llamada
+        def on_codigo_change():
+            codigo = st.session_state.selected_codigo
+            if codigo:
+                producto_data = productos_filtrados[productos_filtrados['Codigo'] == codigo].iloc[0]
+                st.session_state.selected_nombre = producto_data['Nombre']
+            else:
+                st.session_state.selected_nombre = ''
+
+        def on_nombre_change():
+            nombre = st.session_state.selected_nombre
+            if nombre:
+                producto_data = productos_filtrados[productos_filtrados['Nombre'] == nombre].iloc[0]
+                st.session_state.selected_codigo = producto_data['Codigo']
+            else:
+                st.session_state.selected_codigo = ''
+
         # Buscador por código y nombre como selectbox
         col_codigo, col_nombre = st.columns([1, 2])
 
         with col_codigo:
             codigo_lista = [""] + productos_filtrados['Codigo'].astype(str).unique().tolist()
-            codigo_buscado = st.selectbox("Buscar por Código", codigo_lista, key="buscador_codigo")
-            if codigo_buscado:
-                producto_data = productos_filtrados[productos_filtrados['Codigo'] == codigo_buscado].iloc[0]
-                producto_buscado = producto_data['Nombre']
-            else:
-                producto_buscado = None
+            st.selectbox("Buscar por Código", codigo_lista, key='selected_codigo', on_change=on_codigo_change)
 
         with col_nombre:
             nombre_lista = [""] + productos_filtrados['Nombre'].unique().tolist()
-            if 'producto_buscado' in locals() and producto_buscado:
-                producto_buscado = st.selectbox("Buscar producto por Nombre", nombre_lista, index=nombre_lista.index(producto_buscado), key="buscador_nombre")
-            else:
-                producto_buscado = st.selectbox("Buscar producto por Nombre", nombre_lista, key="buscador_nombre")
-            if producto_buscado:
-                producto_data = productos_filtrados[productos_filtrados['Nombre'] == producto_buscado].iloc[0]
-                codigo_buscado = producto_data['Codigo']
-                # Actualizar el selectbox de código
-                st.session_state.buscador_codigo = codigo_buscado
+            st.selectbox("Buscar producto por Nombre", nombre_lista, key='selected_nombre', on_change=on_nombre_change)
 
-        if producto_buscado:
+        if st.session_state.selected_codigo and st.session_state.selected_nombre:
+            producto_data = productos_filtrados[productos_filtrados['Codigo'] == st.session_state.selected_codigo].iloc[0]
+
             # Mostrar detalles del producto
             col_prod1, col_prod2, col_prod3, col_prod4, col_prod5 = st.columns([2, 1, 1, 1, 1])
 
@@ -927,6 +939,7 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     else:
         st.info("No hay productos en el pedido actual.")
+
 
 
 
