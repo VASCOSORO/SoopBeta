@@ -551,8 +551,11 @@ def modulo_ventas():
     with col1:
         col_cliente, col_agregar = st.columns([5, 1])
         with col_cliente:
+            if 'cliente_seleccionado' not in st.session_state:
+                st.session_state['cliente_seleccionado'] = ''
             cliente_seleccionado = st.selectbox(
                 "🔮 Buscar cliente", [""] + st.session_state.df_clientes['Nombre'].unique().tolist(),
+                key='cliente_seleccionado',
                 help="Escribí el nombre del cliente o seleccioná uno de la lista."
             )
         with col_agregar:
@@ -601,14 +604,13 @@ def modulo_ventas():
                             st.success("Cliente agregado exitosamente.")
                             # Actualizar la lista de clientes en el selectbox
                             st.session_state['mostrar_formulario_cliente'] = False
-                            st.experimental_rerun()
+                            # Seleccionar automáticamente el nuevo cliente
+                            st.session_state['cliente_seleccionado'] = nombre_cliente.strip()
                         except Exception as e:
                             st.error(f"Error al guardar el cliente: {e}")
                 elif cancelar_nuevo_cliente:
                     st.session_state['mostrar_formulario_cliente'] = False
-                    st.experimental_rerun()
-        else:
-            st.session_state['mostrar_formulario_cliente'] = False
+                    # No es necesario llamar a st.experimental_rerun()
 
     with col2:
         if cliente_seleccionado != "":  # Solo se muestran si hay cliente seleccionado
