@@ -1777,7 +1777,7 @@ elif seccion == "💲Administración":
     modulo_administracion()
     
 elif seccion == "📊Estadísticas":
-    modulo_estadistica()
+    modulo_reportes_leads()
     
 elif seccion == "👻Equipo":
     modulo_equipo()
