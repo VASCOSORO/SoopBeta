@@ -1267,134 +1267,6 @@ import streamlit as st
 # Módulo Estadísticas Adaptado 2.0
 # ===============================
 
-def modulo_estadistica_leads():
-    st.header("📈 Módulo Estadísticas Mejorado 📊")
-
-    # Incluir un cargador de archivo para permitir la carga de Excel
-    archivo_excel = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
-
-    if archivo_excel is not None:
-        # Cargar los datos del archivo Excel subido
-        df = pd.read_excel(archivo_excel)
-        df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
-
-        # Agrupar ventas por vendedor y estado (envíos parciales, rechazados, etc.)
-        st.subheader("📅 Segmentación de Ventas por Mes y Estado")
-
-        # Selección de mes y año
-        meses_unicos = df['Fecha'].dt.to_period('M').unique().tolist()
-        mes_seleccionado = st.selectbox("Seleccionar un Mes", meses_unicos)
-
-        # Filtrar por mes seleccionado
-        df_mes_filtrado = df[df['Fecha'].dt.to_period('M') == mes_seleccionado]
-
-        # Ventas separadas por estados: Enviadas parciales, rechazadas, completadas
-        st.subheader("🔍 Segmentación por Estado de Pedido")
-        estado_seleccionado = st.selectbox("Seleccionar un Estado", ['Procesado / Enviado', 'Rechazado', 'Procesado / Enviado Parcial'])
-
-        # Filtrar los pedidos según el estado seleccionado
-        df_estado_filtrado = df_mes_filtrado[df_mes_filtrado['Status'] == estado_seleccionado]
-
-        # Gráfico de ventas por vendedor basado en estado seleccionado
-        ventas_por_vendedor = df_estado_filtrado.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_por_vendedor)
-
-        st.markdown("---")
-
-        # Gráfico de ventas por vendedor en general (sin importar estado)
-        st.subheader("📊 Ventas Totales por Vendedor en el Mes")
-        ventas_vendedor_mes = df_mes_filtrado.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_vendedor_mes)
-
-        # Productividad del equipo basado en el mes seleccionado
-        st.subheader("👥 Productividad del Equipo en el Mes")
-        st.table(ventas_vendedor_mes)
-    else:
-        st.info("Por favor, carga un archivo Excel para ver las estadísticas.")
-
-# ===============================
-# Nueva Sección - Reportes de Leads
-# ===============================
-
-def modulo_reportes_leads():
-    st.header("📊 Módulo de Reportes de Leads")
-
-    # Subir archivo CSV para los leads
-    archivo_csv = st.file_uploader("Subir archivo CSV de Leads", type=["csv"])
-
-    if archivo_csv is not None:
-        # Cargar el archivo CSV subido
-        df_leads = pd.read_csv(archivo_csv)
-        df_leads['Last Action At'] = pd.to_datetime(df_leads['Last Action At'], errors='coerce')
-
-        # Mostrar el total de leads por asesora
-        st.subheader("Total de Leads por Asesora en el Último Día")
-        ultimo_dia = df_leads['Last Action At'].dt.date.max()
-        leads_ultimo_dia = df_leads[df_leads['Last Action At'].dt.date == ultimo_dia]
-        leads_por_asesora_dia = leads_ultimo_dia['User Assigned'].value_counts()
-        st.table(leads_por_asesora_dia)
-
-        # Mostrar el total de leads por asesora en la última semana
-        st.subheader("Total de Leads por Asesora en la Última Semana")
-        ultima_semana = df_leads[df_leads['Last Action At'] >= pd.Timestamp.now() - pd.Timedelta(weeks=1)]
-        leads_por_asesora_semana = ultima_semana['User Assigned'].value_counts()
-        st.table(leads_por_asesora_semana)
-
-        # Mostrar el total de leads por asesora en el último mes
-        st.subheader("Total de Leads por Asesora en el Último Mes")
-        ultimo_mes = df_leads[df_leads['Last Action At'] >= pd.Timestamp.now() - pd.DateOffset(months=1)]
-        leads_por_asesora_mes = ultimo_mes['User Assigned'].value_counts()
-        st.table(leads_por_asesora_mes)
-    else:
-        st.info("Por favor, sube un archivo CSV para ver los reportes de leads.")
-
-def modulo_estadistica_leads():
-    st.header("📈 Módulo Estadísticas Mejorado 📊")
-
-    # Incluir un cargador de archivo para permitir la carga de Excel
-    archivo_excel = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
-
-    if archivo_excel is not None:
-        # Cargar los datos del archivo Excel subido
-        df = pd.read_excel(archivo_excel)
-        df['Fecha'] = pd.to_datetime(df['Fecha Creado'])
-
-        # Agrupar ventas por vendedor y estado (envíos parciales, rechazados, etc.)
-        st.subheader("📅 Segmentación de Ventas por Mes y Estado")
-
-        # Selección de mes y año
-        meses_unicos = df['Fecha'].dt.to_period('M').unique().tolist()
-        mes_seleccionado = st.selectbox("Seleccionar un Mes", meses_unicos)
-
-        # Filtrar por mes seleccionado
-        df_mes_filtrado = df[df['Fecha'].dt.to_period('M') == mes_seleccionado]
-
-        # Ventas separadas por estados: Enviadas parciales, rechazadas, completadas
-        st.subheader("🔍 Segmentación por Estado de Pedido")
-        estado_seleccionado = st.selectbox("Seleccionar un Estado", ['Procesado / Enviado', 'Rechazado', 'Procesado / Enviado Parcial'])
-
-        # Filtrar los pedidos según el estado seleccionado
-        df_estado_filtrado = df_mes_filtrado[df_mes_filtrado['Status'] == estado_seleccionado]
-
-        # Gráfico de ventas por vendedor basado en estado seleccionado
-        ventas_por_vendedor = df_estado_filtrado.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_por_vendedor)
-
-        st.markdown("---")
-
-        # Gráfico de ventas por vendedor en general (sin importar estado)
-        st.subheader("📊 Ventas Totales por Vendedor en el Mes")
-        ventas_vendedor_mes = df_mes_filtrado.groupby('Vendedor')['Total'].sum()
-        st.bar_chart(ventas_vendedor_mes)
-
-        # Productividad del equipo basado en el mes seleccionado
-        st.subheader("👥 Productividad del Equipo en el Mes")
-        st.table(ventas_vendedor_mes)
-    else:
-        st.info("Por favor, carga un archivo Excel para ver las estadísticas.")
-
-
-
 def modulo_estadistica():
     st.header("📈 Módulo Estadísticas Mejorado 📊")
 
@@ -1440,13 +1312,9 @@ def modulo_estadistica():
     else:
         st.info("Por favor, carga un archivo Excel para ver las estadísticas.")
 
-# ===============================
-# Importaciones necesarias
-# ===============================
-from PIL import Image, ImageDraw, ImageFont  # Para la generación de imágenes
-import requests
-from io import BytesIO
-from fpdf import FPDF  # Para la generación de PDF
+# Llamar a la función del módulo en la app de Streamlit
+modulo_estadistica()
+
 
 # ===============================
 # Módulo Marketing
