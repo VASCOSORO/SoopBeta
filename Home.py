@@ -764,15 +764,14 @@ def modulo_ventas():
                 suc2_text = "<span style='color:red'><strong>No</strong></span>"
             st.markdown(f"**Disponible en Suc2:** {suc2_text}", unsafe_allow_html=True)
 
-            # Checkbox para mostrar más detalles
+            # Checkbox para mostrar más detalles directamente
             mostrar_mas = st.checkbox("Mostrar más detalles del producto")
 
             if mostrar_mas:
-                with st.expander("Detalles del Producto"):
-                    descripcion = producto_data.get('Descripcion', 'No disponible')
-                    categorias = producto_data.get('Categorias', 'No disponible')
-                    st.write(f"**Descripción:** {descripcion}")
-                    st.write(f"**Categorías:** {categorias}")
+                descripcion = producto_data.get('Descripcion', 'No disponible')
+                categorias = producto_data.get('Categorias', 'No disponible')
+                st.write(f"**Descripción:** {descripcion}")
+                st.write(f"**Categorías:** {categorias}")
 
             # Dividir en dos columnas para cantidad e imagen
             col_izq, col_der = st.columns([2, 1])
