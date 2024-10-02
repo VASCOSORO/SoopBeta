@@ -492,7 +492,6 @@ import os
 def guardar_pedido_excel(archivo, order_data):
     """
     Función para guardar el pedido en un archivo Excel.
-    Ajusta esta función según la estructura de tu archivo Excel y tus necesidades.
     """
     try:
         # Cargar el archivo existente o crear uno nuevo si no existe
@@ -538,7 +537,7 @@ def obtener_pedidos_cliente(cliente_nombre):
 def modulo_ventas():
     st.header("🎐 Crear Pedido")
 
-    # Inicializar el pedido y delete_confirm en session_state si no existen
+    # Inicializar el pedido y variables en session_state si no existen
     if 'pedido' not in st.session_state:
         st.session_state.pedido = []
     if 'delete_confirm' not in st.session_state:
@@ -565,14 +564,13 @@ def modulo_ventas():
             st.subheader("Agregar Nuevo Cliente")
             with st.form("form_nuevo_cliente"):
                 nombre_cliente = st.text_input("Nombre del Cliente")
-                nombre_comercio = st.text_input("Nombre del Comercio")
+                direccion_cliente = st.text_input("Dirección")
                 instagram_cliente = st.text_input("Instagram")
-                whatsapp_cliente = st.text_input("Número de WhatsApp")
+                telefono_cliente = st.text_input("Número de Teléfono")
+                referido = st.checkbox("Referido")
                 descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=0)
                 estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'])
                 forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"])
-                rubro_cliente = st.text_input("Rubro")
-                viene_recomendado = st.checkbox("Viene recomendado")
                 notas_cliente = st.text_area("Notas del Cliente")
                 vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist())
                 col_submit, col_cancel = st.columns(2)
@@ -585,14 +583,13 @@ def modulo_ventas():
                     else:
                         nuevo_cliente = {
                             'Nombre': nombre_cliente.strip(),
-                            'Nombre Comercio': nombre_comercio.strip(),
+                            'Dirección': direccion_cliente.strip(),
                             'Instagram': instagram_cliente.strip(),
-                            'WhatsApp': whatsapp_cliente.strip(),
+                            'Teléfono': telefono_cliente.strip(),
+                            'Referido': 'Sí' if referido else 'No',
                             'Descuento': descuento_cliente,
                             'Estado Credito': estado_credito,
                             'Forma Pago': forma_pago,
-                            'Rubro': rubro_cliente.strip(),
-                            'Viene Recomendado': 'Sí' if viene_recomendado else 'No',
                             'Notas': notas_cliente.strip(),
                             'Vendedores': vendedor_asignado,
                             'Fecha Modificado': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -619,11 +616,11 @@ def modulo_ventas():
             vendedores = cliente_data['Vendedores'].split(',') if pd.notna(cliente_data['Vendedores']) else ['No asignado']
             vendedor_seleccionado = st.selectbox("Vendedor asignado", vendedores, index=0)
 
-    # Mostramos los demás campos si se selecciona un cliente distinto al espacio vacío
+    # Mostramos los demás campos si se selecciona un cliente
     if cliente_seleccionado != "":
         cliente_data = st.session_state.df_clientes[st.session_state.df_clientes['Nombre'] == cliente_seleccionado].iloc[0]
 
-        # Mostrar descuento debajo del nombre del cliente pero arriba del vendedor asignado
+        # Mostrar descuento
         st.write(f"**Descuento:** {cliente_data.get('Descuento', 0)}%")
 
         # Sección superior con datos: Última compra, Estado de crédito, Forma de pago
@@ -638,15 +635,15 @@ def modulo_ventas():
                 'Pagos regulares': '🟡',
                 'Mal pagador': '🔴'
             }
-            credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')  # Asumiendo que 'Estado Credito' existe
-            color_credito = opciones_credito.get(credito_cliente, '🟡')  # Valor por defecto si no coincide
+            credito_cliente = cliente_data.get('Estado Credito', 'Pagos regulares')
+            color_credito = opciones_credito.get(credito_cliente, '🟡')
             st.write(f"**Estado de Crédito:** {color_credito} {credito_cliente}")
 
         with col3:
             forma_pago = st.selectbox(
                 "💳 Forma de Pago",
                 ["CC", "Contado", "Depósito/Transferencia"],
-                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))  # Default a 'Contado'
+                index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado'))
             )
 
         # Desplegable para las notas del cliente con opción de editar
@@ -668,25 +665,24 @@ def modulo_ventas():
 
         # Mostrar datos extra del cliente
         with st.expander("📋 Ver datos extra del cliente"):
-            st.write(f"**Nombre del Comercio:** {cliente_data.get('Nombre Comercio', 'No disponible')}")
+            st.write(f"**Dirección:** {cliente_data.get('Dirección', 'No disponible')}")
             st.write(f"**Instagram:** {cliente_data.get('Instagram', 'No disponible')}")
-            st.write(f"**Número de WhatsApp:** {cliente_data.get('WhatsApp', 'No disponible')}")
-            st.write(f"**Rubro:** {cliente_data.get('Rubro', 'No disponible')}")
-            st.write(f"**Viene Recomendado:** {cliente_data.get('Viene Recomendado', 'No')}")
+            st.write(f"**Número de Teléfono:** {cliente_data.get('Teléfono', 'No disponible')}")
+            st.write(f"**Referido:** {cliente_data.get('Referido', 'No')}")
 
-        # Mostrar pedidos anteriores del cliente
-        st.subheader("📜 Pedidos Anteriores")
-        pedidos_cliente = obtener_pedidos_cliente(cliente_seleccionado)
-        if not pedidos_cliente.empty:
-            st.table(pedidos_cliente[['Fecha', 'Hora', 'Vendedor', 'Items']])
-        else:
-            st.info("El cliente no tiene pedidos anteriores.")
+        # Mostrar pedidos anteriores del cliente dentro de un expander
+        with st.expander("📜 Pedidos Anteriores"):
+            pedidos_cliente = obtener_pedidos_cliente(cliente_seleccionado)
+            if not pedidos_cliente.empty:
+                st.table(pedidos_cliente[['Fecha', 'Hora', 'Vendedor', 'Items']])
+            else:
+                st.info("El cliente no tiene pedidos anteriores.")
 
-        # Rubros del cliente: Ficticios en un desplegable con la opción de seleccionar y destildar
-        rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]  # Rubros ficticios
+        # Rubros del cliente: Ficticios en un desplegable
+        rubros_ficticios = ["Juguetería", "Peluches", "Electrónica", "Moda", "Deportes"]
         rubros_seleccionados = st.multiselect("🏷️ Filtrar por Rubro del Cliente", rubros_ficticios, help="Seleccioná rubros para filtrar productos")
 
-        # Lógica para filtrar productos por la columna 'Categorias' en lugar de 'Rubros'
+        # Lógica para filtrar productos por la columna 'Categorias'
         if rubros_seleccionados:
             productos_filtrados = st.session_state.df_productos[
                 st.session_state.df_productos['Categorias'].apply(lambda x: any(rubro in x for rubro in rubros_seleccionados))
@@ -698,16 +694,20 @@ def modulo_ventas():
             productos_filtrados = st.session_state.df_productos
             st.info("Mostrando todos los productos disponibles")
 
-        # Sección de productos solo aparece si hay cliente seleccionado
+        # Sección de productos
         st.header("🔍 Buscador de Productos 🕶️")
 
-        # Tres columnas: Buscador, precio, stock, EnSuc., Suc2
-        col_prod1, col_prod2, col_prod3, col_prod4, col_prod5 = st.columns([2, 1, 1, 1, 1])
+        # Buscador por código y nombre
+        col_codigo, col_nombre = st.columns([1, 2])
 
-        with col_prod1:
-            # Buscador de productos con el rubro seleccionado aplicado si existe
+        with col_codigo:
+            codigo_buscado = st.text_input("Buscar por Código", "")
+            if codigo_buscado.strip() != "":
+                productos_filtrados = productos_filtrados[productos_filtrados['Codigo'].astype(str).str.contains(codigo_buscado.strip())]
+
+        with col_nombre:
             producto_buscado = st.selectbox(
-                "Buscar producto",
+                "Buscar producto por Nombre",
                 [""] + productos_filtrados['Nombre'].unique().tolist(),
                 help="Escribí el nombre del producto o seleccioná uno de la lista."
             )
@@ -715,42 +715,40 @@ def modulo_ventas():
         if producto_buscado:
             producto_data = productos_filtrados[productos_filtrados['Nombre'] == producto_buscado].iloc[0]
 
+            # Mostrar detalles del producto
+            col_prod1, col_prod2, col_prod3, col_prod4, col_prod5 = st.columns([2, 1, 1, 1, 1])
+
+            with col_prod1:
+                st.write(f"**Código:** {producto_data['Codigo']}")
+                st.write(f"**Nombre:** {producto_data['Nombre']}")
+
             with col_prod2:
-                # Mostrar precio
                 st.write(f"**Precio:** ${producto_data['Precio']}")
 
             with col_prod3:
-                # Mostrar stock con colores según la cantidad
-                stock = max(0, producto_data['Stock'])  # Nos aseguramos que el stock no sea negativo
+                stock = max(0, producto_data['Stock'])
                 if stock <= 0:
                     color = 'red'
                 elif stock < 10:
                     color = 'orange'
                 else:
                     color = 'green'
-
                 st.markdown(f"<span style='color:{color}'>**Stock:** {stock}</span>", unsafe_allow_html=True)
 
             with col_prod4:
-                # EnSuc. (En Sucursal)
                 ensuc = producto_data.get('EnSuc', False)
                 ensuc_text = 'Sí' if ensuc else 'No'
                 st.write(f"**EnSuc.:** {ensuc_text}")
 
             with col_prod5:
-                # Suc2 (Disponible en Proveedor)
                 suc2 = producto_data.get('Suc2', False)
                 suc2_text = 'Sí' if suc2 else 'No'
                 st.write(f"**Suc2:** {suc2_text}")
 
-            # Dividimos la sección en dos columnas para mostrar el código y la cantidad en la izquierda, y la imagen a la derecha
+            # Dividir en dos columnas para cantidad e imagen
             col_izq, col_der = st.columns([2, 1])
 
             with col_izq:
-                # Mostrar código del producto
-                st.write(f"**Código del producto:** {producto_data['Codigo']}")
-
-                # Verificar si el campo 'forzar_multiplos' existe y es válido
                 venta_forzada = producto_data.get('forzar_multiplos', 0)
                 if venta_forzada > 0:
                     st.warning(f"Este producto tiene venta forzada por {int(venta_forzada)} unidades.")
@@ -761,7 +759,6 @@ def modulo_ventas():
                         key=f"cantidad_{producto_data['Codigo']}"
                     )
                 else:
-                    # Campo para seleccionar cantidad si no está forzada la venta por múltiplos
                     if stock > 0 or suc2:
                         max_value = stock if stock > 0 else None
                         cantidad = st.number_input(
@@ -777,12 +774,10 @@ def modulo_ventas():
 
                 # Botón para agregar el producto al pedido
                 if st.button("Agregar producto", key=f"agregar_{producto_data['Codigo']}"):
-                    # Verificar si el producto ya está en el pedido
                     existe = any(item['Codigo'] == producto_data['Codigo'] for item in st.session_state.pedido)
                     if existe:
                         st.warning("Este producto ya está en el pedido. Por favor, ajusta la cantidad si es necesario.")
                     else:
-                        # Determinar si el producto está pendiente de obtener
                         pendiente_obtener = False
                         if stock <= 0 and suc2:
                             pendiente_obtener = True
@@ -790,7 +785,7 @@ def modulo_ventas():
                         elif stock <= 0 and not suc2:
                             st.error("No hay stock disponible ni posibilidad de obtener este producto.")
                             return
-                        # Añadir producto al pedido con la cantidad seleccionada
+                        # Añadir producto al pedido
                         producto_agregado = {
                             'Codigo': producto_data['Codigo'],
                             'Nombre': producto_data['Nombre'],
@@ -801,14 +796,13 @@ def modulo_ventas():
                         }
                         st.session_state.pedido.append(producto_agregado)
                         if not pendiente_obtener:
-                            # Descontar del stock si está en sucursal
+                            # Descontar del stock
                             st.session_state.df_productos.loc[
                                 st.session_state.df_productos['Codigo'] == producto_data['Codigo'], 'Stock'
                             ] -= cantidad
                         st.success(f"Se agregó {cantidad} unidad(es) de {producto_data['Nombre']} al pedido.")
 
             with col_der:
-                # Mostrar imagen del producto en la columna aparte
                 if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
                     try:
                         response = requests.get(producto_data['imagen'], timeout=5)
@@ -825,7 +819,7 @@ def modulo_ventas():
 
     if st.session_state.pedido:
         # Mostrar la tabla del pedido con la opción de eliminar ítems y editar cantidad
-        for producto in st.session_state.pedido.copy():  # Use copy to avoid modification during iteration
+        for producto in st.session_state.pedido.copy():
             codigo = producto['Codigo']
             nombre = producto['Nombre']
             cantidad = producto['Cantidad']
@@ -878,17 +872,16 @@ def modulo_ventas():
         total_items = pedido_df['Cantidad'].sum() if not pedido_df.empty else 0
         total_monto = pedido_df['Importe'].sum() if not pedido_df.empty else 0.0
 
-        # Mostrar total de ítems y total del pedido en una sola fila
+        # Mostrar total de ítems y total del pedido
         col_items, col_total = st.columns([1, 1])
 
         with col_items:
             st.write(f"**Total de ítems:** {total_items}")
 
         with col_total:
-            # Mostrar total del pedido al lado de total de ítems
             st.write(f"<h4 style='text-align:right;'>Total del pedido: ${total_monto:,.2f}</h4>", unsafe_allow_html=True)
 
-        # Centrar el botón de guardar pedido
+        # Botón para guardar pedido
         col_guardar, _ = st.columns([2, 3])
         with col_guardar:
             if st.button("Guardar Pedido"):
@@ -927,6 +920,7 @@ def modulo_ventas():
                         st.error(f"Error al actualizar el stock en el archivo de productos: {e}")
     else:
         st.info("No hay productos en el pedido actual.")
+
 
 
 
