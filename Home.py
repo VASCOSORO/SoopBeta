@@ -477,6 +477,11 @@ def modulo_equipo():
                         st.error("El nombre seleccionado no existe.")
 
 
+# ===============================
+# Módulo Ventas 2.1.2.2
+# ===============================
+
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -581,10 +586,18 @@ def modulo_ventas():
                     telefono_cliente = st.text_input("Número de Teléfono", value=cliente_data.get('Teléfono', ''))
                     referido = st.checkbox("Referido", value=(cliente_data.get('Referido', 'No') == 'Sí'))
                     descuento_cliente = st.number_input("Descuento (%)", min_value=0, max_value=100, value=cliente_data.get('Descuento', 0))
-                    estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares')))
-                    forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')))
+                    estado_credito = st.selectbox("Estado de Crédito", ['Buen pagador', 'Pagos regulares', 'Mal pagador'], 
+                                                  index=['Buen pagador', 'Pagos regulares', 'Mal pagador'].index(cliente_data.get('Estado Credito', 'Pagos regulares')))
+                    forma_pago = st.selectbox("Forma de Pago", ["CC", "Contado", "Depósito/Transferencia"], 
+                                              index=["CC", "Contado", "Depósito/Transferencia"].index(cliente_data.get('Forma Pago', 'Contado')))
                     notas_cliente = st.text_area("Notas del Cliente", value=cliente_data.get('Notas', ''))
-                    vendedor_asignado = st.selectbox("Vendedor Asignado", st.session_state.df_equipo['Nombre'].tolist(), index=st.session_state.df_equipo['Nombre'].tolist().index(cliente_data.get('Vendedores', 'No asignado')))
+                    vendedor_asignado = st.selectbox(
+                        "Vendedor Asignado",
+                        st.session_state.df_equipo['Nombre'].tolist(),
+                        index=st.session_state.df_equipo['Nombre'].tolist().index(cliente_data.get('Vendedores', 'No asignado').split(',')[0].strip()) 
+                        if cliente_data.get('Vendedores', 'No asignado').split(',')[0].strip() in st.session_state.df_equipo['Nombre'].tolist() 
+                        else 0
+                    )
                     col_submit, col_cancel = st.columns(2)
                     submit_editar_cliente = col_submit.form_submit_button("Guardar Cambios")
                     cancelar_editar_cliente = col_cancel.form_submit_button("Cancelar")
