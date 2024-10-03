@@ -73,15 +73,28 @@ proveedores = cargar_proveedores()
 
 # Inicializar el DataFrame en session_state para mantener los cambios
 if 'df_productos' not in st.session_state:
-    st.session_state.df_productos = pd.DataFrame()
+    # Define las columnas esperadas
+    columnas_esperadas = [
+        'Código', 'Código de Barras', 'Nombre', 'Descripción',
+        'Alto', 'Ancho', 'Categorias', 'Proveedor',
+        'Costo (Pesos)', 'Costo (USD)', 'Último Precio (Pesos)',
+        'Último Precio (USD)', 'Precio x Mayor', 'Precio',
+        'Precio x Menor', 'Precio Promocional x Mayor',
+        'Precio Promocional', 'Precio Promocional x Menor',
+        'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
+        'Nota 1', 'Activo'
+    ]
+    st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
 
 # Función para resetear el formulario
 def reset_form():
-    for key in ['nuevo_codigo', 'nuevo_codigo_barras', 'activo', 'nuevo_nombre', 'nuevo_descripcion',
-                'nuevo_alto', 'nuevo_ancho', 'nueva_categoria', 'nuevo_costo_pesos',
-                'nuevo_costo_usd', 'precio_x_mayor', 'precio_venta', 'precio_x_menor',
-                'precio_promocional_mayor', 'precio_promocional', 'precio_promocional_menor',
-                'pasillo', 'estante', 'columna', 'fecha_vencimiento', 'nota_1', 'proveedor']:
+    for key in [
+        'nuevo_codigo', 'nuevo_codigo_barras', 'activo', 'nuevo_nombre', 'nuevo_descripcion',
+        'nuevo_alto', 'nuevo_ancho', 'nueva_categoria', 'nuevo_costo_pesos',
+        'nuevo_costo_usd', 'precio_x_mayor', 'precio_venta', 'precio_x_menor',
+        'precio_promocional_mayor', 'precio_promocional', 'precio_promocional_menor',
+        'pasillo', 'estante', 'columna', 'fecha_vencimiento', 'nota_1', 'proveedor'
+    ]:
         if key in st.session_state:
             del st.session_state[key]
 
@@ -104,8 +117,13 @@ if uploaded_file is not None:
         if 'Categorias' not in df.columns:
             df['Categorias'] = ''
 
+        # Asegurarse de que todas las columnas esperadas existan
+        for col in columnas_esperadas:
+            if col not in df.columns:
+                df[col] = ''
+
         # Asignar al session_state
-        st.session_state.df_productos = df
+        st.session_state.df_productos = df[columnas_esperadas]
 
     except Exception as e:
         st.error(f"❌ Ocurrió un error al leer el archivo: {e}")
@@ -119,7 +137,7 @@ if not st.session_state.df_productos.empty:
     if search_option == "Nombre":
         buscar_producto = st.selectbox("Selecciona el Nombre del Producto", options=[''] + st.session_state.df_productos['Nombre'].dropna().unique().tolist())
     else:
-        buscar_producto = st.selectbox("Selecciona el Código del Producto", options=[''] + st.session_state.df_productos['Código'].dropna().astype(str).tolist())
+        buscar_producto = st.selectbox("Selecciona el Código del Producto", options=[''] + st.session_state.df_productos['Código'].dropna().astype(str).unique().tolist())
 else:
     buscar_producto = ''
 
