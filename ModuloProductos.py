@@ -45,7 +45,7 @@ def agregar_footer():
     """
     st.markdown(footer, unsafe_allow_html=True)
 
-# Cargar Proveedores desde ProveedoresSoop.xlsx
+# Función para cargar proveedores desde ProveedoresSoop.xlsx
 def cargar_proveedores():
     proveedores_path = 'ProveedoresSoop.xlsx'
     if os.path.exists(proveedores_path):
@@ -65,7 +65,7 @@ def cargar_proveedores():
         return []
 
 # Sidebar para cargar el archivo CSV o Excel
-st.sidebar.header("Cargar Archivo de Productos")
+st.sidebar.header("📥 Cargar Archivo de Productos")
 uploaded_file = st.sidebar.file_uploader("📤 Subir archivo CSV o Excel", type=["csv", "xlsx"])
 
 # Cargar proveedores
@@ -119,7 +119,7 @@ if not st.session_state.df_productos.empty:
     if search_option == "Nombre":
         buscar_producto = st.selectbox("Selecciona el Nombre del Producto", options=[''] + st.session_state.df_productos['Nombre'].dropna().unique().tolist())
     else:
-        buscar_producto = st.selectbox("Selecciona el Código del Producto", options=[''] + st.session_state.df_productos['Código'].dropna().unique().astype(str).tolist())
+        buscar_producto = st.selectbox("Selecciona el Código del Producto", options=[''] + st.session_state.df_productos['Código'].dropna().astype(str).tolist())
 else:
     buscar_producto = ''
 
