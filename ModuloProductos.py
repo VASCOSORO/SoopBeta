@@ -44,6 +44,10 @@ if uploaded_file is not None:
         st.write("🔍 **Identificando columnas...**")
         st.write(f"📋 **Columnas identificadas:** {df.columns.tolist()}")
 
+        # Si la columna 'Categorias' no existe, crearla vacía
+        if 'Categorias' not in df.columns:
+            df['Categorias'] = ''
+
         # Mostrar el buscador para buscar un producto para editar
         st.subheader("🔍 Buscar Producto para Editar")
         buscar_producto = st.selectbox("Buscar Producto", options=[''] + df['Nombre'].tolist())
@@ -80,8 +84,8 @@ if uploaded_file is not None:
                 nuevo_ancho = st.number_input("Ancho", min_value=0.0, step=0.01, value=producto_seleccionado['Ancho'] if buscar_producto else 0.0)
 
             # Categorías desplegable
-            categorias = df['Categorías'].dropna().unique().tolist()
-            nueva_categoria = st.multiselect("Categorías", options=categorias, default=producto_seleccionado['Categorías'].split(',') if buscar_producto else [])
+            categorias = df['Categorias'].dropna().unique().tolist()
+            nueva_categoria = st.multiselect("Categorías", options=categorias, default=producto_seleccionado['Categorias'].split(',') if buscar_producto else [])
 
             # Fila de costos y precios
             st.markdown("---")
