@@ -75,7 +75,7 @@ proveedores = cargar_proveedores()
 if 'df_productos' not in st.session_state:
     st.session_state.df_productos = pd.DataFrame()
 
-# Función para restablecer los campos de entrada
+# Función para resetear el formulario
 def reset_form():
     for key in ['nuevo_codigo', 'nuevo_codigo_barras', 'activo', 'nuevo_nombre', 'nuevo_descripcion',
                 'nuevo_alto', 'nuevo_ancho', 'nueva_categoria', 'nuevo_costo_pesos',
@@ -85,6 +85,7 @@ def reset_form():
         if key in st.session_state:
             del st.session_state[key]
 
+# Leer el archivo subido y actualizar el DataFrame en session_state
 if uploaded_file is not None:
     try:
         st.write("📂 **Leyendo archivo...**")
@@ -108,9 +109,6 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"❌ Ocurrió un error al leer el archivo: {e}")
-else:
-    if 'df_productos' not in st.session_state or st.session_state.df_productos.empty:
-        st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
 
 # Mostrar el buscador para buscar un producto para editar
 if not st.session_state.df_productos.empty:
@@ -134,28 +132,28 @@ with st.form(key='agregar_producto_unique'):
     # Primera fila: Código, Código de Barras, Activo
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        nuevo_codigo = st.text_input("Código", value=str(producto_seleccionado['Código']) if producto_seleccionado is not None else "", key="nuevo_codigo")
+        nuevo_codigo = st.text_input("Código", value=str(producto_seleccionado['Código']) if producto_seleccionado is not None and 'Código' in producto_seleccionado else "", key="nuevo_codigo")
     with col2:
-        nuevo_codigo_barras = st.text_input("Código de Barras", value=producto_seleccionado['Código de Barras'] if producto_seleccionado is not None else "", key="nuevo_codigo_barras")
+        nuevo_codigo_barras = st.text_input("Código de Barras", value=producto_seleccionado['Código de Barras'] if producto_seleccionado is not None and 'Código de Barras' in producto_seleccionado else "", key="nuevo_codigo_barras")
     with col3:
-        activo = st.checkbox("Activo", value=(producto_seleccionado['Activo'] == 'Sí') if producto_seleccionado is not None else False, key="activo")
+        activo = st.checkbox("Activo", value=(producto_seleccionado['Activo'] == 'Sí') if producto_seleccionado is not None and 'Activo' in producto_seleccionado else False, key="activo")
 
     # Segunda fila: Nombre
-    nuevo_nombre = st.text_input("Nombre", value=producto_seleccionado['Nombre'] if producto_seleccionado is not None else "", key="nuevo_nombre")
+    nuevo_nombre = st.text_input("Nombre", value=producto_seleccionado['Nombre'] if producto_seleccionado is not None and 'Nombre' in producto_seleccionado else "", key="nuevo_nombre")
 
     # Tercera fila: Descripción
-    nuevo_descripcion = st.text_area("Descripción", value=producto_seleccionado['Descripción'] if producto_seleccionado is not None else "", height=100, key="nuevo_descripcion")
+    nuevo_descripcion = st.text_area("Descripción", value=producto_seleccionado['Descripción'] if producto_seleccionado is not None and 'Descripción' in producto_seleccionado else "", height=100, key="nuevo_descripcion")
 
     # Cuarta fila: Tamaño (Alto y Ancho)
     col4, col5 = st.columns([1, 1])
     with col4:
-        nuevo_alto = st.number_input("Alto (cm)", min_value=0, step=1, value=int(producto_seleccionado['Alto']) if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Alto'])) else 0, key="nuevo_alto")
+        nuevo_alto = st.number_input("Alto (cm)", min_value=0, step=1, value=int(producto_seleccionado['Alto']) if producto_seleccionado is not None and 'Alto' in producto_seleccionado and pd.notna(producto_seleccionado['Alto']) else 0, key="nuevo_alto")
     with col5:
-        nuevo_ancho = st.number_input("Ancho (cm)", min_value=0, step=1, value=int(producto_seleccionado['Ancho']) if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Ancho'])) else 0, key="nuevo_ancho")
+        nuevo_ancho = st.number_input("Ancho (cm)", min_value=0, step=1, value=int(producto_seleccionado['Ancho']) if producto_seleccionado is not None and 'Ancho' in producto_seleccionado and pd.notna(producto_seleccionado['Ancho']) else 0, key="nuevo_ancho")
 
     # Categorías desplegable
     categorias = st.session_state.df_productos['Categorias'].dropna().unique().tolist()
-    nueva_categoria = st.multiselect("Categorías", options=categorias, default=producto_seleccionado['Categorias'].split(',') if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Categorias'])) else [], key="nueva_categoria")
+    nueva_categoria = st.multiselect("Categorías", options=categorias, default=producto_seleccionado['Categorias'].split(',') if (producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias'])) else [], key="nueva_categoria")
 
     # Proveedor desplegable
     st.write("### Proveedor")
@@ -169,13 +167,13 @@ with st.form(key='agregar_producto_unique'):
     st.markdown("---")
     col6, col7, col8, col9 = st.columns([1, 1, 1, 1])
     with col6:
-        nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=producto_seleccionado['Costo (Pesos)'] if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0, key="nuevo_costo_pesos")
+        nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=producto_seleccionado['Costo (Pesos)'] if producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)']) else 0.0, key="nuevo_costo_pesos")
     with col7:
-        nuevo_costo_usd = st.number_input("Costo (USD)", min_value=0.0, step=0.01, value=producto_seleccionado['Costo (USD)'] if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0, key="nuevo_costo_usd")
+        nuevo_costo_usd = st.number_input("Costo (USD)", min_value=0.0, step=0.01, value=producto_seleccionado['Costo (USD)'] if producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)']) else 0.0, key="nuevo_costo_usd")
     with col8:
-        ultimo_precio_pesos = st.number_input("Último Precio (Pesos)", value=float(producto_seleccionado['Último Precio (Pesos)']) if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Último Precio (Pesos)'])) else 0.0, disabled=True, key="ultimo_precio_pesos")
+        ultimo_precio_pesos = st.number_input("Último Precio (Pesos)", value=float(producto_seleccionado['Último Precio (Pesos)']) if (producto_seleccionado is not None and 'Último Precio (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Último Precio (Pesos)'])) else 0.0, disabled=True, key="ultimo_precio_pesos")
     with col9:
-        ultimo_precio_usd = st.number_input("Último Precio (USD)", value=float(producto_seleccionado['Último Precio (USD)']) if (producto_seleccionado is not None and pd.notna(producto_seleccionado['Último Precio (USD)'])) else 0.0, disabled=True, key="ultimo_precio_usd")
+        ultimo_precio_usd = st.number_input("Último Precio (USD)", value=float(producto_seleccionado['Último Precio (USD)']) if (producto_seleccionado is not None and 'Último Precio (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Último Precio (USD)'])) else 0.0, disabled=True, key="ultimo_precio_usd")
 
     # Marcar último precio en rojo si es menor que el nuevo costo
     if (nuevo_costo_pesos > ultimo_precio_pesos):
@@ -220,15 +218,15 @@ with st.form(key='agregar_producto_unique'):
     st.subheader("📍 Campos Adicionales")
     col16, col17, col18 = st.columns([1, 1, 1])
     with col16:
-        pasillo = st.text_input("Pasillo", value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in st.session_state.df_productos.columns) else "", key="pasillo")
+        pasillo = st.text_input("Pasillo", value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado) else "", key="pasillo")
     with col17:
-        estante = st.text_input("Estante", value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in st.session_state.df_productos.columns) else "", key="estante")
+        estante = st.text_input("Estante", value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in producto_seleccionado) else "", key="estante")
     with col18:
-        columna = st.text_input("Columna", value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in st.session_state.df_productos.columns) else "", key="columna")
+        columna = st.text_input("Columna", value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in producto_seleccionado) else "", key="columna")
 
     # Fecha de vencimiento y Nota 1
     fecha_vencimiento = st.date_input("📅 Fecha de Vencimiento", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')), key="fecha_vencimiento")
-    nota_1 = st.text_area("📝 Nota 1", value=producto_seleccionado['Nota 1'] if (producto_seleccionado is not None and 'Nota 1' in st.session_state.df_productos.columns) else "", key="nota_1")
+    nota_1 = st.text_area("📝 Nota 1", value=producto_seleccionado['Nota 1'] if (producto_seleccionado is not None and 'Nota 1' in producto_seleccionado) else "", key="nota_1")
 
     # Botones para guardar o cancelar
     st.markdown("---")
@@ -240,51 +238,57 @@ with st.form(key='agregar_producto_unique'):
 
     if guardar:
         try:
-            # Generar nuevo ID correlativo
-            if 'Código' in st.session_state.df_productos.columns and not st.session_state.df_productos['Código'].empty:
-                try:
-                    ultimo_id = st.session_state.df_productos['Código'].astype(int).max()
-                    nuevo_id = ultimo_id + 1000
-                except:
-                    nuevo_id = 1000
+            # Validaciones básicas
+            if not nuevo_codigo or not nuevo_nombre:
+                st.error("❌ Por favor, completa los campos obligatorios (Código y Nombre).")
+            elif nuevo_codigo in st.session_state.df_productos['Código'].astype(str).tolist():
+                st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
             else:
-                nuevo_id = 1000
+                # Generar nuevo ID correlativo
+                if 'Código' in st.session_state.df_productos.columns and not st.session_state.df_productos['Código'].empty:
+                    try:
+                        ultimo_id = st.session_state.df_productos['Código'].astype(int).max()
+                        nuevo_id = ultimo_id + 1000
+                    except:
+                        nuevo_id = 1000
+                else:
+                    nuevo_id = 1000
 
-            # Crear nuevo producto
-            nuevo_producto = pd.DataFrame({
-                'Código': [nuevo_id],
-                'Código de Barras': [nuevo_codigo_barras],
-                'Nombre': [nuevo_nombre],
-                'Descripción': [nuevo_descripcion],
-                'Alto': [nuevo_alto],
-                'Ancho': [nuevo_ancho],
-                'Categorias': [','.join(nueva_categoria)],
-                'Proveedor': [proveedor_seleccionado],
-                'Costo (Pesos)': [nuevo_costo_pesos],
-                'Costo (USD)': [nuevo_costo_usd],
-                'Último Precio (Pesos)': [0.0],
-                'Último Precio (USD)': [0.0],
-                'Precio x Mayor': [precio_x_mayor],
-                'Precio': [precio_venta],
-                'Precio x Menor': [precio_x_menor],
-                'Precio Promocional x Mayor': [precio_promocional_mayor],
-                'Precio Promocional': [precio_promocional],
-                'Precio Promocional x Menor': [precio_promocional_menor],
-                'Pasillo': [pasillo],
-                'Estante': [estante],
-                'Columna': [columna],
-                'Fecha de Vencimiento': [fecha_vencimiento],
-                'Nota 1': [nota_1],
-                'Activo': ['Sí' if activo else 'No']
-            })
+                # Crear nuevo producto
+                nuevo_producto = pd.DataFrame({
+                    'Código': [nuevo_id],
+                    'Código de Barras': [nuevo_codigo_barras],
+                    'Nombre': [nuevo_nombre],
+                    'Descripción': [nuevo_descripcion],
+                    'Alto': [nuevo_alto],
+                    'Ancho': [nuevo_ancho],
+                    'Categorias': [','.join(nueva_categoria)],
+                    'Proveedor': [proveedor_seleccionado],
+                    'Costo (Pesos)': [nuevo_costo_pesos],
+                    'Costo (USD)': [nuevo_costo_usd],
+                    'Último Precio (Pesos)': [0.0],
+                    'Último Precio (USD)': [0.0],
+                    'Precio x Mayor': [precio_x_mayor],
+                    'Precio': [precio_venta],
+                    'Precio x Menor': [precio_x_menor],
+                    'Precio Promocional x Mayor': [precio_promocional_mayor],
+                    'Precio Promocional': [precio_promocional],
+                    'Precio Promocional x Menor': [precio_promocional_menor],
+                    'Pasillo': [pasillo],
+                    'Estante': [estante],
+                    'Columna': [columna],
+                    'Fecha de Vencimiento': [fecha_vencimiento],
+                    'Nota 1': [nota_1],
+                    'Activo': ['Sí' if activo else 'No']
+                })
 
-            # Concatenar el nuevo producto al DataFrame existente
-            st.session_state.df_productos = pd.concat([st.session_state.df_productos, nuevo_producto], ignore_index=True)
+                # Concatenar el nuevo producto al DataFrame existente
+                st.session_state.df_productos = pd.concat([st.session_state.df_productos, nuevo_producto], ignore_index=True)
 
-            st.success("✅ Producto guardado exitosamente.")
+                st.success("✅ Producto guardado exitosamente.")
 
-            # Resetear el formulario
-            reset_form()
+                # Resetear el formulario
+                reset_form()
 
         except Exception as e:
             st.error(f"❌ Ocurrió un error al guardar el producto: {e}")
