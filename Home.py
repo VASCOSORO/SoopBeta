@@ -1352,7 +1352,7 @@ def modulo_reportes_leads():
 
 
 # ===============================
-# Módulo Marketing
+# Módulo Marketing (completo) 2.o
 # ===============================
 
 def modulo_marketing():
@@ -1383,12 +1383,9 @@ def modulo_marketing():
         with col_detalles1:
             st.write(f"**Código del producto:** {producto_data['Codigo']}")
             st.write(f"**Proveedor:** {producto_data['Proveedor']}")
-            
-            # Verificar si la columna 'Categorías' existe en el DataFrame
-            if 'Categorías' in producto_data:
-                st.write(f"**Categorías:** {producto_data['Categorías']}")
-            else:
-                st.write("**Categorías:** No disponible")
+            st.write(f"**Categorías:** {producto_data.get('Categorias', 'No disponible')}")
+            st.write(f"**Descripción:** {producto_data.get('Descripcion', 'No disponible')}")
+            st.write(f"**Medidas:** {producto_data.get('Medidas', 'No disponible')}")
         
         with col_detalles2:
             # Mostrar imagen del producto
@@ -1414,21 +1411,29 @@ def modulo_marketing():
             
             with col_form1:
                 codigo = st.text_input("Código del Producto")
-                proveedor = st.text_input("Proveedor")
-                imagen_url = st.text_input("URL de la Imagen del Producto")
+                codigo_barra = st.text_input("Código de Barra")
+                nombre = st.text_input("Nombre del Producto")
                 categorias = st.text_input("Categorías (separadas por coma)")
+                descripcion = st.text_area("Descripción")
+                medidas = st.text_input("Medidas (Ancho x Alto)")
                 stock = st.number_input("Stock Inicial", min_value=0)
+                proveedor = st.text_input("Proveedor")
+                ubicacion = st.text_input("Ubicación del Producto")
                 
             with col_form2:
-                venta_forzada = st.checkbox("Venta Forzada", help="Marcar si la venta es forzada por múltiplos.")
-                costo_en_pesos = st.checkbox("Agregar Precio de Costo en Pesos")
-                costo_en_dolares = st.checkbox("Agregar Precio de Costo en Dólares")
-                
-                # Mostrar campos de precio según selección
-                if costo_en_pesos:
-                    precio_pesos = st.number_input("Costo en Pesos", min_value=0.0, step=0.01)
-                if costo_en_dolares:
-                    precio_dolares = st.number_input("Costo en Dólares", min_value=0.0, step=0.01)
+                imagen_url = st.text_input("URL de la Imagen del Producto")
+                costo_en_pesos = st.number_input("Costo en Pesos", min_value=0.0, step=0.01)
+                costo_en_dolares = st.number_input("Costo en USD", min_value=0.0, step=0.01)
+
+                # Calcular precios automáticamente
+                precio_venta_x_mayor = round(costo_en_pesos * 1.44, 2)
+                precio_venta = round(precio_venta_x_mayor * 1.13, 2)
+                precio_venta_x_menor = round(precio_venta_x_mayor * 1.90, 2)
+
+                # Mostrar precios calculados
+                st.write(f"**Precio Venta x Mayor:** {precio_venta_x_mayor}")
+                st.write(f"**Precio de Venta:** {precio_venta}")
+                st.write(f"**Precio Venta x Menor:** {precio_venta_x_menor}")
             
             # Botón para agregar el producto
             agregar_producto_submit = st.form_submit_button("Agregar Producto")
@@ -1436,13 +1441,20 @@ def modulo_marketing():
             if agregar_producto_submit:
                 nuevo_producto = {
                     'Codigo': codigo,
-                    'Proveedor': proveedor,
-                    'imagen': imagen_url,
-                    'Categorías': categorias,
+                    'codigo de barra': codigo_barra,
+                    'Nombre': nombre,
+                    'Categorias': categorias,
+                    'Descripcion': descripcion,
+                    'Medidas': medidas,
                     'Stock': stock,
-                    'forzar multiplos': 1 if venta_forzada else 0,
-                    'Precio Costo Pesos': precio_pesos if costo_en_pesos else None,
-                    'Precio Costo USD': precio_dolares if costo_en_dolares else None
+                    'Proveedor': proveedor,
+                    'Ubicacion': ubicacion,
+                    'imagen': imagen_url,
+                    'Costo en Pesos': costo_en_pesos,
+                    'Costo en USD': costo_en_dolares,
+                    'Precio Venta x Mayor': precio_venta_x_mayor,
+                    'Precio Venta': precio_venta,
+                    'Precio Venta x Menor': precio_venta_x_menor
                 }
                 st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
                 st.success(f"Producto {codigo} agregado exitosamente.")
@@ -1493,7 +1505,7 @@ def modulo_marketing():
                 generar_imagen_flayer(productos_flayer)
 
 # ===============================
-# Funciones para generar PDF e Imagen
+# Funciones para generar PDF e Imagen (completo)
 # ===============================
 
 def generar_pdf(productos):
@@ -1535,68 +1547,8 @@ def generar_pdf(productos):
     # Guardar el PDF en memoria
     pdf_output = BytesIO()
     pdf.output(pdf_output)
-    pdf_output.seek(0)
-    st.download_button(label="Descargar PDF", data=pdf_output.getvalue(), file_name="productos_seleccionados.pdf")
+   
 
-def generar_imagen_png(productos):
-    # Crear una imagen de 2 columnas y 3 filas
-    width, height = 800, 1200  # Tamaño A4 aproximado
-    img = Image.new('RGB', (width, height), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.load_default()
-
-    # Definir posiciones
-    img_width = 300
-    img_height = 300
-    x_positions = [50, 450]  # 2 columnas
-    y_positions = [50, 450, 850]  # 3 filas
-    
-    for i, producto in enumerate(productos):
-        producto_data = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == producto].iloc[0]
-        
-        # Descargar la imagen del producto
-        if pd.notna(producto_data['imagen']) and producto_data['imagen'] != '':
-            try:
-                response = requests.get(producto_data['imagen'], timeout=5)
-                response.raise_for_status()
-                product_img = Image.open(BytesIO(response.content)).resize((img_width, img_height))
-                
-                # Calcular la posición en la cuadrícula
-                x = x_positions[i % 2]
-                y = y_positions[i // 2]
-                
-                # Pegar imagen y agregar texto
-                img.paste(product_img, (x, y))
-                draw.text((x, y + img_height + 10), f"Producto: {producto_data['Nombre']}", font=font, fill=(0, 0, 0))
-                draw.text((x, y + img_height + 30), f"Código: {producto_data['Codigo']}", font=font, fill=(0, 0, 0))
-                draw.text((x, y + img_height + 50), f"Proveedor: {producto_data['Proveedor']}", font=font, fill=(0, 0, 0))
-            except Exception:
-                draw.text((x, y), "No image available", font=font, fill=(0, 0, 0))
-
-    # Guardar la imagen en memoria
-    img_output = BytesIO()
-    img.save(img_output, format="PNG")
-    img_output.seek(0)
-    
-    # Mostrar la imagen y permitir su descarga
-    st.image(img, caption="Vista previa del flayer")
-    st.download_button(label="Descargar Imagen PNG", data=img_output, file_name="productos_flayer.png", mime="image/png")
-
-# ===============================
-# Funciones para generar Flayer
-# ===============================
-
-def generar_flayer_preview(productos):
-    st.write("🎞️Aquí se generará una vista previa del flayer con los productos seleccionados.")
-    generar_imagen_png(productos)
-
-def generar_pdf_flayer(productos):
-    st.write("📄Aquí se generará un PDF con los productos seleccionados en formato de flayer.")
-    generar_pdf(productos)
-
-def generar_imagen_flayer(productos):
-    st.write("👨‍🦼Aquí se generará una imagen PNG con los productos seleccionados en formato de flayer.")
-    generar_imagen_png(productos)
 
 # ===============================
 # Módulo Logística
