@@ -8,13 +8,13 @@ from PIL import Image
 
 # Configuración de la página
 st.set_page_config(
-    page_title="📁 Modulo Productos",
+    page_title="📁 Módulo Productos",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título de la aplicación
-st.title("📁 Modulo Productos")
+st.title("📁 Módulo Productos")
 
 # Función para convertir DataFrame a CSV en memoria
 def convertir_a_csv(df):
@@ -69,8 +69,34 @@ if uploaded_file is not None:
             st.error("❌ Formato de archivo no soportado. Por favor, sube un archivo CSV o XLSX.")
             st.stop()
 
+        # Renombrar columnas según las indicaciones
+        renombrar_columnas = {
+            'precio': 'Precio x Mayor',
+            'PRecios Jugueterias FAce': 'precio',
+            'inner': 'Paquete/Presentación'
+        }
+        df.rename(columns=renombrar_columnas, inplace=True)
+
+        # Eliminar columnas no necesarias si existen
+        columnas_a_eliminar = ['precio 25 plus', 'precio precio face dolar', 'precio face+50', 'precio bonus']
+        df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], inplace=True)
+
         # Verificar y agregar columnas nuevas si no existen
-        columnas_nuevas = ['Precio Promocional con Descuento', 'Precio x Mayor con Descuento', 'Precio x Menor con Descuento', 'Suc2Activ', 'StockSuc2', 'Código de Barras', 'Alto', 'Ancho']
+        columnas_nuevas = [
+            'Precio Promocional con Descuento', 
+            'Precio x Mayor con Descuento', 
+            'Precio x Menor con Descuento', 
+            'Suc2Activ', 
+            'StockSuc2', 
+            'Código de Barras', 
+            'Alto', 
+            'Ancho',
+            'Columna',
+            'Fecha de Vencimiento',
+            'Última modificación fecha',
+            'Último en modificar',
+            'Nota 1'
+        ]
         for columna in columnas_nuevas:
             if columna not in df.columns:
                 df[columna] = None
@@ -90,12 +116,12 @@ if uploaded_file is not None:
         gb.configure_pagination(paginationAutoPageSize=True)
         gb.configure_side_bar()
         gb.configure_default_column(
-            editable=False,
+            editable=True,  # Permitir edición
             groupable=True,
-            resizable=False,
+            resizable=True,
             sortable=True,
-            wrapText=False,  # Envuelve el texto para columnas largas
-            autoHeight=False  # Ajusta la altura automáticamente
+            wrapText=True,
+            autoHeight=True
         )
 
         for column in df.columns:
@@ -116,10 +142,10 @@ if uploaded_file is not None:
                 gridOptions=gridOptions,
                 data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                 update_mode=GridUpdateMode.MODEL_CHANGED,
-                fit_columns_on_grid_load=False,
+                fit_columns_on_grid_load=True,
                 theme='streamlit',
                 enable_enterprise_modules=False,
-                height=500,
+                height=600,
                 reload_data=False
             )
 
@@ -138,6 +164,7 @@ if uploaded_file is not None:
                 nuevo_nombre = st.text_input("Nombre")
                 nuevo_categoria = st.text_input("Categoría")
                 nuevo_descripcion = st.text_area("Descripción")
+                nuevo_tamaño = st.text_input("Tamaño")
                 nuevo_alto = st.number_input("Alto", min_value=0.0, step=0.01)
                 nuevo_ancho = st.number_input("Ancho", min_value=0.0, step=0.01)
 
@@ -159,6 +186,16 @@ if uploaded_file is not None:
                     nuevo_precio_venta_unitario = st.number_input("Precio Venta Unitario", min_value=0.0, step=0.01)
                     nuevo_precio_promocional_descuento = st.number_input("Precio Promocional con Descuento", min_value=0.0, step=0.01)
 
+                # Campos adicionales
+                st.subheader("Campos Adicionales")
+                nuevo_fecha_vencimiento = st.date_input("Fecha de Vencimiento", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
+                nuevo_columna = st.text_input("Columna")
+                nuevo_pasillo = st.text_input("Pasillo")
+                nuevo_estante = st.text_input("Estante")
+
+                # Nota 1
+                nuevo_nota1 = st.text_area("Nota 1")
+
                 submit_nuevo = st.form_submit_button(label='Agregar Producto')
 
                 if submit_nuevo:
@@ -174,21 +211,39 @@ if uploaded_file is not None:
                             'Nombre': nuevo_nombre,
                             'Categoría': nuevo_categoria,
                             'Descripción': nuevo_descripcion,
+                            'Tamaño': nuevo_tamaño,
                             'Alto': nuevo_alto,
                             'Ancho': nuevo_ancho,
-                            'Costo (Pesos)': nuevo_precio_costo_pesos,
-                            'Costo (USD)': nuevo_precio_costo_usd,
-                            'Precio Venta Unitario': nuevo_precio_venta_unitario,
                             'Precio Promocional con Descuento': nuevo_precio_promocional_descuento,
                             'Precio x Mayor': nuevo_precio_x_mayor,
                             'Precio x Mayor con Descuento': nuevo_precio_x_mayor_descuento,
                             'Precio x Menor': nuevo_precio_x_menor,
                             'Precio x Menor con Descuento': nuevo_precio_x_menor_descuento,
+                            'Precio Venta Unitario': nuevo_precio_venta_unitario,
+                            'Precio': nuevo_precio_venta_unitario,  # Asegurarse de que "precio" se asigne correctamente
+                            'Suc2Activ': 'No',
+                            'StockSuc2': None,
+                            'Costo (Pesos)': nuevo_precio_costo_pesos,
+                            'Costo (USD)': nuevo_precio_costo_usd,
+                            'Paquete/Presentación': None,  # Puedes ajustar si hay un valor por defecto
+                            'Columna': nuevo_columna,
+                            'Pasillo': nuevo_pasillo,
+                            'Estante': nuevo_estante,
+                            'Fecha de Vencimiento': nuevo_fecha_vencimiento,
+                            'Última modificación fecha': None,  # Puedes establecer automáticamente la fecha
+                            'Último en modificar': None,  # Puedes vincularlo con el usuario actual si es necesario
+                            'Nota 1': nuevo_nota1
                         }
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
 
-        # Botón para descargar el archivo CSV o Excel modificado
+        except Exception as e:
+            st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+    else:
+        st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
+
+    # Botón para descargar el archivo CSV o Excel modificado
+    if uploaded_file is not None:
         st.header("💾 Descargar Archivo Modificado:")
         csv = convertir_a_csv(df_modificado)
         excel = convertir_a_excel(df_modificado)
@@ -212,10 +267,5 @@ if uploaded_file is not None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    except Exception as e:
-        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
-else:
-    st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
-
-# Agregar el footer
-agregar_footer()
+    # Agregar el footer
+    agregar_footer()
