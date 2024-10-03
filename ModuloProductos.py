@@ -55,19 +55,26 @@ uploaded_file = st.sidebar.file_uploader("📤 Subir archivo CSV o Excel", type=
 
 if uploaded_file is not None:
     try:
+        st.write("📂 **Leyendo archivo...**")
         # Detectar el tipo de archivo subido y leerlo
         if uploaded_file.name.endswith('.csv'):
             try:
                 # Intentar leer el CSV con detección automática de delimitador y saltar líneas problemáticas
                 df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=None, engine='python', on_bad_lines='skip')
+                st.success("✅ **Archivo CSV leído correctamente.**")
             except Exception as e:
                 st.error(f"❌ Error al procesar el CSV: {e}")
                 st.stop()
         elif uploaded_file.name.endswith('.xlsx'):
             df = pd.read_excel(uploaded_file, engine='openpyxl')
+            st.success("✅ **Archivo Excel leído correctamente.**")
         else:
             st.error("❌ Formato de archivo no soportado. Por favor, sube un archivo CSV o XLSX.")
             st.stop()
+
+        st.write("🔍 **Identificando columnas...**")
+        # Mostrar las columnas identificadas en el archivo original
+        st.write(f"📋 **Columnas identificadas:** {df.columns.tolist()}")
 
         # Renombrar columnas según las indicaciones
         renombrar_columnas = {
@@ -76,10 +83,15 @@ if uploaded_file is not None:
             'inner': 'Paquete/Presentación'
         }
         df.rename(columns=renombrar_columnas, inplace=True)
+        st.write("🔄 **Renombrando columnas:**")
+        st.write(f"📋 **Columnas renombradas:** {list(renombrar_columnas.keys())} → {list(renombrar_columnas.values())}")
 
         # Eliminar columnas no necesarias si existen
         columnas_a_eliminar = ['precio 25 plus', 'precio precio face dolar', 'precio face+50', 'precio bonus']
-        df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], inplace=True)
+        columnas_eliminadas = [col for col in columnas_a_eliminar if col in df.columns]
+        df.drop(columns=columnas_eliminadas, inplace=True)
+        st.write("🗑️ **Eliminando columnas no necesarias:**")
+        st.write(f"📋 **Columnas eliminadas:** {columnas_eliminadas}")
 
         # Verificar y agregar columnas nuevas si no existen
         columnas_nuevas = [
@@ -97,16 +109,22 @@ if uploaded_file is not None:
             'Último en modificar',
             'Nota 1'
         ]
+        columnas_agregadas = []
         for columna in columnas_nuevas:
             if columna not in df.columns:
                 df[columna] = None
+                columnas_agregadas.append(columna)
+
+        st.write("➕ **Agregando columnas nuevas si no existen:**")
+        st.write(f"📋 **Columnas agregadas:** {columnas_agregadas}")
 
         # Establecer todos los valores en 'Suc2Activ' a "No"
         df['Suc2Activ'] = 'No'
+        st.write("🔄 **Ajustando valores de la columna 'Suc2Activ' a 'No' en todas las filas.**")
 
         # Mostrar los nombres de las columnas para depuración
-        st.sidebar.write("🔍 **Columnas en el archivo:**")
-        st.sidebar.write(df.columns.tolist())
+        st.write("🔍 **Columnas después de las modificaciones:**")
+        st.write(f"📋 {df.columns.tolist()}")
 
         # Inicialización de la variable df_modificado
         df_modificado = df.copy()
@@ -130,7 +148,7 @@ if uploaded_file is not None:
         gridOptions = gb.build()
 
         # Mostrar el número de artículos filtrados
-        st.write(f"Total de Artículos Filtrados: {len(df)}")
+        st.write(f"📊 **Total de Artículos Filtrados:** {len(df)}")
 
         # Mostrar la tabla editable
         mostrar_tabla = st.checkbox("Mostrar Vista Preliminar de la Tabla")
