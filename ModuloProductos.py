@@ -237,35 +237,36 @@ if uploaded_file is not None:
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
 
-        except Exception as e:
-            st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
-    else:
-        st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
+    except Exception as e:
+        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
 
-    # Botón para descargar el archivo CSV o Excel modificado
-    if uploaded_file is not None:
-        st.header("💾 Descargar Archivo Modificado:")
-        csv = convertir_a_csv(df_modificado)
-        excel = convertir_a_excel(df_modificado)
+else:
+    st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
 
-        argentina = pytz.timezone('America/Argentina/Buenos_Aires')
-        timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
+# Botón para descargar el archivo CSV o Excel modificado
+if uploaded_file is not None:
+    st.header("💾 Descargar Archivo Modificado:")
+    csv = convertir_a_csv(df_modificado)
+    excel = convertir_a_excel(df_modificado)
 
-        # Opción para descargar como CSV
-        st.download_button(
-            label="📥 Descargar CSV Modificado",
-            data=csv,
-            file_name=f"productos_modificados_{timestamp}.csv",
-            mime="text/csv"
-        )
+    argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+    timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
 
-        # Opción para descargar como XLSX
-        st.download_button(
-            label="📥 Descargar Excel Modificado",
-            data=excel,
-            file_name=f"productos_modificados_{timestamp}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    # Opción para descargar como CSV
+    st.download_button(
+        label="📥 Descargar CSV Modificado",
+        data=csv,
+        file_name=f"productos_modificados_{timestamp}.csv",
+        mime="text/csv"
+    )
 
-    # Agregar el footer
-    agregar_footer()
+    # Opción para descargar como XLSX
+    st.download_button(
+        label="📥 Descargar Excel Modificado",
+        data=excel,
+        file_name=f"productos_modificados_{timestamp}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+# Agregar el footer
+agregar_footer()
