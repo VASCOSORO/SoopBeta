@@ -142,28 +142,28 @@ if uploaded_file is not None:
                 # Generar nuevo ID correlativo
                 nuevo_id = df['Código'].max() + 1000 if 'Código' in df.columns else 1000
                 # Crear nuevo producto
-                nuevo_producto = {
-                    'Código': nuevo_id,
-                    'Código de Barras': nuevo_codigo_barras,
-                    'Nombre': nuevo_nombre,
-                    'Descripción': nuevo_descripcion,
-                    'Alto': nuevo_alto,
-                    'Ancho': nuevo_ancho,
-                    'Categorías': ','.join(nueva_categoria),
-                    'Costo (Pesos)': nuevo_costo_pesos,
-                    'Costo (USD)': nuevo_costo_usd,
-                    'Precio x Mayor': precio_x_mayor,
-                    'Precio': precio_venta,
-                    'Precio x Menor': precio_x_menor,
-                    'Pasillo': pasillo,
-                    'Estante': estante,
-                    'Columna': columna,
-                    'Fecha de Vencimiento': fecha_vencimiento,
-                    'Nota 1': nota_1,
-                    'Activo': 'Sí' if activo else 'No'
-                }
-                # Agregar al DataFrame
-                df = df.append(nuevo_producto, ignore_index=True)
+                nuevo_producto = pd.DataFrame({
+                    'Código': [nuevo_id],
+                    'Código de Barras': [nuevo_codigo_barras],
+                    'Nombre': [nuevo_nombre],
+                    'Descripción': [nuevo_descripcion],
+                    'Alto': [nuevo_alto],
+                    'Ancho': [nuevo_ancho],
+                    'Categorías': [','.join(nueva_categoria)],
+                    'Costo (Pesos)': [nuevo_costo_pesos],
+                    'Costo (USD)': [nuevo_costo_usd],
+                    'Precio x Mayor': [precio_x_mayor],
+                    'Precio': [precio_venta],
+                    'Precio x Menor': [precio_x_menor],
+                    'Pasillo': [pasillo],
+                    'Estante': [estante],
+                    'Columna': [columna],
+                    'Fecha de Vencimiento': [fecha_vencimiento],
+                    'Nota 1': [nota_1],
+                    'Activo': ['Sí' if activo else 'No']
+                })
+                # Concatenar el nuevo producto al DataFrame existente
+                df = pd.concat([df, nuevo_producto], ignore_index=True)
                 st.success("✅ Producto guardado exitosamente.")
 
         # Descargar archivo modificado
