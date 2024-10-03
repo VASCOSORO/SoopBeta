@@ -91,9 +91,9 @@ if uploaded_file is not None:
             with col7:
                 nuevo_costo_usd = st.number_input("Costo (USD)", min_value=0.0, step=0.01, value=producto_seleccionado['Costo (USD)'] if buscar_producto else 0.0)
             with col8:
-                ultimo_precio_pesos = st.text_input("Último Precio (Pesos)", value="null", disabled=True)
+                ultimo_precio_pesos = st.text_input("Último Precio (Pesos)", value="0", disabled=True)
             with col9:
-                ultimo_precio_usd = st.text_input("Último Precio (USD)", value="null", disabled=True)
+                ultimo_precio_usd = st.text_input("Último Precio (USD)", value="0", disabled=True)
 
             # Marcar último precio en rojo si es menor que el nuevo costo
             if nuevo_costo_pesos > float(ultimo_precio_pesos) or nuevo_costo_usd > float(ultimo_precio_usd):
