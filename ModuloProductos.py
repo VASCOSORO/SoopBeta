@@ -65,7 +65,7 @@ def cargar_proveedores():
         return []
 
 # Sidebar para cargar el archivo CSV o Excel
-st.sidebar.header("Cargar Archivo CSV o Excel de Productos")
+st.sidebar.header("Cargar Archivo de Productos")
 uploaded_file = st.sidebar.file_uploader("📤 Subir archivo CSV o Excel", type=["csv", "xlsx"])
 
 # Cargar proveedores
@@ -113,7 +113,13 @@ if uploaded_file is not None:
 # Mostrar el buscador para buscar un producto para editar
 if not st.session_state.df_productos.empty:
     st.subheader("🔍 Buscar Producto para Editar")
-    buscar_producto = st.selectbox("Buscar Producto", options=[''] + st.session_state.df_productos['Nombre'].tolist())
+    # Crear una opción para buscar por Nombre o Código
+    search_option = st.radio("Buscar por:", options=["Nombre", "Código"], horizontal=True)
+    
+    if search_option == "Nombre":
+        buscar_producto = st.selectbox("Selecciona el Nombre del Producto", options=[''] + st.session_state.df_productos['Nombre'].dropna().unique().tolist())
+    else:
+        buscar_producto = st.selectbox("Selecciona el Código del Producto", options=[''] + st.session_state.df_productos['Código'].dropna().unique().astype(str).tolist())
 else:
     buscar_producto = ''
 
@@ -121,7 +127,10 @@ else:
 producto_seleccionado = None
 if buscar_producto:
     try:
-        producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == buscar_producto].iloc[0]
+        if search_option == "Nombre":
+            producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == buscar_producto].iloc[0]
+        else:
+            producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos['Código'].astype(str) == buscar_producto].iloc[0]
         st.write(f"**Producto Seleccionado: {producto_seleccionado['Nombre']}**")
     except Exception as e:
         st.error(f"❌ Error al seleccionar el producto: {e}")
