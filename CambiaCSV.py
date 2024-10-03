@@ -58,7 +58,11 @@ if uploaded_file is not None:
     try:
         # Detectar el tipo de archivo subido y leerlo
         if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
+            try:
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                st.warning("⚠️ Problema de codificación con UTF-8, intentando con ISO-8859-1.")
+                df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
         elif uploaded_file.name.endswith('.xlsx'):
             df = pd.read_excel(uploaded_file, engine='openpyxl')
         else:
@@ -208,4 +212,10 @@ if uploaded_file is not None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    except Exception as
+    except Exception as e:
+        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+else:
+    st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
+
+# Agregar el footer
+agregar_footer()
