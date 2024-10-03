@@ -17,13 +17,16 @@ st.set_page_config(
 # Título de la aplicación
 st.title("📁 Modulo Productos")
 
+# Función para convertir DataFrame a CSV en memoria
+def convertir_a_csv(df):
+    return df.to_csv(index=False).encode('utf-8')
+
 # Función para convertir DataFrame a Excel en memoria usando openpyxl
 def convertir_a_excel(df):
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Productos')
-    excel_bytes = buffer.getvalue()
-    return excel_bytes
+    return buffer.getvalue()
 
 # Función para agregar el footer
 def agregar_footer():
@@ -47,18 +50,14 @@ def agregar_footer():
     """
     st.markdown(footer, unsafe_allow_html=True)
 
-# Función para asegurar que el valor es al menos el mínimo permitido
-def safe_value(value, min_value=0.0):
-    return max(value, min_value)
-
-# Sidebar para cargar el archivo Excel
-st.sidebar.header("Cargar Archivo Excel de Productos")
-uploaded_file = st.sidebar.file_uploader("📤 Subir archivo Excel", type=["xlsx"])
+# Sidebar para cargar el archivo CSV
+st.sidebar.header("Cargar Archivo CSV de Productos")
+uploaded_file = st.sidebar.file_uploader("📤 Subir archivo CSV", type=["csv"])
 
 if uploaded_file is not None:
     try:
-        # Leer el archivo Excel
-        df = pd.read_excel(uploaded_file, engine='openpyxl')
+        # Leer el archivo CSV
+        df = pd.read_csv(uploaded_file)
 
         # Verificar y agregar columnas nuevas si no existen
         columnas_nuevas = ['Precio Promocional con Descuento', 'Precio x Mayor con Descuento', 'Precio x Menor con Descuento', 'Suc2Activ', 'StockSuc2', 'Código de Barras', 'Alto', 'Ancho']
@@ -179,26 +178,34 @@ if uploaded_file is not None:
                         df_modificado = df_modificado.append(nuevo_producto, ignore_index=True)
                         st.success("✅ Producto agregado exitosamente.")
 
-        # Botón para descargar el archivo Excel modificado
+        # Botón para descargar el archivo CSV o Excel modificado
         st.header("💾 Descargar Archivo Modificado:")
+        csv = convertir_a_csv(df_modificado)
         excel = convertir_a_excel(df_modificado)
 
         argentina = pytz.timezone('America/Argentina/Buenos_Aires')
         timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
 
-        file_name = f"productos_modificados_{timestamp}.xlsx"
+        # Opción para descargar como CSV
+        st.download_button(
+            label="📥 Descargar CSV Modificado",
+            data=csv,
+            file_name=f"productos_modificados_{timestamp}.csv",
+            mime="text/csv"
+        )
 
+        # Opción para descargar como XLSX
         st.download_button(
             label="📥 Descargar Excel Modificado",
             data=excel,
-            file_name=file_name,
+            file_name=f"productos_modificados_{timestamp}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
     except Exception as e:
         st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
 else:
-    st.info("📂 Por favor, sube un archivo Excel para comenzar.")
+    st.info("📂 Por favor, sube un archivo CSV para comenzar.")
 
 # Agregar el footer
 agregar_footer()
