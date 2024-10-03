@@ -75,6 +75,16 @@ proveedores = cargar_proveedores()
 if 'df_productos' not in st.session_state:
     st.session_state.df_productos = pd.DataFrame()
 
+# Función para restablecer los campos de entrada
+def reset_form():
+    for key in ['nuevo_codigo', 'nuevo_codigo_barras', 'activo', 'nuevo_nombre', 'nuevo_descripcion',
+                'nuevo_alto', 'nuevo_ancho', 'nueva_categoria', 'nuevo_costo_pesos',
+                'nuevo_costo_usd', 'precio_x_mayor', 'precio_venta', 'precio_x_menor',
+                'precio_promocional_mayor', 'precio_promocional', 'precio_promocional_menor',
+                'pasillo', 'estante', 'columna', 'fecha_vencimiento', 'nota_1', 'proveedor']:
+        if key in st.session_state:
+            del st.session_state[key]
+
 if uploaded_file is not None:
     try:
         st.write("📂 **Leyendo archivo...**")
@@ -117,16 +127,6 @@ if buscar_producto:
         st.write(f"**Producto Seleccionado: {producto_seleccionado['Nombre']}**")
     except Exception as e:
         st.error(f"❌ Error al seleccionar el producto: {e}")
-
-# Función para resetear el formulario
-def reset_form():
-    for key in ['nuevo_codigo', 'nuevo_codigo_barras', 'activo', 'nuevo_nombre', 'nuevo_descripcion',
-                'nuevo_alto', 'nuevo_ancho', 'nueva_categoria', 'nuevo_costo_pesos',
-                'nuevo_costo_usd', 'precio_x_mayor', 'precio_venta', 'precio_x_menor',
-                'precio_promocional_mayor', 'precio_promocional', 'precio_promocional_menor',
-                'pasillo', 'estante', 'columna', 'fecha_vencimiento', 'nota_1', 'proveedor']:
-        if key in st.session_state:
-            del st.session_state[key]
 
 # Formulario para agregar o editar productos
 st.subheader("➕ Agregar/Editar Producto")
