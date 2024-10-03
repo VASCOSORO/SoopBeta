@@ -50,14 +50,21 @@ def agregar_footer():
     """
     st.markdown(footer, unsafe_allow_html=True)
 
-# Sidebar para cargar el archivo CSV
-st.sidebar.header("Cargar Archivo CSV de Productos")
-uploaded_file = st.sidebar.file_uploader("📤 Subir archivo CSV", type=["csv"])
+# Sidebar para cargar el archivo CSV o Excel
+st.sidebar.header("Cargar Archivo CSV o Excel de Productos")
+uploaded_file = st.sidebar.file_uploader("📤 Subir archivo CSV o Excel", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
-        # Leer el archivo CSV
-        df = pd.read_csv(uploaded_file)
+        # Detectar el tipo de archivo subido y leerlo
+        if uploaded_file.name.endswith('.csv'):
+            # Forzar la lectura con ISO-8859-1 para evitar problemas de codificación
+            df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+        elif uploaded_file.name.endswith('.xlsx'):
+            df = pd.read_excel(uploaded_file, engine='openpyxl')
+        else:
+            st.error("❌ Formato de archivo no soportado. Por favor, sube un archivo CSV o XLSX.")
+            st.stop()
 
         # Verificar y agregar columnas nuevas si no existen
         columnas_nuevas = ['Precio Promocional con Descuento', 'Precio x Mayor con Descuento', 'Precio x Menor con Descuento', 'Suc2Activ', 'StockSuc2', 'Código de Barras', 'Alto', 'Ancho']
@@ -205,7 +212,7 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
 else:
-    st.info("📂 Por favor, sube un archivo CSV para comenzar.")
+    st.info("📂 Por favor, sube un archivo CSV o Excel para comenzar.")
 
 # Agregar el footer
 agregar_footer()
