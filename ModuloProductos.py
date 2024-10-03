@@ -58,8 +58,8 @@ if uploaded_file is not None:
         # Detectar el tipo de archivo subido y leerlo
         if uploaded_file.name.endswith('.csv'):
             try:
-                # Intentar leer el CSV con detección automática de delimitador
-                df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=None, engine='python', error_bad_lines=False)
+                # Intentar leer el CSV con detección automática de delimitador y saltar líneas problemáticas
+                df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=None, engine='python', on_bad_lines='skip')
             except Exception as e:
                 st.error(f"❌ Error al procesar el CSV: {e}")
                 st.stop()
