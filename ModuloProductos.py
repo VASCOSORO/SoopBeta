@@ -12,6 +12,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Definir las columnas esperadas globalmente
+columnas_esperadas = [
+    'Código', 'Código de Barras', 'Nombre', 'Descripción',
+    'Alto', 'Ancho', 'Categorias', 'Proveedor',
+    'Costo (Pesos)', 'Costo (USD)', 'Último Precio (Pesos)',
+    'Último Precio (USD)', 'Precio x Mayor', 'Precio',
+    'Precio x Menor', 'Precio Promocional x Mayor',
+    'Precio Promocional', 'Precio Promocional x Menor',
+    'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
+    'Nota 1', 'Activo'
+]
+
 # Función para convertir DataFrame a CSV en memoria
 def convertir_a_csv(df):
     return df.to_csv(index=False).encode('utf-8')
@@ -73,28 +85,18 @@ proveedores = cargar_proveedores()
 
 # Inicializar el DataFrame en session_state para mantener los cambios
 if 'df_productos' not in st.session_state:
-    # Define las columnas esperadas
-    columnas_esperadas = [
-        'Código', 'Código de Barras', 'Nombre', 'Descripción',
-        'Alto', 'Ancho', 'Categorias', 'Proveedor',
-        'Costo (Pesos)', 'Costo (USD)', 'Último Precio (Pesos)',
-        'Último Precio (USD)', 'Precio x Mayor', 'Precio',
-        'Precio x Menor', 'Precio Promocional x Mayor',
-        'Precio Promocional', 'Precio Promocional x Menor',
-        'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
-        'Nota 1', 'Activo'
-    ]
     st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
 
 # Función para resetear el formulario
 def reset_form():
-    for key in [
+    keys_to_reset = [
         'nuevo_codigo', 'nuevo_codigo_barras', 'activo', 'nuevo_nombre', 'nuevo_descripcion',
         'nuevo_alto', 'nuevo_ancho', 'nueva_categoria', 'nuevo_costo_pesos',
         'nuevo_costo_usd', 'precio_x_mayor', 'precio_venta', 'precio_x_menor',
         'precio_promocional_mayor', 'precio_promocional', 'precio_promocional_menor',
         'pasillo', 'estante', 'columna', 'fecha_vencimiento', 'nota_1', 'proveedor'
-    ]:
+    ]
+    for key in keys_to_reset:
         if key in st.session_state:
             del st.session_state[key]
 
