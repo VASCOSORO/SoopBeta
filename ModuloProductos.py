@@ -1,4 +1,4 @@
-# ===== Módulo Productos 2.0.2 ANDA BASTATE BIEN DE VISTA POR LO MNEOS ======
+# ===== Módulo Productos 2.0 para Carga ======
 # ===========================================
 
 import streamlit as st
@@ -18,12 +18,13 @@ st.set_page_config(
 columnas_esperadas = [
     'id', 'id externo', 'Codigo', 'Codigo de Barras', 'Nombre', 'Descripcion',
     'Alto', 'Ancho', 'Categorias', 'Proveedor',
-    'Costo (Pesos)', 'Costo (USD)', 'Ultimo Precio (Pesos)',
-    'Ultimo Precio (USD)', 'Precio x Mayor', 'Precio Venta',
+    'Costo (Pesos)', 'Costo (USD)', 'Ultimo Costo (Pesos)', 'Ultimo Costo (USD)',
+    'Ultimo Precio (Pesos)', 'Ultimo Precio (USD)', 'Precio x Mayor', 'Precio Venta',
     'Precio x Menor', 'Precio Promocional x Mayor',
     'Precio Promocional', 'Precio Promocional x Menor',
     'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
-    'Nota 1', 'Activo', 'Imagen', 'Unidades por Bulto', 'Venta Forzada', 'Presentacion'
+    'Nota 1', 'Activo', 'Imagen', 'Unidades por Bulto', 'Venta Forzada', 'Presentacion',
+    'Ultima Actualizacion'
 ]
 
 def cargar_excel():
@@ -41,7 +42,9 @@ def cargar_excel():
                 'costo fob': 'Costo (USD)',
                 'costo': 'Costo (Pesos)',
                 'id': 'id',
-                'id externo': 'id externo'
+                'id externo': 'id externo',
+                'ultimo costo (pesos)': 'Ultimo Costo (Pesos)',
+                'ultimo costo (usd)': 'Ultimo Costo (USD)'
             }
 
             for col_actual, col_esperada in mapeo_columnas.items():
@@ -120,6 +123,60 @@ else:
 # Sección para agregar o editar productos
 st.subheader("➕ Agregar/Editar Producto")
 with st.form(key='agregar_producto_unique'):
+    # Historico de Costos
+    st.write("### Histórico de Costos")
+    col_histo1, col_histo2 = st.columns(2)
+    with col_histo1:
+        st.markdown("**Último Costo (Pesos):**")
+        if producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Costo (Pesos)']):
+            ultimo_costo_pesos = float(producto_seleccionado['Ultimo Costo (Pesos)'])
+            nuevo_costo_pesos = st.number_input(
+                "Nuevo Costo (Pesos)",
+                min_value=0.0,
+                step=0.01,
+                value=float(producto_seleccionado['Costo (Pesos)']) if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
+                key="costo_pesos"
+            )
+            # Verificar si el nuevo costo es mayor que el último costo
+            if nuevo_costo_pesos > ultimo_costo_pesos:
+                st.markdown(f"<span style='color:red'>**↑ Nuevo costo es mayor que el último costo (↑ {ultimo_costo_pesos})**</span>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"**Último Costo (Pesos):** {ultimo_costo_pesos}")
+        else:
+            nuevo_costo_pesos = st.number_input(
+                "Nuevo Costo (Pesos)",
+                min_value=0.0,
+                step=0.01,
+                value=0.0,
+                key="costo_pesos"
+            )
+
+    with col_histo2:
+        st.markdown("**Último Costo (USD):**")
+        if producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Costo (USD)']):
+            ultimo_costo_usd = float(producto_seleccionado['Ultimo Costo (USD)'])
+            nuevo_costo_usd = st.number_input(
+                "Nuevo Costo (USD)",
+                min_value=0.0,
+                step=0.01,
+                value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
+                key="costo_usd"
+            )
+            # Verificar si el nuevo costo es mayor que el último costo
+            if nuevo_costo_usd > ultimo_costo_usd:
+                st.markdown(f"<span style='color:red'>**↑ Nuevo costo es mayor que el último costo (↑ {ultimo_costo_usd})**</span>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"**Último Costo (USD):** {ultimo_costo_usd}")
+        else:
+            nuevo_costo_usd = st.number_input(
+                "Nuevo Costo (USD)",
+                min_value=0.0,
+                step=0.01,
+                value=0.0,
+                key="costo_usd"
+            )
+
+    # Campos básicos del producto
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         nuevo_codigo = st.text_input(
@@ -226,49 +283,53 @@ with st.form(key='agregar_producto_unique'):
             key="fecha_vencimiento"
         )
 
-    # Continuación del formulario con más campos según las columnas esperadas
+    # Precios y Costos (no editables)
     st.write("### Precios y Costos")
     col9, col10, col11 = st.columns([1, 1, 1])
     with col9:
-        costo_pesos = st.number_input(
-            "Costo (Pesos)",
-            min_value=0.0,
-            step=0.01,
-            value=float(producto_seleccionado['Costo (Pesos)']) if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
-            key="costo_pesos"
-        )
+        st.markdown("**Precio x Mayor (Calculado):**")
+        precio_x_mayor = nuevo_costo_pesos * 1.5  # Ejemplo de cálculo
+        st.text(f"${precio_x_mayor:.2f}")
     with col10:
-        costo_usd = st.number_input(
-            "Costo (USD)",
-            min_value=0.0,
-            step=0.01,
-            value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
-            key="costo_usd"
-        )
+        st.markdown("**Precio Venta (Calculado):**")
+        precio_venta_calculado = nuevo_costo_pesos * 2.0  # Ejemplo de cálculo
+        st.text(f"${precio_venta_calculado:.2f}")
     with col11:
-        precio_venta = st.number_input(
-            "Precio Venta (Pesos)",
-            min_value=0.0,
-            step=0.01,
-            value=float(producto_seleccionado['Precio Venta']) if (producto_seleccionado is not None and 'Precio Venta' in producto_seleccionado and pd.notna(producto_seleccionado['Precio Venta'])) else 0.0,
-            key="precio_venta"
-        )
+        st.markdown("**Precio x Menor (Calculado):**")
+        precio_x_menor = nuevo_costo_pesos * 1.8  # Ejemplo de cálculo
+        st.text(f"${precio_x_menor:.2f}")
 
-    st.write("### Ubicación en Tienda")
+    st.write("### Precios Promocionales (Calculados)")
     col12, col13, col14 = st.columns([1, 1, 1])
     with col12:
+        precio_promocional_mayor = precio_x_mayor * 0.9  # Ejemplo de 10% de descuento
+        st.markdown("**Promoción x Mayor:**")
+        st.text(f"${precio_promocional_mayor:.2f}")
+    with col13:
+        precio_promocional = precio_venta_calculado * 0.85  # Ejemplo de 15% de descuento
+        st.markdown("**Promoción Venta:**")
+        st.text(f"${precio_promocional:.2f}")
+    with col14:
+        precio_promocional_menor = precio_x_menor * 0.95  # Ejemplo de 5% de descuento
+        st.markdown("**Promoción x Menor:**")
+        st.text(f"${precio_promocional_menor:.2f}")
+
+    # Ubicación en Tienda
+    st.write("### Ubicación en Tienda")
+    col15, col16, col17 = st.columns([1, 1, 1])
+    with col15:
         pasillo = st.text_input(
             "Pasillo",
             value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado) else "",
             key="pasillo"
         )
-    with col13:
+    with col16:
         estante = st.text_input(
             "Estante",
             value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in producto_seleccionado) else "",
             key="estante"
         )
-    with col14:
+    with col17:
         columna = st.text_input(
             "Columna",
             value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in producto_seleccionado) else "",
@@ -295,10 +356,15 @@ with st.form(key='agregar_producto_unique'):
     else:
         ruta_imagen = producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else ""
 
-    # Botón de envío del formulario
-    submit_button = st.form_submit_button(label='Guardar Producto')
+    # Botones para Guardar y Borrar
+    st.write("### Acciones")
+    col_accion1, col_accion2 = st.columns(2)
+    with col_accion1:
+        guardar_button = st.form_submit_button(label='💾 Guardar Producto')
+    with col_accion2:
+        borrar_button = st.form_submit_button(label='🗑️ Borrar Producto')
 
-    if submit_button:
+    if guardar_button:
         # Validaciones básicas
         if not nuevo_codigo:
             st.error("❌ El campo 'Código' es obligatorio.")
@@ -319,16 +385,18 @@ with st.form(key='agregar_producto_unique'):
                 'Ancho': nuevo_ancho,
                 'Categorias': ', '.join(nueva_categoria),
                 'Proveedor': proveedor_seleccionado,
-                'Costo (Pesos)': costo_pesos,
-                'Costo (USD)': costo_usd,
-                'Ultimo Precio (Pesos)': producto_seleccionado['Ultimo Precio (Pesos)'] if (producto_seleccionado is not None and 'Ultimo Precio (Pesos)' in producto_seleccionado) else 0.0,
-                'Ultimo Precio (USD)': producto_seleccionado['Ultimo Precio (USD)'] if (producto_seleccionado is not None and 'Ultimo Precio (USD)' in producto_seleccionado) else 0.0,
-                'Precio x Mayor': producto_seleccionado['Precio x Mayor'] if (producto_seleccionado is not None and 'Precio x Mayor' in producto_seleccionado) else 0.0,
-                'Precio Venta': precio_venta,
-                'Precio x Menor': producto_seleccionado['Precio x Menor'] if (producto_seleccionado is not None and 'Precio x Menor' in producto_seleccionado) else 0.0,
-                'Precio Promocional x Mayor': producto_seleccionado['Precio Promocional x Mayor'] if (producto_seleccionado is not None and 'Precio Promocional x Mayor' in producto_seleccionado) else 0.0,
-                'Precio Promocional': producto_seleccionado['Precio Promocional'] if (producto_seleccionado is not None and 'Precio Promocional' in producto_seleccionado) else 0.0,
-                'Precio Promocional x Menor': producto_seleccionado['Precio Promocional x Menor'] if (producto_seleccionado is not None and 'Precio Promocional x Menor' in producto_seleccionado) else 0.0,
+                'Costo (Pesos)': nuevo_costo_pesos,
+                'Costo (USD)': nuevo_costo_usd,
+                'Ultimo Costo (Pesos)': producto_seleccionado['Costo (Pesos)'] if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado) else nuevo_costo_pesos,
+                'Ultimo Costo (USD)': producto_seleccionado['Costo (USD)'] if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado) else nuevo_costo_usd,
+                'Ultimo Precio (Pesos)': producto_seleccionado['Precio Venta'] if (producto_seleccionado is not None and 'Precio Venta' in producto_seleccionado) else 0.0,
+                'Ultimo Precio (USD)': producto_seleccionado['Costo (USD)'] if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado) else 0.0,
+                'Precio x Mayor': precio_x_mayor,
+                'Precio Venta': precio_venta_calculado,
+                'Precio x Menor': precio_x_menor,
+                'Precio Promocional x Mayor': precio_promocional_mayor,
+                'Precio Promocional': precio_promocional,
+                'Precio Promocional x Menor': precio_promocional_menor,
                 'Pasillo': pasillo,
                 'Estante': estante,
                 'Columna': columna,
@@ -367,6 +435,23 @@ with st.form(key='agregar_producto_unique'):
             # Resetear los campos del formulario si se desea
             st.session_state.buscar_codigo = ''
             st.session_state.buscar_nombre = ''
+
+    if borrar_button:
+        if producto_seleccionado is not None:
+            confirmacion = st.warning("⚠️ ¿Estás seguro de que deseas borrar este producto?", icon="⚠️")
+            borrar_confirm = st.button("Confirmar Borrado")
+            if borrar_confirm:
+                try:
+                    st.session_state.df_productos = st.session_state.df_productos[st.session_state.df_productos['id'] != producto_seleccionado['id']]
+                    st.session_state.df_productos.to_excel('Produt2.xlsx', index=False, engine='openpyxl')
+                    st.success(f"✅ **Producto '{producto_seleccionado['Nombre']}' borrado exitosamente.**")
+                    # Resetear la selección
+                    st.session_state.buscar_codigo = ''
+                    st.session_state.buscar_nombre = ''
+                except Exception as e:
+                    st.error(f"❌ Error al borrar el producto: {e}")
+        else:
+            st.error("❌ No hay un producto seleccionado para borrar.")
 
 # Opcional: Mostrar todos los productos en una tabla
 st.subheader("📊 Todos los Productos")
