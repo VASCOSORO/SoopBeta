@@ -23,7 +23,7 @@ columnas_esperadas = [
     'Precio x Menor', 'Precio Promocional x Mayor',
     'Precio Promocional', 'Precio Promocional x Menor',
     'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
-    'Nota 1', 'Activo', 'Imagen', 'Unidades por Bulto', 'Venta Forzada'
+    'Nota 1', 'Activo', 'Imagen', 'Unidades por Bulto', 'Venta Forzada', 'Presentacion'
 ]
 
 def cargar_excel():
@@ -195,19 +195,29 @@ with st.form(key='agregar_producto_unique'):
         key="proveedor"
     )
 
-    unidades_por_bulto = st.number_input(
-        "Unidades por Bulto",
-        min_value=0,
-        step=1,
-        value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
-        key="unidades_por_bulto"
-    )
-
-    venta_forzada = st.checkbox(
-        "Venta Forzada",
-        value=(producto_seleccionado['Venta Forzada'] == 'Sí') if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado) else False,
-        key="venta_forzada"
-    )
+    col_bulk1, col_bulk2, col_bulk3 = st.columns([1, 1, 1])
+    with col_bulk1:
+        unidades_por_bulto = st.number_input(
+            "Unidades por Bulto",
+            min_value=0,
+            step=1,
+            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
+            key="unidades_por_bulto"
+        )
+    with col_bulk2:
+        presentacion = st.text_input(
+            "Presentación/Paquete/Bolsa/Display",
+            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccionado and pd.notna(producto_seleccionado['Presentacion'])) else "",
+            key="presentacion"
+        )
+    with col_bulk3:
+        venta_forzada = st.number_input(
+            "Venta Forzada por Cantidad",
+            min_value=0,
+            step=1,
+            value=int(producto_seleccionado['Venta Forzada']) if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado and pd.notna(producto_seleccionado['Venta Forzada'])) else 0,
+            key="venta_forzada"
+        )
 
     url_imagen = st.text_input(
         "URL de Imagen",
