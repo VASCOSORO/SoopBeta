@@ -282,3 +282,5 @@ with st.form(key='agregar_producto_unique'):
             value=round(precio_x_mayor * 1.90, 2) if precio_x_mayor else 0.0,
             key="precio_x_menor"
         )
+
+    st.form_submit_button(label="Guardar Producto")
