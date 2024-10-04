@@ -23,7 +23,7 @@ columnas_esperadas = [
     'Precio x Menor', 'Precio Promocional x Mayor',
     'Precio Promocional', 'Precio Promocional x Menor',
     'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
-    'Nota 1', 'Activo'
+    'Nota 1', 'Activo', 'Imagen'
 ]
 
 def cargar_excel():
@@ -37,6 +37,10 @@ def cargar_excel():
                 df.rename(columns={'precio jugueterias face': 'Precio Venta'}, inplace=True)
             if 'precio' in df.columns:
                 df.rename(columns={'precio': 'Precio x Mayor'}, inplace=True)
+            if 'Costo FOB' in df.columns:
+                df.rename(columns={'Costo FOB': 'Costo (USD)'}, inplace=True)
+            if 'costo' in df.columns:
+                df.rename(columns={'costo': 'Costo (Pesos)'}, inplace=True)
 
             if 'Categorias' not in df.columns:
                 df['Categorias'] = ''
@@ -198,111 +202,4 @@ with st.form(key='agregar_producto_unique'):
                 nuevo_costo_pesos = 0.0
         nuevo_costo_pesos = st.number_input(
             "Costo (Pesos)",
-            min_value=0.0,
-            step=0.01,
-            value=nuevo_costo_pesos,
-            key="nuevo_costo_pesos"
-        )
-    with col7:
-        nuevo_costo_usd = 0.0
-        if producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)']):
-            try:
-                nuevo_costo_usd = float(producto_seleccionado['Costo (USD)'])
-            except (ValueError, TypeError):
-                nuevo_costo_usd = 0.0
-        nuevo_costo_usd = st.number_input(
-            "Costo (USD)",
-            min_value=0.0,
-            step=0.01,
-            value=nuevo_costo_usd,
-            key="nuevo_costo_usd"
-        )
-    with col8:
-        ultimo_precio_pesos = 0.0
-        if producto_seleccionado is not None and 'Ultimo Precio (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Precio (Pesos)']):
-            try:
-                ultimo_precio_pesos = float(producto_seleccionado['Ultimo Precio (Pesos)'])
-            except (ValueError, TypeError):
-                ultimo_precio_pesos = 0.0
-        ultimo_precio_pesos = st.number_input(
-            "Último Precio (Pesos)",
-            value=ultimo_precio_pesos,
-            disabled=True,
-            key="ultimo_precio_pesos"
-        )
-    with col9:
-        ultimo_precio_usd = 0.0
-        if producto_seleccionado is not None and 'Ultimo Precio (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Precio (USD)']):
-            try:
-                ultimo_precio_usd = float(producto_seleccionado['Ultimo Precio (USD)'])
-            except (ValueError, TypeError):
-                ultimo_precio_usd = 0.0
-        ultimo_precio_usd = st.number_input(
-            "Último Precio (USD)",
-            value=ultimo_precio_usd,
-            disabled=True,
-            key="ultimo_precio_usd"
-        )
-
-    if nuevo_costo_pesos > ultimo_precio_pesos:
-        col8.markdown("<p style='color:red;'>Último Precio Menor al Costo</p>", unsafe_allow_html=True)
-    if nuevo_costo_usd > ultimo_precio_usd:
-        col9.markdown("<p style='color:red;'>Último Precio Menor al Costo</p>", unsafe_allow_html=True)
-
-    st.markdown("---")
-    col10, col11, col12 = st.columns([1, 1, 1])
-    with col10:
-        precio_x_mayor = st.number_input(
-            "Precio x Mayor",
-            min_value=0.0,
-            step=0.01,
-            value=round(nuevo_costo_pesos * 1.44, 2) if nuevo_costo_pesos else 0.0,
-            key="precio_x_mayor"
-        )
-    with col11:
-        precio_venta = st.number_input(
-            "Precio Venta",
-            min_value=0.0,
-            step=0.01,
-            value=round(precio_x_mayor * 1.13, 2) if precio_x_mayor else 0.0,
-            key="precio_venta"
-        )
-    with col12:
-        precio_x_menor = st.number_input(
-            "Precio x Menor",
-            min_value=0.0,
-            step=0.01,
-            value=round(precio_x_mayor * 1.90, 2) if precio_x_mayor else 0.0,
-            key="precio_x_menor"
-        )
-
-    st.markdown("---")
-    st.write("### Precios Promocionales")
-    col13, col14, col15 = st.columns([1, 1, 1])
-    with col13:
-        promo_mayor = st.checkbox("Agregar Precio Promocional x Mayor", key="promo_mayor")
-        if promo_mayor:
-            precio_promocional_mayor = st.number_input("Precio Promocional x Mayor", min_value=0.0, step=0.01, key="precio_promocional_mayor")
-        else:
-            precio_promocional_mayor = 0.0
-    with col14:
-        promo_venta = st.checkbox("Agregar Precio Promocional", key="promo_venta")
-        if promo_venta:
-            precio_promocional = st.number_input("Precio Promocional", min_value=0.0, step=0.01, key="precio_promocional")
-        else:
-            precio_promocional = 0.0
-    with col15:
-        promo_menor = st.checkbox("Agregar Precio Promocional x Menor", key="promo_menor")
-        if promo_menor:
-            precio_promocional_menor = st.number_input("Precio Promocional x Menor", min_value=0.0, step=0.01, key="precio_promocional_menor")
-        else:
-            precio_promocional_menor = 0.0
-
-    st.subheader("📍 Campos Adicionales")
-    col16, col17, col18 = st.columns([1, 1, 1])
-    with col16:
-        pasillo = st.text_input(
-            "Pasillo",
-            value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado and pd.notna(producto_seleccionado['Pasillo'])) else "",
-            key="pasillo"
-        )
+            min_value
