@@ -283,4 +283,8 @@ with st.form(key='agregar_producto_unique'):
             key="precio_x_menor"
         )
 
-    st.form_submit_button(label="Guardar Producto")
+    col_cancel, col_save = st.columns([1, 1])
+    with col_cancel:
+        st.form_submit_button(label="Cancelar")
+    with col_save:
+        st.form_submit_button(label="Guardar Producto")
