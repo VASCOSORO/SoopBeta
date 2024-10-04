@@ -33,7 +33,6 @@ def cargar_excel():
             df = pd.read_excel(excel_path, engine='openpyxl')
             st.success("✅ **Archivo Excel leído correctamente.**")
 
-            # Asegurar que las columnas se encuentren correctamente nombradas
             columnas_actuales = df.columns.str.strip().str.lower()
             mapeo_columnas = {
                 'precio jugueterias face': 'Precio Venta',
@@ -48,7 +47,6 @@ def cargar_excel():
                 if col_actual in columnas_actuales:
                     df.rename(columns={df.columns[columnas_actuales.get_loc(col_actual)]: col_esperada}, inplace=True)
 
-            # Asegurar que todas las columnas esperadas existan
             for col in columnas_esperadas:
                 if col not in df.columns:
                     df[col] = ''
@@ -286,6 +284,11 @@ with st.form(key='agregar_producto_unique'):
             value=round(nuevo_costo_pesos * 1.44, 2) if nuevo_costo_pesos else 0.0,
             key="precio_x_mayor"
         )
+        promo_mayor = st.checkbox("Agregar Precio Promocional x Mayor", key="promo_mayor")
+        if promo_mayor:
+            precio_promocional_mayor = st.number_input("Precio Promocional x Mayor", min_value=0.0, step=0.01, key="precio_promocional_mayor")
+            st.markdown(f"<p style='text-decoration: line-through;'>Precio Regular x Mayor: {precio_x_mayor}</p>", unsafe_allow_html=True)
+            precio_x_mayor = 0.0
     with col11:
         precio_venta = st.number_input(
             "Precio Venta",
@@ -294,6 +297,11 @@ with st.form(key='agregar_producto_unique'):
             value=round(precio_x_mayor * 1.13, 2) if precio_x_mayor else 0.0,
             key="precio_venta"
         )
+        promo_venta = st.checkbox("Agregar Precio Promocional", key="promo_venta")
+        if promo_venta:
+            precio_promocional = st.number_input("Precio Promocional", min_value=0.0, step=0.01, key="precio_promocional")
+            st.markdown(f"<p style='text-decoration: line-through;'>Precio Regular Venta: {precio_venta}</p>", unsafe_allow_html=True)
+            precio_venta = 0.0
     with col12:
         precio_x_menor = st.number_input(
             "Precio x Menor",
@@ -302,28 +310,11 @@ with st.form(key='agregar_producto_unique'):
             value=round(precio_x_mayor * 1.90, 2) if precio_x_mayor else 0.0,
             key="precio_x_menor"
         )
-
-    st.markdown("---")
-    st.write("### Precios Promocionales")
-    col13, col14, col15 = st.columns([1, 1, 1])
-    with col13:
-        promo_mayor = st.checkbox("Agregar Precio Promocional x Mayor", key="promo_mayor")
-        if promo_mayor:
-            precio_promocional_mayor = st.number_input("Precio Promocional x Mayor", min_value=0.0, step=0.01, key="precio_promocional_mayor")
-        else:
-            precio_promocional_mayor = 0.0
-    with col14:
-        promo_venta = st.checkbox("Agregar Precio Promocional", key="promo_venta")
-        if promo_venta:
-            precio_promocional = st.number_input("Precio Promocional", min_value=0.0, step=0.01, key="precio_promocional")
-        else:
-            precio_promocional = 0.0
-    with col15:
         promo_menor = st.checkbox("Agregar Precio Promocional x Menor", key="promo_menor")
         if promo_menor:
             precio_promocional_menor = st.number_input("Precio Promocional x Menor", min_value=0.0, step=0.01, key="precio_promocional_menor")
-        else:
-            precio_promocional_menor = 0.0
+            st.markdown(f"<p style='text-decoration: line-through;'>Precio Regular x Menor: {precio_x_menor}</p>", unsafe_allow_html=True)
+            precio_x_menor = 0.0
 
     st.subheader("📍 Campos Adicionales")
     col16, col17, col18 = st.columns([1, 1, 1])
