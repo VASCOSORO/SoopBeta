@@ -381,13 +381,15 @@ with st.form(key='agregar_producto_unique'):
             else:
                 # Generar nuevo ID correlativo solo si es un nuevo producto
                 if producto_seleccionado is None:
-                    if 'Código' in st.session_state.df_productos.columns and not st.session_state.df_productos['Código'].astype(str).str.isnumeric().any() is False:
-                        try:
-                            ultimo_id = st.session_state.df_productos['Código'].astype(int).max()
+                    try:
+                        # Intentar convertir 'Código' a int para encontrar el máximo
+                        df_numerico = st.session_state.df_productos['Código'].astype(str).str.extract('(\d+)').dropna().astype(int)
+                        if not df_numerico.empty:
+                            ultimo_id = df_numerico[0].max()
                             nuevo_id = ultimo_id + 1
-                        except:
+                        else:
                             nuevo_id = 1000
-                    else:
+                    except:
                         nuevo_id = 1000
                 else:
                     nuevo_id = producto_seleccionado['Código']
@@ -439,7 +441,7 @@ with st.form(key='agregar_producto_unique'):
     if cancelar:
         # Resetear el formulario sin guardar
         reset_form()
-        st.experimental_rerun()
+        st.success("✅ Operación cancelada y formulario reseteado.")
 
 # Descargar archivo modificado
 if not st.session_state.df_productos.empty:
