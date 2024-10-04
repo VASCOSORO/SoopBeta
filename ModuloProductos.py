@@ -124,8 +124,11 @@ if uploaded_file is not None:
             if col not in df.columns:
                 df[col] = ''
 
+        # Reordenar las columnas según `columnas_esperadas`
+        df = df[columnas_esperadas]
+
         # Asignar al session_state
-        st.session_state.df_productos = df[columnas_esperadas]
+        st.session_state.df_productos = df
 
     except Exception as e:
         st.error(f"❌ Ocurrió un error al leer el archivo: {e}")
@@ -373,51 +376,59 @@ with st.form(key='agregar_producto_unique'):
             # Validaciones básicas
             if not nuevo_codigo or not nuevo_nombre:
                 st.error("❌ Por favor, completa los campos obligatorios (Código y Nombre).")
-            elif nuevo_codigo in st.session_state.df_productos['Código'].astype(str).tolist():
+            elif nuevo_codigo in st.session_state.df_productos['Código'].astype(str).tolist() and (producto_seleccionado is None or str(producto_seleccionado['Código']) != nuevo_codigo):
                 st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
             else:
-                # Generar nuevo ID correlativo
-                if 'Código' in st.session_state.df_productos.columns and not st.session_state.df_productos['Código'].empty:
-                    try:
-                        ultimo_id = st.session_state.df_productos['Código'].astype(int).max()
-                        nuevo_id = ultimo_id + 1000
-                    except:
+                # Generar nuevo ID correlativo solo si es un nuevo producto
+                if producto_seleccionado is None:
+                    if 'Código' in st.session_state.df_productos.columns and not st.session_state.df_productos['Código'].astype(str).str.isnumeric().any() is False:
+                        try:
+                            ultimo_id = st.session_state.df_productos['Código'].astype(int).max()
+                            nuevo_id = ultimo_id + 1
+                        except:
+                            nuevo_id = 1000
+                    else:
                         nuevo_id = 1000
                 else:
-                    nuevo_id = 1000
+                    nuevo_id = producto_seleccionado['Código']
 
-                # Crear nuevo producto
-                nuevo_producto = pd.DataFrame({
-                    'Código': [nuevo_id],
-                    'Código de Barras': [nuevo_codigo_barras],
-                    'Nombre': [nuevo_nombre],
-                    'Descripción': [nuevo_descripcion],
-                    'Alto': [nuevo_alto],
-                    'Ancho': [nuevo_ancho],
-                    'Categorias': [','.join(nueva_categoria)],
-                    'Proveedor': [proveedor_seleccionado],
-                    'Costo (Pesos)': [nuevo_costo_pesos],
-                    'Costo (USD)': [nuevo_costo_usd],
-                    'Último Precio (Pesos)': [0.0],
-                    'Último Precio (USD)': [0.0],
-                    'Precio x Mayor': [precio_x_mayor],
-                    'Precio': [precio_venta],
-                    'Precio x Menor': [precio_x_menor],
-                    'Precio Promocional x Mayor': [precio_promocional_mayor],
-                    'Precio Promocional': [precio_promocional],
-                    'Precio Promocional x Menor': [precio_promocional_menor],
-                    'Pasillo': [pasillo],
-                    'Estante': [estante],
-                    'Columna': [columna],
-                    'Fecha de Vencimiento': [fecha_vencimiento],
-                    'Nota 1': [nota_1],
-                    'Activo': ['Sí' if activo else 'No']
-                })
+                # Crear nuevo producto o actualizar existente
+                nuevo_producto = {
+                    'Código': nuevo_id,
+                    'Código de Barras': nuevo_codigo_barras,
+                    'Nombre': nuevo_nombre,
+                    'Descripción': nuevo_descripcion,
+                    'Alto': nuevo_alto,
+                    'Ancho': nuevo_ancho,
+                    'Categorias': ','.join(nueva_categoria),
+                    'Proveedor': proveedor_seleccionado,
+                    'Costo (Pesos)': nuevo_costo_pesos,
+                    'Costo (USD)': nuevo_costo_usd,
+                    'Último Precio (Pesos)': ultimo_precio_pesos,
+                    'Último Precio (USD)': ultimo_precio_usd,
+                    'Precio x Mayor': precio_x_mayor,
+                    'Precio': precio_venta,
+                    'Precio x Menor': precio_x_menor,
+                    'Precio Promocional x Mayor': precio_promocional_mayor,
+                    'Precio Promocional': precio_promocional,
+                    'Precio Promocional x Menor': precio_promocional_menor,
+                    'Pasillo': pasillo,
+                    'Estante': estante,
+                    'Columna': columna,
+                    'Fecha de Vencimiento': fecha_vencimiento,
+                    'Nota 1': nota_1,
+                    'Activo': 'Sí' if activo else 'No'
+                }
 
-                # Concatenar el nuevo producto al DataFrame existente
-                st.session_state.df_productos = pd.concat([st.session_state.df_productos, nuevo_producto], ignore_index=True)
-
-                st.success("✅ Producto guardado exitosamente.")
+                if producto_seleccionado is None:
+                    # Agregar nuevo producto
+                    st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
+                    st.success("✅ Producto agregado exitosamente.")
+                else:
+                    # Actualizar producto existente
+                    idx = st.session_state.df_productos.index[st.session_state.df_productos['Código'] == producto_seleccionado['Código']].tolist()[0]
+                    st.session_state.df_productos.loc[idx] = nuevo_producto
+                    st.success("✅ Producto actualizado exitosamente.")
 
                 # Resetear el formulario
                 reset_form()
