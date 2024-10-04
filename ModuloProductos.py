@@ -212,4 +212,9 @@ with st.form(key='agregar_producto_unique'):
 
     url_imagen = st.text_input(
         "URL de Imagen",
-        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in
+        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
+        key="url_imagen"
+    )
+
+    st.form_submit_button(label="Guardar Producto")
+    
