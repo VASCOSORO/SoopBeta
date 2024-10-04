@@ -42,6 +42,20 @@ def cargar_y_convertir_csv():
             st.write("🔍 **Identificando columnas...**")
             st.write(f"📋 **Columnas identificadas:** {df.columns.tolist()}")
 
+            columnas_modificadas = {}
+            for col in df.columns:
+                nuevo_nombre = st.text_input(f"Renombrar columna '{col}':", value=col)
+                if st.checkbox(f"Eliminar columna '{col}'"):
+                    columnas_modificadas[col] = None
+                else:
+                    columnas_modificadas[col] = nuevo_nombre
+
+            # Aplicar los cambios a las columnas
+            df.rename(columns=columnas_modificadas, inplace=True)
+            columnas_a_eliminar = [col for col, nuevo in columnas_modificadas.items() if nuevo is None]
+            df.drop(columns=columnas_a_eliminar, inplace=True)
+
+            # Normalizar nombres de columnas
             df.columns = df.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
 
             if 'precio jugueterias face' in df.columns:
@@ -283,7 +297,7 @@ with st.form(key='agregar_producto_unique'):
         )
     with col11:
         precio_venta = st.number_input(
-            "Precio",
+            "Precio Venta",
             min_value=0.0,
             step=0.01,
             value=round(precio_x_mayor * 1.13, 2) if precio_x_mayor else 0.0,
@@ -395,7 +409,7 @@ with st.form(key='agregar_producto_unique'):
                     'Ultimo Precio (Pesos)': ultimo_precio_pesos,
                     'Ultimo Precio (USD)': ultimo_precio_usd,
                     'Precio x Mayor': precio_x_mayor,
-                    'Precio': precio_venta,
+                    'Precio Venta': precio_venta,
                     'Precio x Menor': precio_x_menor,
                     'Precio Promocional x Mayor': precio_promocional_mayor,
                     'Precio Promocional': precio_promocional,
