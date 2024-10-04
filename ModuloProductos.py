@@ -97,13 +97,13 @@ if not st.session_state.df_productos.empty:
     if buscar_codigo:
         try:
             producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str) == buscar_codigo].iloc[0]
-            st.write(f"**Producto Seleccionado por Código: {producto_seleccionado['Nombre']}**")
+            st.session_state.buscar_nombre = producto_seleccionado['Nombre']
         except Exception as e:
             st.error(f"❌ Error al seleccionar el producto por Código: {e}")
     elif buscar_nombre:
         try:
             producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == buscar_nombre].iloc[0]
-            st.write(f"**Producto Seleccionado por Nombre: {producto_seleccionado['Nombre']}**")
+            st.session_state.buscar_codigo = producto_seleccionado['Codigo']
         except Exception as e:
             st.error(f"❌ Error al seleccionar el producto por Nombre: {e}")
 else:
@@ -191,7 +191,7 @@ with st.form(key='agregar_producto_unique'):
     proveedor_seleccionado = st.selectbox(
         "Selecciona un proveedor",
         options=proveedores,
-        index=0,
+        index=proveedores.index(producto_seleccionado['Proveedor']) if producto_seleccionado is not None and producto_seleccionado['Proveedor'] in proveedores else 0,
         key="proveedor"
     )
 
