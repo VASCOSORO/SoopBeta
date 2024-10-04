@@ -32,12 +32,12 @@ def convertir_a_excel(df):
         df.to_excel(writer, index=False, sheet_name='Productos')
     return buffer.getvalue()
 
-def cargar_y_convertir_csv():
-    csv_path = 'Produt2.csv'
-    if os.path.exists(csv_path):
+def cargar_excel():
+    excel_path = 'Produt2.xlsx'
+    if os.path.exists(excel_path):
         try:
-            df = pd.read_csv(csv_path, encoding='ISO-8859-1', sep=None, engine='python', on_bad_lines='skip')
-            st.success("✅ **Archivo CSV leído correctamente.**")
+            df = pd.read_excel(excel_path, engine='openpyxl')
+            st.success("✅ **Archivo Excel leído correctamente.**")
 
             st.write("🔍 **Identificando columnas...**")
             st.write(f"📋 **Columnas identificadas:** {df.columns.tolist()}")
@@ -75,33 +75,22 @@ def cargar_y_convertir_csv():
             df['Ultima Actualizacion'] = datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')).strftime("%Y-%m-%d %H:%M:%S")
 
             df.to_excel('Produt2.xlsx', index=False, engine='openpyxl')
-            st.success("✅ Archivo 'Produt2.csv' convertido y guardado como 'Produt2.xlsx'.")
+            st.success("✅ Archivo 'Produt2.xlsx' actualizado con éxito.")
 
             st.write("### Vista Previa de los Datos Convertidos:")
             st.dataframe(df.head(10))
 
             return df
         except Exception as e:
-            st.error(f"❌ Error al convertir 'Produt2.csv': {e}")
+            st.error(f"❌ Error al leer 'Produt2.xlsx': {e}")
     else:
-        st.warning("⚠️ El archivo 'Produt2.csv' no se encontró en la carpeta raíz.")
+        st.warning("⚠️ El archivo 'Produt2.xlsx' no se encontró en la carpeta raíz.")
     return None
 
-st.sidebar.header("📅 Cargar y Convertir Archivo de Productos")
-if st.sidebar.button("Cargar 'Produt2.csv' y Convertir a Excel"):
-    df_convertido = cargar_y_convertir_csv()
-    if df_convertido is not None:
-        if st.button("Confirmar Conversión y Usar Archivo 'Produt2.xlsx'"):
-            st.session_state.df_productos = df_convertido
-            st.success("✅ Confirmación recibida. Ahora se utilizará 'Produt2.xlsx' para las modificaciones.")
-
 if 'df_productos' not in st.session_state:
-    if os.path.exists('Produt2.xlsx'):
-        try:
-            st.session_state.df_productos = pd.read_excel('Produt2.xlsx', engine='openpyxl')
-        except Exception as e:
-            st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
-            st.error(f"❌ Error al leer 'Produt2.xlsx': {e}")
+    df_convertido = cargar_excel()
+    if df_convertido is not None:
+        st.session_state.df_productos = df_convertido
     else:
         st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
 
