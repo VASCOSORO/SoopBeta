@@ -1,5 +1,5 @@
 # ===== Modulo Productos 2.0 para Carga ======
-# ================ ESTE ANDA BIEN HASTA URL FALTAN PRECIOS Y UBICACION
+# ================
 # =============
 
 import streamlit as st
@@ -216,16 +216,3 @@ with st.form(key='agregar_producto_unique'):
             "Venta Forzada por Cantidad",
             min_value=0,
             step=1,
-            value=int(producto_seleccionado['Venta Forzada']) if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado and pd.notna(producto_seleccionado['Venta Forzada'])) else 0,
-            key="venta_forzada"
-        )
-
-    url_imagen = st.text_input(
-        "URL de Imagen",
-        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
-        key="url_imagen"
-    )
-
-    st.markdown("---")
-
-
