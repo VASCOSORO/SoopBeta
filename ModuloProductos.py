@@ -26,12 +26,6 @@ columnas_esperadas = [
     'Nota 1', 'Activo'
 ]
 
-def convertir_a_excel(df):
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Productos')
-    return buffer.getvalue()
-
 def cargar_excel():
     excel_path = 'Produt2.xlsx'
     if os.path.exists(excel_path):
@@ -39,27 +33,8 @@ def cargar_excel():
             df = pd.read_excel(excel_path, engine='openpyxl')
             st.success("✅ **Archivo Excel leído correctamente.**")
 
-            st.write("🔍 **Identificando columnas...**")
-            st.write(f"📋 **Columnas identificadas:** {df.columns.tolist()}")
-
-            columnas_modificadas = {}
-            for col in df.columns:
-                nuevo_nombre = st.text_input(f"Renombrar columna '{col}':", value=col, key=f"rename_{col}")
-                if st.checkbox(f"Eliminar columna '{col}'", key=f"delete_{col}"):
-                    columnas_modificadas[col] = None
-                else:
-                    columnas_modificadas[col] = nuevo_nombre
-
-            # Aplicar los cambios a las columnas
-            df.rename(columns=columnas_modificadas, inplace=True)
-            columnas_a_eliminar = [col for col, nuevo in columnas_modificadas.items() if nuevo is None]
-            df.drop(columns=columnas_a_eliminar, inplace=True)
-
-            # Normalizar nombres de columnas
-            df.columns = df.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
-
             if 'precio jugueterias face' in df.columns:
-                df.rename(columns={'precio jugueterias face': 'Precio Venta', 'precio': 'Precio x Mayor'}, inplace=True)
+                df.rename(columns={'precio jugueterias face': 'Precio Venta'}, inplace=True)
             if 'precio' in df.columns:
                 df.rename(columns={'precio': 'Precio x Mayor'}, inplace=True)
 
@@ -331,103 +306,3 @@ with st.form(key='agregar_producto_unique'):
             value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado and pd.notna(producto_seleccionado['Pasillo'])) else "",
             key="pasillo"
         )
-    with col17:
-        estante = st.text_input(
-            "Estante",
-            value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in producto_seleccionado and pd.notna(producto_seleccionado['Estante'])) else "",
-            key="estante"
-        )
-    with col18:
-        columna = st.text_input(
-            "Columna",
-            value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in producto_seleccionado and pd.notna(producto_seleccionado['Columna'])) else "",
-            key="columna"
-        )
-
-    fecha_vencimiento = st.date_input(
-        "📅 Fecha de Vencimiento",
-        value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')),
-        key="fecha_vencimiento"
-    )
-    nota_1 = st.text_area(
-        "📝 Nota 1",
-        value=producto_seleccionado['Nota 1'] if (producto_seleccionado is not None and 'Nota 1' in producto_seleccionado and pd.notna(producto_seleccionado['Nota 1'])) else "",
-        key="nota_1"
-    )
-
-    st.markdown("---")
-    col20, col21 = st.columns([1, 1])
-    with col20:
-        guardar = st.form_submit_button(label='Guardar Producto')
-    with col21:
-        cancelar = st.form_submit_button(label='Cancelar')
-
-    if guardar:
-        try:
-            if not nuevo_codigo or not nuevo_nombre:
-                st.error("❌ Por favor, completa los campos obligatorios (Código y Nombre).")
-            elif nuevo_codigo in st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str).tolist() and (producto_seleccionado is None or str(producto_seleccionado['Codigo']) != nuevo_codigo):
-                st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
-            else:
-                es_nuevo = producto_seleccionado is None
-
-                if es_nuevo:
-                    try:
-                        df_numerico = st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str).str.extract(r'(\d+)').dropna().astype(int)
-                        if not df_numerico.empty:
-                            ultimo_id = df_numerico[0].max()
-                            nuevo_id = ultimo_id + 1
-                        else:
-                            nuevo_id = 1000
-                    except:
-                        nuevo_id = 1000
-                else:
-                    nuevo_id = producto_seleccionado['Codigo']
-
-                nuevo_producto = {
-                    'id': producto_seleccionado['id'] if not es_nuevo else len(st.session_state.df_productos) + 1,
-                    'id externo': producto_seleccionado.get('id externo', ''),
-                    'Codigo': nuevo_id,
-                    'Codigo de Barras': nuevo_codigo_barras,
-                    'Nombre': nuevo_nombre,
-                    'Descripcion': nuevo_descripcion,
-                    'Alto': nuevo_alto,
-                    'Ancho': nuevo_ancho,
-                    'Categorias': ','.join(nueva_categoria),
-                    'Proveedor': proveedor_seleccionado,
-                    'Costo (Pesos)': nuevo_costo_pesos,
-                    'Costo (USD)': nuevo_costo_usd,
-                    'Ultimo Precio (Pesos)': ultimo_precio_pesos,
-                    'Ultimo Precio (USD)': ultimo_precio_usd,
-                    'Precio x Mayor': precio_x_mayor,
-                    'Precio Venta': precio_venta,
-                    'Precio x Menor': precio_x_menor,
-                    'Precio Promocional x Mayor': precio_promocional_mayor,
-                    'Precio Promocional': precio_promocional,
-                    'Precio Promocional x Menor': precio_promocional_menor,
-                    'Pasillo': pasillo,
-                    'Estante': estante,
-                    'Columna': columna,
-                    'Fecha de Vencimiento': fecha_vencimiento,
-                    'Nota 1': nota_1,
-                    'Activo': 'Sí' if activo else 'No'
-                }
-
-                if es_nuevo:
-                    st.session_state.df_productos = pd.concat([st.session_state.df_productos, pd.DataFrame([nuevo_producto])], ignore_index=True)
-                    st.success("✅ Producto agregado exitosamente.")
-                else:
-                    idx = st.session_state.df_productos.index[st.session_state.df_productos['Codigo'] == producto_seleccionado['Codigo']].tolist()[0]
-                    st.session_state.df_productos.loc[idx] = nuevo_producto
-                    st.success("✅ Producto actualizado exitosamente.")
-
-                df_convertido = st.session_state.df_productos
-                df_convertido['Ultima Actualizacion'] = datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')).strftime("%Y-%m-%d %H:%M:%S")
-                df_convertido.to_excel('Produt2.xlsx', index=False, engine='openpyxl')
-                st.success("✅ Archivo 'Produt2.xlsx' actualizado con éxito.")
-
-        except Exception as e:
-            st.error(f"❌ Ocurrió un error al guardar el producto: {e}")
-
-    if cancelar:
-        st.success("✅ Operación cancelada y formulario reseteado.")
