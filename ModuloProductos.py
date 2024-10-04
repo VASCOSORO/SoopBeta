@@ -107,9 +107,9 @@ if buscar_producto:
 # Formulario para agregar o editar productos
 st.subheader("➕ Agregar/Editar Producto")
 with st.form(key='agregar_producto_unique'):
-    nuevo_codigo = st.text_input("Código", value=producto_seleccionado['Código'] if producto_seleccionado is not None else "")
+    nuevo_codigo = st.text_input("Código", value=str(producto_seleccionado['Código']) if producto_seleccionado is not None else "")
     nuevo_nombre = st.text_input("Nombre", value=producto_seleccionado['Nombre'] if producto_seleccionado is not None else "")
-    nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=producto_seleccionado['Costo (Pesos)'] if producto_seleccionado is not None else 0.0)
+    nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=float(producto_seleccionado['Costo (Pesos)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (Pesos)']) else 0.0)
 
     # Agregar el botón de envío del formulario
     guardar = st.form_submit_button(label='Guardar Producto')
