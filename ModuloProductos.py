@@ -229,64 +229,24 @@ with st.form(key='agregar_producto_unique'):
     st.markdown("---")
     col9, col10, col11 = st.columns([1, 1, 1])
     with col9:
-        precio_x_mayor = st.number_input(
-            "Precio x Mayor",
+        nuevo_costo_pesos = st.number_input(
+            "Costo (Pesos)",
             min_value=0.0,
             step=0.01,
-            value=float(producto_seleccionado['Precio x Mayor']) if (producto_seleccionado is not None and 'Precio x Mayor' in producto_seleccionado and pd.notna(producto_seleccionado['Precio x Mayor'])) else 0.0,
-            key="precio_x_mayor"
+            value=float(producto_seleccionado['Costo (Pesos)']) if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
+            key="nuevo_costo_pesos"
         )
     with col10:
-        precio_venta = st.number_input(
-            "Precio Venta",
+        nuevo_costo_usd = st.number_input(
+            "Costo (USD)",
             min_value=0.0,
             step=0.01,
-            value=float(producto_seleccionado['Precio Venta']) if (producto_seleccionado is not None and 'Precio Venta' in producto_seleccionado and pd.notna(producto_seleccionado['Precio Venta'])) else 0.0,
-            key="precio_venta"
+            value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
+            key="nuevo_costo_usd"
         )
     with col11:
-        precio_x_menor = st.number_input(
-            "Precio x Menor",
+        precio_promocional = st.number_input(
+            "Precio Promocional",
             min_value=0.0,
             step=0.01,
-            value=float(producto_seleccionado['Precio x Menor']) if (producto_seleccionado is not None and 'Precio x Menor' in producto_seleccionado and pd.notna(producto_seleccionado['Precio x Menor'])) else 0.0,
-            key="precio_x_menor"
-        )
-
-    st.subheader("📍 Campos Adicionales")
-    col12, col13, col14 = st.columns([1, 1, 1])
-    with col12:
-        pasillo = st.text_input(
-            "Pasillo",
-            value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado and pd.notna(producto_seleccionado['Pasillo'])) else "",
-            key="pasillo"
-        )
-    with col13:
-        estante = st.text_input(
-            "Estante",
-            value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in producto_seleccionado and pd.notna(producto_seleccionado['Estante'])) else "",
-            key="estante"
-        )
-    with col14:
-        columna = st.text_input(
-            "Columna",
-            value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in producto_seleccionado and pd.notna(producto_seleccionado['Columna'])) else "",
-            key="columna"
-        )
-
-    fecha_vencimiento = st.date_input(
-        "📅 Fecha de Vencimiento",
-        value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')),
-        key="fecha_vencimiento"
-    )
-    nota_1 = st.text_area(
-        "📝 Nota 1",
-        value=producto_seleccionado['Nota 1'] if (producto_seleccionado is not None and 'Nota 1' in producto_seleccionado and pd.notna(producto_seleccionado['Nota 1'])) else "",
-        key="nota_1"
-    )
-
-    col_cancel, col_save = st.columns([1, 1])
-    with col_cancel:
-        st.form_submit_button(label="Cancelar")
-    with col_save:
-        st.form_submit_button(label="Guardar Producto")
+            value=float(producto_seleccionado['Precio Promocional']) if (producto_seleccionado is not None and 'Precio Promocional' in producto_seleccionado and pd.notna(producto_se
