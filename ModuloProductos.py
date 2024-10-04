@@ -196,11 +196,4 @@ with st.form(key='agregar_producto_unique'):
         key="proveedor"
     )
 
-    col6, col7, col8 = st.columns([1, 1, 1])
-    with col6:
-        unidades_por_bulto = st.number_input(
-            "Unidades por Bulto",
-            min_value=0,
-            step=1,
-            value=int(producto_seleccionado
-                      
+    col6,
