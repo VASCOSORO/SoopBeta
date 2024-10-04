@@ -200,28 +200,46 @@ with st.form(key='agregar_producto_unique'):
     # Cuarta fila: Tamaño (Alto y Ancho)
     col4, col5 = st.columns([1, 1])
     with col4:
+        # Manejo seguro del valor 'Alto'
+        alto_valor = 0
+        if producto_seleccionado is not None and 'Alto' in producto_seleccionado and pd.notna(producto_seleccionado['Alto']):
+            try:
+                alto_valor = int(producto_seleccionado['Alto'])
+            except ValueError:
+                alto_valor = 0
         nuevo_alto = st.number_input(
             "Alto (cm)",
             min_value=0,
             step=1,
-            value=int(producto_seleccionado['Alto']) if (producto_seleccionado is not None and 'Alto' in producto_seleccionado and pd.notna(producto_seleccionado['Alto'])) else 0,
+            value=alto_valor,
             key="nuevo_alto"
         )
     with col5:
+        # Manejo seguro del valor 'Ancho'
+        ancho_valor = 0
+        if producto_seleccionado is not None and 'Ancho' in producto_seleccionado and pd.notna(producto_seleccionado['Ancho']):
+            try:
+                ancho_valor = int(producto_seleccionado['Ancho'])
+            except ValueError:
+                ancho_valor = 0
         nuevo_ancho = st.number_input(
             "Ancho (cm)",
             min_value=0,
             step=1,
-            value=int(producto_seleccionado['Ancho']) if (producto_seleccionado is not None and 'Ancho' in producto_seleccionado and pd.notna(producto_seleccionado['Ancho'])) else 0,
+            value=ancho_valor,
             key="nuevo_ancho"
         )
 
     # Categorías desplegable
     categorias = st.session_state.df_productos['Categorias'].dropna().unique().tolist()
+    if producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias']):
+        default_categorias = [cat.strip() for cat in producto_seleccionado['Categorias'].split(',')]
+    else:
+        default_categorias = []
     nueva_categoria = st.multiselect(
         "Categorías",
         options=categorias,
-        default=producto_seleccionado['Categorias'].split(',') if (producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias'])) else [],
+        default=default_categorias,
         key="nueva_categoria"
     )
 
@@ -246,7 +264,7 @@ with st.form(key='agregar_producto_unique'):
             "Costo (Pesos)",
             min_value=0.0,
             step=0.01,
-            value=producto_seleccionado['Costo (Pesos)'] if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
+            value=float(producto_seleccionado['Costo (Pesos)']) if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
             key="nuevo_costo_pesos"
         )
     with col7:
@@ -254,7 +272,7 @@ with st.form(key='agregar_producto_unique'):
             "Costo (USD)",
             min_value=0.0,
             step=0.01,
-            value=producto_seleccionado['Costo (USD)'] if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
+            value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
             key="nuevo_costo_usd"
         )
     with col8:
