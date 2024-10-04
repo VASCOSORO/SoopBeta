@@ -216,3 +216,4 @@ with st.form(key='agregar_producto_unique'):
             "Venta Forzada por Cantidad",
             min_value=0,
             step=1,
+            value=int(producto_seleccionado['Venta For
