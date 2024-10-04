@@ -192,7 +192,7 @@ with st.form(key='agregar_producto_unique'):
     proveedor_seleccionado = st.selectbox(
         "Selecciona un proveedor",
         options=proveedores,
-        index=0,
+        index=proveedores.index(producto_seleccionado['Proveedor']) if producto_seleccionado is not None and producto_seleccionado['Proveedor'] in proveedores else 0,
         key="proveedor"
     )
 
@@ -202,4 +202,5 @@ with st.form(key='agregar_producto_unique'):
             "Unidades por Bulto",
             min_value=0,
             step=1,
-            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_se
+            value=int(producto_seleccionado
+                      
