@@ -189,3 +189,31 @@ with st.form(key='agregar_producto_unique'):
 
     st.write("### Proveedor")
     proveedores = st.session_state.df_productos['Proveedor'].dropna().unique().tolist()
+    proveedor_seleccionado = st.selectbox(
+        "Selecciona un proveedor",
+        options=proveedores,
+        index=0,
+        key="proveedor"
+    )
+
+    unidades_por_bulto = st.number_input(
+        "Unidades por Bulto",
+        min_value=0,
+        step=1,
+        value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
+        key="unidades_por_bulto"
+    )
+
+    presentacion = st.text_input(
+        "Presentación/Paquete",
+        value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccionado) else "",
+        key="presentacion"
+    )
+
+    venta_forzada = st.checkbox(
+        "Venta Forzada",
+        value=(producto_seleccionado['Venta Forzada'] == 'Sí') if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado) else False,
+        key="venta_forzada"
+    )
+
+    url_imagen
