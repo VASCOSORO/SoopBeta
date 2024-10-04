@@ -202,11 +202,11 @@ with st.form(key='agregar_producto_unique'):
     with col4:
         # Manejo seguro del valor 'Alto'
         alto_valor = 0
-        if (producto_seleccionado is not None and 'Alto' in producto_seleccionado and pd.notna(producto_seleccionado['Alto'])):
-            try:
-                alto_valor = int(producto_seleccionado['Alto'])
-            except (ValueError, TypeError):
-                alto_valor = 0
+        if (producto_seleccionado is not None and 
+            'Alto' in producto_seleccionado and 
+            pd.notna(producto_seleccionado['Alto']) and 
+            str(producto_seleccionado['Alto']).strip().isdigit()):
+            alto_valor = int(producto_seleccionado['Alto'])
         nuevo_alto = st.number_input(
             "Alto (cm)",
             min_value=0,
@@ -217,11 +217,11 @@ with st.form(key='agregar_producto_unique'):
     with col5:
         # Manejo seguro del valor 'Ancho'
         ancho_valor = 0
-        if (producto_seleccionado is not None and 'Ancho' in producto_seleccionado and pd.notna(producto_seleccionado['Ancho'])):
-            try:
-                ancho_valor = int(producto_seleccionado['Ancho'])
-            except (ValueError, TypeError):
-                ancho_valor = 0
+        if (producto_seleccionado is not None and 
+            'Ancho' in producto_seleccionado and 
+            pd.notna(producto_seleccionado['Ancho']) and 
+            str(producto_seleccionado['Ancho']).strip().isdigit()):
+            ancho_valor = int(producto_seleccionado['Ancho'])
         nuevo_ancho = st.number_input(
             "Ancho (cm)",
             min_value=0,
@@ -232,7 +232,7 @@ with st.form(key='agregar_producto_unique'):
 
     # Categorías desplegable
     categorias = st.session_state.df_productos['Categorias'].dropna().unique().tolist()
-    if (producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias'])):
+    if producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias']):
         default_categorias = [cat.strip() for cat in producto_seleccionado['Categorias'].split(',')]
     else:
         default_categorias = []
@@ -260,32 +260,64 @@ with st.form(key='agregar_producto_unique'):
     st.markdown("---")
     col6, col7, col8, col9 = st.columns([1, 1, 1, 1])
     with col6:
+        try:
+            nuevo_costo_pesos = float(producto_seleccionado['Costo (Pesos)']) if (
+                producto_seleccionado is not None and 
+                'Costo (Pesos)' in producto_seleccionado and 
+                pd.notna(producto_seleccionado['Costo (Pesos)'])
+            ) else 0.0
+        except (ValueError, TypeError):
+            nuevo_costo_pesos = 0.0
         nuevo_costo_pesos = st.number_input(
             "Costo (Pesos)",
             min_value=0.0,
             step=0.01,
-            value=float(producto_seleccionado['Costo (Pesos)']) if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
+            value=nuevo_costo_pesos,
             key="nuevo_costo_pesos"
         )
     with col7:
+        try:
+            nuevo_costo_usd = float(producto_seleccionado['Costo (USD)']) if (
+                producto_seleccionado is not None and 
+                'Costo (USD)' in producto_seleccionado and 
+                pd.notna(producto_seleccionado['Costo (USD)'])
+            ) else 0.0
+        except (ValueError, TypeError):
+            nuevo_costo_usd = 0.0
         nuevo_costo_usd = st.number_input(
             "Costo (USD)",
             min_value=0.0,
             step=0.01,
-            value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
+            value=nuevo_costo_usd,
             key="nuevo_costo_usd"
         )
     with col8:
+        try:
+            ultimo_precio_pesos = float(producto_seleccionado['Último Precio (Pesos)']) if (
+                producto_seleccionado is not None and 
+                'Último Precio (Pesos)' in producto_seleccionado and 
+                pd.notna(producto_seleccionado['Último Precio (Pesos)'])
+            ) else 0.0
+        except (ValueError, TypeError):
+            ultimo_precio_pesos = 0.0
         ultimo_precio_pesos = st.number_input(
             "Último Precio (Pesos)",
-            value=float(producto_seleccionado['Último Precio (Pesos)']) if (producto_seleccionado is not None and 'Último Precio (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Último Precio (Pesos)'])) else 0.0,
+            value=ultimo_precio_pesos,
             disabled=True,
             key="ultimo_precio_pesos"
         )
     with col9:
+        try:
+            ultimo_precio_usd = float(producto_seleccionado['Último Precio (USD)']) if (
+                producto_seleccionado is not None and 
+                'Último Precio (USD)' in producto_seleccionado and 
+                pd.notna(producto_seleccionado['Último Precio (USD)'])
+            ) else 0.0
+        except (ValueError, TypeError):
+            ultimo_precio_usd = 0.0
         ultimo_precio_usd = st.number_input(
             "Último Precio (USD)",
-            value=float(producto_seleccionado['Último Precio (USD)']) if (producto_seleccionado is not None and 'Último Precio (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Último Precio (USD)'])) else 0.0,
+            value=ultimo_precio_usd,
             disabled=True,
             key="ultimo_precio_usd"
         )
@@ -444,8 +476,8 @@ with st.form(key='agregar_producto_unique'):
                 }
 
                 if es_nuevo:
-                    # Agregar nuevo producto
-                    st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
+                    # Agregar nuevo producto utilizando pd.concat en lugar de append
+                    st.session_state.df_productos = pd.concat([st.session_state.df_productos, pd.DataFrame([nuevo_producto])], ignore_index=True)
                     st.success("✅ Producto agregado exitosamente.")
                 else:
                     # Actualizar producto existente
@@ -463,3 +495,31 @@ with st.form(key='agregar_producto_unique'):
         # Resetear el formulario sin guardar
         reset_form()
         st.success("✅ Operación cancelada y formulario reseteado.")
+
+# Descargar archivo modificado
+if not st.session_state.df_productos.empty:
+    st.header("💾 Descargar Archivo Modificado:")
+    csv = convertir_a_csv(st.session_state.df_productos)
+    excel = convertir_a_excel(st.session_state.df_productos)
+
+    argentina = pytz.timezone('America/Argentina/Buenos_Aires')
+    timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
+
+    # Opción para descargar como CSV
+    st.download_button(
+        label="📥 Descargar CSV Modificado",
+        data=csv,
+        file_name=f"productos_modificados_{timestamp}.csv",
+        mime="text/csv"
+    )
+
+    # Opción para descargar como XLSX
+    st.download_button(
+        label="📥 Descargar Excel Modificado",
+        data=excel,
+        file_name=f"productos_modificados_{timestamp}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+# Agregar el footer
+agregar_footer()
