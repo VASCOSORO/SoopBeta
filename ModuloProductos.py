@@ -138,7 +138,7 @@ if not st.session_state.df_productos.empty:
     st.subheader("🔍 Buscar Producto para Editar")
     # Crear una opción para buscar por Nombre o Código
     search_option = st.radio("Buscar por:", options=["Nombre", "Código"], horizontal=True)
-    
+
     if search_option == "Nombre":
         buscar_producto = st.selectbox("Selecciona el Nombre del Producto", options=[''] + st.session_state.df_productos['Nombre'].dropna().unique().tolist())
     else:
@@ -379,10 +379,13 @@ with st.form(key='agregar_producto_unique'):
             elif nuevo_codigo in st.session_state.df_productos['Código'].astype(str).tolist() and (producto_seleccionado is None or str(producto_seleccionado['Código']) != nuevo_codigo):
                 st.error("❌ El Código ya existe. Por favor, utiliza un Código único.")
             else:
+                # Determinar si es un nuevo producto o una actualización
+                es_nuevo = producto_seleccionado is None
+
                 # Generar nuevo ID correlativo solo si es un nuevo producto
-                if producto_seleccionado is None:
+                if es_nuevo:
                     try:
-                        # Intentar convertir 'Código' a int para encontrar el máximo
+                        # Intentar extraer números del 'Código' para encontrar el máximo
                         df_numerico = st.session_state.df_productos['Código'].astype(str).str.extract('(\d+)').dropna().astype(int)
                         if not df_numerico.empty:
                             ultimo_id = df_numerico[0].max()
@@ -422,7 +425,7 @@ with st.form(key='agregar_producto_unique'):
                     'Activo': 'Sí' if activo else 'No'
                 }
 
-                if producto_seleccionado is None:
+                if es_nuevo:
                     # Agregar nuevo producto
                     st.session_state.df_productos = st.session_state.df_productos.append(nuevo_producto, ignore_index=True)
                     st.success("✅ Producto agregado exitosamente.")
