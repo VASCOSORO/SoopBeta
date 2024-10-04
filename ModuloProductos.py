@@ -24,60 +24,41 @@ columnas_esperadas = [
     'Nota 1', 'Activo'
 ]
 
-# Función para cargar proveedores desde ProveedoresSoop.xlsx
-def cargar_proveedores():
-    proveedores_path = 'ProveedoresSoop.xlsx'
-    if os.path.exists(proveedores_path):
+# Función para cargar archivo Produt2.csv y convertir a Produt2.xlsx
+def cargar_y_convertir_csv():
+    csv_path = 'Produt2.csv'
+    if os.path.exists(csv_path):
         try:
-            proveedores_df = pd.read_excel(proveedores_path, engine='openpyxl')
-            if 'Proveedor' in proveedores_df.columns:
-                proveedores = proveedores_df['Proveedor'].dropna().unique().tolist()
-                return proveedores
-            else:
-                st.sidebar.warning("⚠️ La columna 'Proveedor' no se encontró en 'ProveedoresSoop.xlsx'.")
-                return []
+            df = pd.read_csv(csv_path, encoding='ISO-8859-1', sep=None, engine='python', on_bad_lines='skip')
+            # Asegurarse de que todas las columnas esperadas existan
+            for col in columnas_esperadas:
+                if col not in df.columns:
+                    df[col] = ''
+            # Reordenar las columnas según `columnas_esperadas`
+            df = df[columnas_esperadas]
+            # Guardar como Excel
+            df.to_excel('Produt2.xlsx', index=False, engine='openpyxl')
+            st.success("✅ Archivo 'Produt2.csv' convertido y guardado como 'Produt2.xlsx'.")
         except Exception as e:
-            st.sidebar.error(f"❌ Error al leer 'ProveedoresSoop.xlsx': {e}")
-            return []
+            st.error(f"❌ Error al convertir 'Produt2.csv': {e}")
     else:
-        st.sidebar.warning("⚠️ El archivo 'ProveedoresSoop.xlsx' no se encontró. Por favor, agrégalo desde el módulo correspondiente.")
-        return []
+        st.warning("⚠️ El archivo 'Produt2.csv' no se encontró en la carpeta raíz.")
 
-# Sidebar para cargar el archivo CSV o Excel
-st.sidebar.header("📅 Cargar Archivo de Productos")
-uploaded_file = st.sidebar.file_uploader("📄 Subir archivo CSV o Excel", type=["csv", "xlsx"])
-
-# Cargar proveedores
-proveedores = cargar_proveedores()
+# Sidebar para cargar el archivo CSV y convertirlo a Excel
+st.sidebar.header("📥 Cargar y Convertir Archivo de Productos")
+if st.sidebar.button("Cargar 'Produt2.csv' y Convertir a Excel"):
+    cargar_y_convertir_csv()
 
 # Inicializar el DataFrame en session_state para mantener los cambios
 if 'df_productos' not in st.session_state:
-    st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
-
-# Leer el archivo subido y actualizar el DataFrame en session_state
-if uploaded_file is not None:
-    try:
-        st.write("📂 **Leyendo archivo...**")
-        # Detectar el tipo de archivo subido y leerlo
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=None, engine='python', on_bad_lines='skip')
-        elif uploaded_file.name.endswith('.xlsx'):
-            df = pd.read_excel(uploaded_file, engine='openpyxl')
-
-        # Asegurarse de que todas las columnas esperadas existan
-        for col in columnas_esperadas:
-            if col not in df.columns:
-                df[col] = ''
-
-        # Reordenar las columnas según `columnas_esperadas`
-        df = df[columnas_esperadas]
-
-        # Asignar al session_state
-        st.session_state.df_productos = df
-        st.success("✅ Archivo cargado correctamente.")
-
-    except Exception as e:
-        st.error(f"❌ Ocurrió un error al leer el archivo: {e}")
+    if os.path.exists('Produt2.xlsx'):
+        try:
+            st.session_state.df_productos = pd.read_excel('Produt2.xlsx', engine='openpyxl')
+        except Exception as e:
+            st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
+            st.error(f"❌ Error al leer 'Produt2.xlsx': {e}")
+    else:
+        st.session_state.df_productos = pd.DataFrame(columns=columnas_esperadas)
 
 # Mostrar el buscador para buscar un producto para editar
 if not st.session_state.df_productos.empty:
@@ -109,7 +90,7 @@ st.subheader("➕ Agregar/Editar Producto")
 with st.form(key='agregar_producto_unique'):
     nuevo_codigo = st.text_input("Código", value=str(producto_seleccionado['Código']) if producto_seleccionado is not None else "")
     nuevo_nombre = st.text_input("Nombre", value=producto_seleccionado['Nombre'] if producto_seleccionado is not None else "")
-    nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=float(producto_seleccionado['Costo (Pesos)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (Pesos)']) else 0.0)
+    nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=float(producto_seleccionado['Costo (Pesos)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (Pesos)']) and producto_seleccionado['Costo (Pesos)'] != '' else 0.0)
 
     # Agregar el botón de envío del formulario
     guardar = st.form_submit_button(label='Guardar Producto')
@@ -118,7 +99,29 @@ with st.form(key='agregar_producto_unique'):
         if not nuevo_codigo or not nuevo_nombre:
             st.error("❌ Por favor, completa los campos obligatorios (Código y Nombre).")
         else:
-            st.success("✅ Producto guardado correctamente.")
+            # Actualizar o agregar el producto en el DataFrame
+            if producto_seleccionado is not None:
+                idx = st.session_state.df_productos.index[st.session_state.df_productos['Código'] == producto_seleccionado['Código']].tolist()[0]
+                st.session_state.df_productos.loc[idx, 'Código'] = nuevo_codigo
+                st.session_state.df_productos.loc[idx, 'Nombre'] = nuevo_nombre
+                st.session_state.df_productos.loc[idx, 'Costo (Pesos)'] = nuevo_costo_pesos
+                st.success("✅ Producto actualizado correctamente.")
+            else:
+                nuevo_producto = {
+                    'Código': nuevo_codigo,
+                    'Nombre': nuevo_nombre,
+                    'Costo (Pesos)': nuevo_costo_pesos,
+                    # Agregar el resto de las columnas con valores predeterminados
+                }
+                st.session_state.df_productos = pd.concat([st.session_state.df_productos, pd.DataFrame([nuevo_producto])], ignore_index=True)
+                st.success("✅ Producto agregado correctamente.")
+
+            # Guardar los cambios en el archivo Excel
+            try:
+                st.session_state.df_productos.to_excel('Produt2.xlsx', index=False, engine='openpyxl')
+                st.success("✅ Cambios guardados en 'Produt2.xlsx'.")
+            except Exception as e:
+                st.error(f"❌ Error al guardar los cambios en 'Produt2.xlsx': {e}")
 
 # Agregar el footer
 st.markdown("""
