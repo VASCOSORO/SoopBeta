@@ -1,4 +1,4 @@
-# ===== Modulo Productos 2.0.1 para Carga ======
+# ===== Modulo Productos 2.0 para Carga ======
 # ================
 # =============
 
@@ -233,4 +233,24 @@ with st.form(key='agregar_producto_unique'):
             "Costo (Pesos)",
             min_value=0.0,
             step=0.01,
-            value=float(producto_seleccionado['Costo (Pesos)
+            value=float(producto_seleccionado['Costo (Pesos)']) if (producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)'])) else 0.0,
+            key="nuevo_costo_pesos"
+        )
+    with col10:
+        nuevo_costo_usd = st.number_input(
+            "Costo (USD)",
+            min_value=0.0,
+            step=0.01,
+            value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
+            key="nuevo_costo_usd"
+        )
+    with col11:
+        ultimo_precio_pesos = st.number_input(
+            "Último Precio (Pesos)",
+            min_value=0.0,
+            step=0.01,
+            value=float(producto_seleccionado['Ultimo Precio (Pesos)']) if (producto_seleccionado is not None and 'Ultimo Precio (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Precio (Pesos)'])) else 0.0,
+            key="ultimo_precio_pesos"
+        )
+
+    col12, col13, col14 = st
