@@ -366,4 +366,57 @@ with st.form(key='agregar_producto_unique'):
 
                 if es_nuevo:
                     try:
-                        df_numerico = st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str).str.extract('(\d+)').drop
+                        df_numerico = st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str).str.extract(r'(\d+)').dropna().astype(int)
+                        if not df_numerico.empty:
+                            ultimo_id = df_numerico[0].max()
+                            nuevo_id = ultimo_id + 1
+                        else:
+                            nuevo_id = 1000
+                    except:
+                        nuevo_id = 1000
+                else:
+                    nuevo_id = producto_seleccionado['Codigo']
+
+                nuevo_producto = {
+                    'Codigo': nuevo_id,
+                    'Codigo de Barras': nuevo_codigo_barras,
+                    'Nombre': nuevo_nombre,
+                    'Descripcion': nuevo_descripcion,
+                    'Alto': nuevo_alto,
+                    'Ancho': nuevo_ancho,
+                    'Categorias': ','.join(nueva_categoria),
+                    'Proveedor': proveedor_seleccionado,
+                    'Costo (Pesos)': nuevo_costo_pesos,
+                    'Costo (USD)': nuevo_costo_usd,
+                    'Ultimo Precio (Pesos)': ultimo_precio_pesos,
+                    'Ultimo Precio (USD)': ultimo_precio_usd,
+                    'Precio x Mayor': precio_x_mayor,
+                    'Precio': precio_venta,
+                    'Precio x Menor': precio_x_menor,
+                    'Precio Promocional x Mayor': precio_promocional_mayor,
+                    'Precio Promocional': precio_promocional,
+                    'Precio Promocional x Menor': precio_promocional_menor,
+                    'Pasillo': pasillo,
+                    'Estante': estante,
+                    'Columna': columna,
+                    'Fecha de Vencimiento': fecha_vencimiento,
+                    'Nota 1': nota_1,
+                    'Activo': 'Sí' if activo else 'No'
+                }
+
+                if es_nuevo:
+                    st.session_state.df_productos = pd.concat([st.session_state.df_productos, pd.DataFrame([nuevo_producto])], ignore_index=True)
+                    st.success("✅ Producto agregado exitosamente.")
+                else:
+                    idx = st.session_state.df_productos.index[st.session_state.df_productos['Codigo'] == producto_seleccionado['Codigo']].tolist()[0]
+                    st.session_state.df_productos.loc[idx] = nuevo_producto
+                    st.success("✅ Producto actualizado exitosamente.")
+
+                reset_form()
+
+        except Exception as e:
+            st.error(f"❌ Ocurrió un error al guardar el producto: {e}")
+
+    if cancelar:
+        reset_form()
+        st.success("✅ Operación cancelada y formulario reseteado.")
