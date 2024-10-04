@@ -196,4 +196,30 @@ with st.form(key='agregar_producto_unique'):
         key="proveedor"
     )
 
-    col6,
+    col6, col7, col8 = st.columns([1, 1, 1])
+    with col6:
+        unidades_por_bulto = st.number_input(
+            "Unidades por Bulto",
+            min_value=0,
+            step=1,
+            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
+            key="unidades_por_bulto"
+        )
+    with col7:
+        presentacion = st.text_input(
+            "Presentación",
+            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccionado and pd.notna(producto_seleccionado['Presentacion'])) else "",
+            key="presentacion"
+        )
+    with col8:
+        venta_forzada = st.number_input(
+            "Venta Forzada por Cantidad",
+            min_value=0,
+            step=1,
+            value=int(producto_seleccionado['Venta Forzada']) if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado and pd.notna(producto_seleccionado['Venta Forzada'])) else 0,
+            key="venta_forzada"
+        )
+
+    url_imagen = st.text_input(
+        "URL de Imagen",
+        value=producto
