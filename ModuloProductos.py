@@ -208,12 +208,4 @@ with st.form(key='agregar_producto_unique'):
     with col7:
         presentacion = st.text_input(
             "Presentación/Paquete/Bolsa/Display",
-            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccionado and pd.notna(producto_seleccionado['Presentacion'])) else "",
-            key="presentacion"
-        )
-    with col8:
-        venta_forzada = st.number_input(
-            "Venta Forzada por Cantidad",
-            min_value=0,
-            step=1,
-            value=int(producto_seleccionado['Venta For
+            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccion
