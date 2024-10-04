@@ -33,7 +33,6 @@ def cargar_excel():
             df = pd.read_excel(excel_path, engine='openpyxl')
             st.success("✅ **Archivo Excel leído correctamente.**")
 
-            # Asegurar que las columnas se encuentren correctamente nombradas
             columnas_actuales = df.columns.str.strip().str.lower()
             mapeo_columnas = {
                 'precio jugueterias face': 'Precio Venta',
@@ -48,7 +47,6 @@ def cargar_excel():
                 if col_actual in columnas_actuales:
                     df.rename(columns={df.columns[columnas_actuales.get_loc(col_actual)]: col_esperada}, inplace=True)
 
-            # Asegurar que todas las columnas esperadas existan
             for col in columnas_esperadas:
                 if col not in df.columns:
                     df[col] = ''
@@ -97,13 +95,13 @@ if not st.session_state.df_productos.empty:
     if buscar_codigo:
         try:
             producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str) == buscar_codigo].iloc[0]
-            st.session_state.buscar_nombre = producto_seleccionado['Nombre']
+            st.write(f"**Producto Seleccionado por Código: {producto_seleccionado['Nombre']}**")
         except Exception as e:
             st.error(f"❌ Error al seleccionar el producto por Código: {e}")
     elif buscar_nombre:
         try:
             producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == buscar_nombre].iloc[0]
-            st.session_state.buscar_codigo = producto_seleccionado['Codigo']
+            st.write(f"**Producto Seleccionado por Nombre: {producto_seleccionado['Nombre']}**")
         except Exception as e:
             st.error(f"❌ Error al seleccionar el producto por Nombre: {e}")
 else:
@@ -187,187 +185,4 @@ with st.form(key='agregar_producto_unique'):
     )
 
     st.write("### Proveedor")
-    proveedores = st.session_state.df_productos['Proveedor'].dropna().unique().tolist()
-    proveedor_seleccionado = st.selectbox(
-        "Selecciona un proveedor",
-        options=proveedores,
-        index=proveedores.index(producto_seleccionado['Proveedor']) if producto_seleccionado is not None and producto_seleccionado['Proveedor'] in proveedores else 0,
-        key="proveedor"
-    )
-
-    col_bulk1, col_bulk2, col_bulk3 = st.columns([1, 1, 1])
-    with col_bulk1:
-        unidades_por_bulto = st.number_input(
-            "Unidades por Bulto",
-            min_value=0,
-            step=1,
-            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
-            key="unidades_por_bulto"
-        )
-    with col_bulk2:
-        presentacion = st.text_input(
-            "Presentación/Paquete/Bolsa/Display",
-            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccionado and pd.notna(producto_seleccionado['Presentacion'])) else "",
-            key="presentacion"
-        )
-    with col_bulk3:
-        venta_forzada = st.number_input(
-            "Venta Forzada por Cantidad",
-            min_value=0,
-            step=1,
-            value=int(producto_seleccionado['Venta Forzada']) if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado and pd.notna(producto_seleccionado['Venta Forzada'])) else 0,
-            key="venta_forzada"
-        )
-
-    url_imagen = st.text_input(
-        "URL de Imagen",
-        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
-        key="url_imagen"
-    )
-
-    st.markdown("---")
-    col6, col7, col8, col9 = st.columns([1, 1, 1, 1])
-    with col6:
-        nuevo_costo_pesos = 0.0
-        if producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)']):
-            try:
-                nuevo_costo_pesos = float(producto_seleccionado['Costo (Pesos)'])
-            except (ValueError, TypeError):
-                nuevo_costo_pesos = 0.0
-        nuevo_costo_pesos = st.number_input(
-            "Costo (Pesos)",
-            min_value=0.0,
-            step=0.01,
-            value=nuevo_costo_pesos,
-            key="nuevo_costo_pesos"
-        )
-    with col7:
-        nuevo_costo_usd = 0.0
-        if producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)']):
-            try:
-                nuevo_costo_usd = float(producto_seleccionado['Costo (USD)'])
-            except (ValueError, TypeError):
-                nuevo_costo_usd = 0.0
-        nuevo_costo_usd = st.number_input(
-            "Costo (USD)",
-            min_value=0.0,
-            step=0.01,
-            value=nuevo_costo_usd,
-            key="nuevo_costo_usd"
-        )
-    with col8:
-        ultimo_precio_pesos = 0.0
-        if producto_seleccionado is not None and 'Ultimo Precio (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Precio (Pesos)']):
-            try:
-                ultimo_precio_pesos = float(producto_seleccionado['Ultimo Precio (Pesos)'])
-            except (ValueError, TypeError):
-                ultimo_precio_pesos = 0.0
-        ultimo_precio_pesos = st.number_input(
-            "Último Precio (Pesos)",
-            value=ultimo_precio_pesos,
-            disabled=True,
-            key="ultimo_precio_pesos"
-        )
-    with col9:
-        ultimo_precio_usd = 0.0
-        if producto_seleccionado is not None and 'Ultimo Precio (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Ultimo Precio (USD)']):
-            try:
-                ultimo_precio_usd = float(producto_seleccionado['Ultimo Precio (USD)'])
-            except (ValueError, TypeError):
-                ultimo_precio_usd = 0.0
-        ultimo_precio_usd = st.number_input(
-            "Último Precio (USD)",
-            value=ultimo_precio_usd,
-            disabled=True,
-            key="ultimo_precio_usd"
-        )
-
-    if nuevo_costo_pesos > ultimo_precio_pesos:
-        col8.markdown("<p style='color:red;'>Último Precio Menor al Costo</p>", unsafe_allow_html=True)
-    if nuevo_costo_usd > ultimo_precio_usd:
-        col9.markdown("<p style='color:red;'>Último Precio Menor al Costo</p>", unsafe_allow_html=True)
-
-    col10, col11, col12 = st.columns([1, 1, 1])
-    with col10:
-        precio_x_mayor = st.number_input(
-            "Precio x Mayor",
-            min_value=0.0,
-            step=0.01,
-            value=round(nuevo_costo_pesos * 1.44, 2) if nuevo_costo_pesos else 0.0,
-            key="precio_x_mayor"
-        )
-        precio_promocional_mayor = st.number_input(
-            "Precio Promocional x Mayor",
-            min_value=0.0,
-            step=0.01,
-            value=0.0,
-            key="precio_promocional_mayor"
-        )
-    with col11:
-        precio_venta = st.number_input(
-            "Precio Venta",
-            min_value=0.0,
-            step=0.01,
-            value=round(precio_x_mayor * 1.13, 2) if precio_x_mayor else 0.0,
-            key="precio_venta"
-        )
-        precio_promocional = st.number_input(
-            "Precio Promocional",
-            min_value=0.0,
-            step=0.01,
-            value=0.0,
-            key="precio_promocional"
-        )
-    with col12:
-        precio_x_menor = st.number_input(
-            "Precio x Menor",
-            min_value=0.0,
-            step=0.01,
-            value=round(precio_x_mayor * 1.90, 2) if precio_x_mayor else 0.0,
-            key="precio_x_menor"
-        )
-        precio_promocional_menor = st.number_input(
-            "Precio Promocional x Menor",
-            min_value=0.0,
-            step=0.01,
-            value=0.0,
-            key="precio_promocional_menor"
-        )
-
-    st.subheader("📍 Campos Adicionales")
-    col16, col17, col18 = st.columns([1, 1, 1])
-    with col16:
-        pasillo = st.text_input(
-            "Pasillo",
-            value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado and pd.notna(producto_seleccionado['Pasillo'])) else "",
-            key="pasillo"
-        )
-    with col17:
-        estante = st.text_input(
-            "Estante",
-            value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in producto_seleccionado and pd.notna(producto_seleccionado['Estante'])) else "",
-            key="estante"
-        )
-    with col18:
-        columna = st.text_input(
-            "Columna",
-            value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in producto_seleccionado and pd.notna(producto_seleccionado['Columna'])) else "",
-            key="columna"
-        )
-
-    fecha_vencimiento = st.date_input(
-        "📅 Fecha de Vencimiento",
-        value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')),
-        key="fecha_vencimiento"
-    )
-    nota_1 = st.text_area(
-        "📝 Nota 1",
-        value=producto_seleccionado['Nota 1'] if (producto_seleccionado is not None and 'Nota 1' in producto_seleccionado and pd.notna(producto_seleccionado['Nota 1'])) else "",
-        key="nota_1"
-    )
-
-    col_cancel, col_save = st.columns([1, 1])
-    with col_cancel:
-        st.form_submit_button(label="Cancelar")
-    with col_save:
-        st.form_submit_button(label="Guardar Producto")
+    proveedores = st.session_state.df
