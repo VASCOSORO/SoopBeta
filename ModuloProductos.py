@@ -202,10 +202,4 @@ with st.form(key='agregar_producto_unique'):
             "Unidades por Bulto",
             min_value=0,
             step=1,
-            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
-            key="unidades_por_bulto"
-        )
-    with col7:
-        presentacion = st.text_input(
-            "Presentación/Paquete",
-            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Present
+            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_se
