@@ -183,40 +183,4 @@ with st.form(key='agregar_producto_unique'):
     nueva_categoria = st.multiselect(
         "Categorías",
         options=categorias,
-        default=default_categorias,
-        key="nueva_categoria"
-    )
-
-    st.write("### Proveedor")
-    proveedores = st.session_state.df_productos['Proveedor'].dropna().unique().tolist()
-    proveedor_seleccionado = st.selectbox(
-        "Selecciona un proveedor",
-        options=proveedores,
-        index=0
-    )
-
-    unidades_por_bulto = st.number_input(
-        "Unidades por Bulto",
-        min_value=0,
-        step=1,
-        value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
-        key="unidades_por_bulto"
-    )
-
-    venta_forzada = st.checkbox(
-        "Venta Forzada",
-        value=(producto_seleccionado['Venta Forzada'] == 'Sí') if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado) else False,
-        key="venta_forzada"
-    )
-
-    url_imagen = st.text_input(
-        "URL de Imagen",
-        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
-        key="url_imagen"
-    )
-
-    st.markdown("---")
-    col6, col7, col8, col9 = st.columns([1, 1, 1, 1])
-    with col6:
-        nuevo_costo_pesos = 0.0
-        if producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (
+        default=default_categorias
