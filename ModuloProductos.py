@@ -224,3 +224,13 @@ with st.form(key='agregar_producto_unique'):
         "URL de Imagen",
         value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
         key="url_imagen"
+    )
+
+    st.markdown("---")
+    col9, col10 = st.columns([1, 1])
+    with col9:
+        nuevo_costo_pesos = st.number_input(
+            "Costo (Pesos)",
+            min_value=0.0,
+            step=0.01,
+            value=float(producto_seleccionado['Costo (Pesos)']) if (producto
