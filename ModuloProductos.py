@@ -23,7 +23,7 @@ columnas_esperadas = [
     'Precio x Menor', 'Precio Promocional x Mayor',
     'Precio Promocional', 'Precio Promocional x Menor',
     'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
-    'Nota 1', 'Activo', 'Imagen'
+    'Nota 1', 'Activo', 'Imagen', 'Unidades por Bulto', 'Venta Forzada'
 ]
 
 def cargar_excel():
@@ -195,6 +195,26 @@ with st.form(key='agregar_producto_unique'):
         key="proveedor"
     )
 
+    unidades_por_bulto = st.number_input(
+        "Unidades por Bulto",
+        min_value=0,
+        step=1,
+        value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
+        key="unidades_por_bulto"
+    )
+
+    venta_forzada = st.checkbox(
+        "Venta Forzada",
+        value=(producto_seleccionado['Venta Forzada'] == 'Sí') if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado) else False,
+        key="venta_forzada"
+    )
+
+    url_imagen = st.text_input(
+        "URL de Imagen",
+        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
+        key="url_imagen"
+    )
+
     st.markdown("---")
     col6, col7, col8, col9 = st.columns([1, 1, 1, 1])
     with col6:
@@ -282,6 +302,60 @@ with st.form(key='agregar_producto_unique'):
             value=round(precio_x_mayor * 1.90, 2) if precio_x_mayor else 0.0,
             key="precio_x_menor"
         )
+
+    st.markdown("---")
+    st.write("### Precios Promocionales")
+    col13, col14, col15 = st.columns([1, 1, 1])
+    with col13:
+        promo_mayor = st.checkbox("Agregar Precio Promocional x Mayor", key="promo_mayor")
+        if promo_mayor:
+            precio_promocional_mayor = st.number_input("Precio Promocional x Mayor", min_value=0.0, step=0.01, key="precio_promocional_mayor")
+        else:
+            precio_promocional_mayor = 0.0
+    with col14:
+        promo_venta = st.checkbox("Agregar Precio Promocional", key="promo_venta")
+        if promo_venta:
+            precio_promocional = st.number_input("Precio Promocional", min_value=0.0, step=0.01, key="precio_promocional")
+        else:
+            precio_promocional = 0.0
+    with col15:
+        promo_menor = st.checkbox("Agregar Precio Promocional x Menor", key="promo_menor")
+        if promo_menor:
+            precio_promocional_menor = st.number_input("Precio Promocional x Menor", min_value=0.0, step=0.01, key="precio_promocional_menor")
+        else:
+            precio_promocional_menor = 0.0
+
+    st.subheader("📍 Campos Adicionales")
+    col16, col17, col18 = st.columns([1, 1, 1])
+    with col16:
+        pasillo = st.text_input(
+            "Pasillo",
+            value=producto_seleccionado['Pasillo'] if (producto_seleccionado is not None and 'Pasillo' in producto_seleccionado and pd.notna(producto_seleccionado['Pasillo'])) else "",
+            key="pasillo"
+        )
+    with col17:
+        estante = st.text_input(
+            "Estante",
+            value=producto_seleccionado['Estante'] if (producto_seleccionado is not None and 'Estante' in producto_seleccionado and pd.notna(producto_seleccionado['Estante'])) else "",
+            key="estante"
+        )
+    with col18:
+        columna = st.text_input(
+            "Columna",
+            value=producto_seleccionado['Columna'] if (producto_seleccionado is not None and 'Columna' in producto_seleccionado and pd.notna(producto_seleccionado['Columna'])) else "",
+            key="columna"
+        )
+
+    fecha_vencimiento = st.date_input(
+        "📅 Fecha de Vencimiento",
+        value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')),
+        key="fecha_vencimiento"
+    )
+    nota_1 = st.text_area(
+        "📝 Nota 1",
+        value=producto_seleccionado['Nota 1'] if (producto_seleccionado is not None and 'Nota 1' in producto_seleccionado and pd.notna(producto_seleccionado['Nota 1'])) else "",
+        key="nota_1"
+    )
 
     col_cancel, col_save = st.columns([1, 1])
     with col_cancel:
