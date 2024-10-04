@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 columnas_esperadas = [
-    'Codigo', 'Codigo de Barras', 'Nombre', 'Descripcion',
+    'id', 'id externo', 'Codigo', 'Codigo de Barras', 'Nombre', 'Descripcion',
     'Alto', 'Ancho', 'Categorias', 'Proveedor',
     'Costo (Pesos)', 'Costo (USD)', 'Ultimo Precio (Pesos)',
     'Ultimo Precio (USD)', 'Precio x Mayor', 'Precio Venta',
@@ -44,8 +44,8 @@ def cargar_excel():
 
             columnas_modificadas = {}
             for col in df.columns:
-                nuevo_nombre = st.text_input(f"Renombrar columna '{col}':", value=col)
-                if st.checkbox(f"Eliminar columna '{col}'"):
+                nuevo_nombre = st.text_input(f"Renombrar columna '{col}':", value=col, key=f"rename_{col}")
+                if st.checkbox(f"Eliminar columna '{col}'", key=f"delete_{col}"):
                     columnas_modificadas[col] = None
                 else:
                     columnas_modificadas[col] = nuevo_nombre
@@ -385,6 +385,8 @@ with st.form(key='agregar_producto_unique'):
                     nuevo_id = producto_seleccionado['Codigo']
 
                 nuevo_producto = {
+                    'id': producto_seleccionado['id'] if not es_nuevo else len(st.session_state.df_productos) + 1,
+                    'id externo': producto_seleccionado.get('id externo', ''),
                     'Codigo': nuevo_id,
                     'Codigo de Barras': nuevo_codigo_barras,
                     'Nombre': nuevo_nombre,
