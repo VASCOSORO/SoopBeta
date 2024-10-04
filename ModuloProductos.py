@@ -87,7 +87,7 @@ if not st.session_state.df_productos.empty:
     with col_search2:
         buscar_nombre = st.selectbox(
             "Buscar por Nombre",
-            options=[''] + st.session_state.df_productos['Nombre'].unique().tolist(),
+            options=[''] + st.session_state.df_productos['Nombre'].fillna('').unique().tolist(),
             key="buscar_nombre"
         )
 
@@ -95,15 +95,18 @@ if not st.session_state.df_productos.empty:
     if buscar_codigo:
         try:
             producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos.get('Codigo', pd.Series(dtype='str')).astype(str) == buscar_codigo].iloc[0]
-            st.write(f"**Producto Seleccionado por Código: {producto_seleccionado['Nombre']}**")
+            st.session_state.buscar_nombre = producto_seleccionado['Nombre']
         except Exception as e:
             st.error(f"❌ Error al seleccionar el producto por Código: {e}")
     elif buscar_nombre:
         try:
             producto_seleccionado = st.session_state.df_productos[st.session_state.df_productos['Nombre'] == buscar_nombre].iloc[0]
-            st.write(f"**Producto Seleccionado por Nombre: {producto_seleccionado['Nombre']}**")
+            st.session_state.buscar_codigo = producto_seleccionado['Codigo']
         except Exception as e:
             st.error(f"❌ Error al seleccionar el producto por Nombre: {e}")
+
+    if producto_seleccionado is not None:
+        st.write(f"**Producto Seleccionado: {producto_seleccionado['Nombre']}**")
 else:
     st.info("ℹ️ No hay productos disponibles. Por favor, carga un archivo de productos.")
 
@@ -185,4 +188,45 @@ with st.form(key='agregar_producto_unique'):
     )
 
     st.write("### Proveedor")
-    proveedores = st.session_state.df
+    proveedores = st.session_state.df_productos['Proveedor'].dropna().unique().tolist()
+    proveedor_seleccionado = st.selectbox(
+        "Selecciona un proveedor",
+        options=proveedores,
+        index=0,
+        key="proveedor"
+    )
+
+    unidades_por_bulto = st.number_input(
+        "Unidades por Bulto",
+        min_value=0,
+        step=1,
+        value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
+        key="unidades_por_bulto"
+    )
+
+    venta_forzada = st.checkbox(
+        "Venta Forzada",
+        value=(producto_seleccionado['Venta Forzada'] == 'Sí') if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado) else False,
+        key="venta_forzada"
+    )
+
+    presentacion = st.text_input(
+        "Presentación",
+        value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Presentacion' in producto_seleccionado) else "",
+        key="presentacion"
+    )
+
+    url_imagen = st.text_input(
+        "URL de Imagen",
+        value=producto_seleccionado['Imagen'] if (producto_seleccionado is not None and 'Imagen' in producto_seleccionado) else "",
+        key="url_imagen"
+    )
+
+    st.markdown("---")
+    col6, col7, col8, col9 = st.columns([1, 1, 1, 1])
+    with col6:
+        nuevo_costo_pesos = 0.0
+        if producto_seleccionado is not None and 'Costo (Pesos)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (Pesos)']):
+            try:
+                nuevo_costo_pesos = float(producto_seleccionado['Costo (Pesos)'])
+            except
