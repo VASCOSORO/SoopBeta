@@ -202,10 +202,10 @@ with st.form(key='agregar_producto_unique'):
     with col4:
         # Manejo seguro del valor 'Alto'
         alto_valor = 0
-        if producto_seleccionado is not None and 'Alto' in producto_seleccionado and pd.notna(producto_seleccionado['Alto']):
+        if (producto_seleccionado is not None and 'Alto' in producto_seleccionado and pd.notna(producto_seleccionado['Alto'])):
             try:
                 alto_valor = int(producto_seleccionado['Alto'])
-            except ValueError:
+            except (ValueError, TypeError):
                 alto_valor = 0
         nuevo_alto = st.number_input(
             "Alto (cm)",
@@ -217,10 +217,10 @@ with st.form(key='agregar_producto_unique'):
     with col5:
         # Manejo seguro del valor 'Ancho'
         ancho_valor = 0
-        if producto_seleccionado is not None and 'Ancho' in producto_seleccionado and pd.notna(producto_seleccionado['Ancho']):
+        if (producto_seleccionado is not None and 'Ancho' in producto_seleccionado and pd.notna(producto_seleccionado['Ancho'])):
             try:
                 ancho_valor = int(producto_seleccionado['Ancho'])
-            except ValueError:
+            except (ValueError, TypeError):
                 ancho_valor = 0
         nuevo_ancho = st.number_input(
             "Ancho (cm)",
@@ -232,7 +232,7 @@ with st.form(key='agregar_producto_unique'):
 
     # Categorías desplegable
     categorias = st.session_state.df_productos['Categorias'].dropna().unique().tolist()
-    if producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias']):
+    if (producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias'])):
         default_categorias = [cat.strip() for cat in producto_seleccionado['Categorias'].split(',')]
     else:
         default_categorias = []
@@ -463,31 +463,3 @@ with st.form(key='agregar_producto_unique'):
         # Resetear el formulario sin guardar
         reset_form()
         st.success("✅ Operación cancelada y formulario reseteado.")
-
-# Descargar archivo modificado
-if not st.session_state.df_productos.empty:
-    st.header("💾 Descargar Archivo Modificado:")
-    csv = convertir_a_csv(st.session_state.df_productos)
-    excel = convertir_a_excel(st.session_state.df_productos)
-
-    argentina = pytz.timezone('America/Argentina/Buenos_Aires')
-    timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
-
-    # Opción para descargar como CSV
-    st.download_button(
-        label="📥 Descargar CSV Modificado",
-        data=csv,
-        file_name=f"productos_modificados_{timestamp}.csv",
-        mime="text/csv"
-    )
-
-    # Opción para descargar como XLSX
-    st.download_button(
-        label="📥 Descargar Excel Modificado",
-        data=excel,
-        file_name=f"productos_modificados_{timestamp}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# Agregar el footer
-agregar_footer()
