@@ -239,14 +239,4 @@ with st.form(key='agregar_producto_unique'):
     with col10:
         nuevo_costo_usd = st.number_input(
             "Costo (USD)",
-            min_value=0.0,
-            step=0.01,
-            value=float(producto_seleccionado['Costo (USD)']) if (producto_seleccionado is not None and 'Costo (USD)' in producto_seleccionado and pd.notna(producto_seleccionado['Costo (USD)'])) else 0.0,
-            key="nuevo_costo_usd"
-        )
-    with col11:
-        precio_promocional = st.number_input(
-            "Precio Promocional",
-            min_value=0.0,
-            step=0.01,
-            value=float(producto_seleccionado['Precio Promocional']) if (producto_seleccionado is not None and 'Precio Promocional' in producto_seleccionado and pd.notna(producto_se
+            min_value=
