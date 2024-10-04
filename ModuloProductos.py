@@ -196,18 +196,16 @@ with st.form(key='agregar_producto_unique'):
         key="proveedor"
     )
 
-    unidades_por_bulto = st.number_input(
-        "Unidades por Bulto",
-        min_value=0,
-        step=1,
-        value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
-        key="unidades_por_bulto"
-    )
-
-    venta_forzada = st.checkbox(
-        "Venta Forzada",
-        value=(producto_seleccionado['Venta Forzada'] == 'Sí') if (producto_seleccionado is not None and 'Venta Forzada' in producto_seleccionado) else False,
-        key="venta_forzada"
-    )
-
-    url_imagen
+    col6, col7, col8 = st.columns([1, 1, 1])
+    with col6:
+        unidades_por_bulto = st.number_input(
+            "Unidades por Bulto",
+            min_value=0,
+            step=1,
+            value=int(producto_seleccionado['Unidades por Bulto']) if (producto_seleccionado is not None and 'Unidades por Bulto' in producto_seleccionado and pd.notna(producto_seleccionado['Unidades por Bulto'])) else 0,
+            key="unidades_por_bulto"
+        )
+    with col7:
+        presentacion = st.text_input(
+            "Presentación/Paquete",
+            value=producto_seleccionado['Presentacion'] if (producto_seleccionado is not None and 'Present
