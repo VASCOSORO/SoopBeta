@@ -89,11 +89,100 @@ if buscar_producto:
 st.subheader("➕ Agregar/Editar Producto")
 with st.form(key='agregar_producto_unique'):
     nuevo_codigo = st.text_input("Código", value=str(producto_seleccionado['Código']) if producto_seleccionado is not None else "")
+    nuevo_codigo_barras = st.text_input("Código de Barras", value=producto_seleccionado['Código de Barras'] if producto_seleccionado is not None else "")
     nuevo_nombre = st.text_input("Nombre", value=producto_seleccionado['Nombre'] if producto_seleccionado is not None else "")
-    nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=float(producto_seleccionado['Costo (Pesos)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (Pesos)']) and producto_seleccionado['Costo (Pesos)'] != '' else 0.0)
+    nuevo_descripcion = st.text_area("Descripción", value=producto_seleccionado['Descripción'] if producto_seleccionado is not None else "", height=100)
 
-    # Agregar el botón de envío del formulario
-    guardar = st.form_submit_button(label='Guardar Producto')
+    # Tamaño (Alto y Ancho)
+    col1, col2 = st.columns(2)
+    with col1:
+        nuevo_alto = st.number_input("Alto (cm)", min_value=0, step=1, value=int(producto_seleccionado['Alto']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Alto']) and str(producto_seleccionado['Alto']).strip().isdigit() else 0)
+    with col2:
+        nuevo_ancho = st.number_input("Ancho (cm)", min_value=0, step=1, value=int(producto_seleccionado['Ancho']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Ancho']) and str(producto_seleccionado['Ancho']).strip().isdigit() else 0)
+
+    # Categorías desplegable
+    categorias = st.session_state.df_productos['Categorias'].dropna().unique().tolist()
+    if producto_seleccionado is not None and 'Categorias' in producto_seleccionado and pd.notna(producto_seleccionado['Categorias']):
+        default_categorias = [cat.strip() for cat in producto_seleccionado['Categorias'].split(',')]
+    else:
+        default_categorias = []
+    nueva_categoria = st.multiselect("Categorías", options=categorias, default=default_categorias)
+
+    # Proveedor desplegable
+    proveedores = st.session_state.df_productos['Proveedor'].dropna().unique().tolist()
+    proveedor_seleccionado = st.selectbox("Proveedor", options=proveedores, index=proveedores.index(producto_seleccionado['Proveedor']) if producto_seleccionado is not None and producto_seleccionado['Proveedor'] in proveedores else 0)
+
+    # Fila de costos y precios
+    st.markdown("---")
+    col3, col4, col5, col6 = st.columns(4)
+    with col3:
+        nuevo_costo_pesos = st.number_input("Costo (Pesos)", min_value=0.0, step=0.01, value=float(producto_seleccionado['Costo (Pesos)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (Pesos)']) else 0.0)
+    with col4:
+        nuevo_costo_usd = st.number_input("Costo (USD)", min_value=0.0, step=0.01, value=float(producto_seleccionado['Costo (USD)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Costo (USD)']) else 0.0)
+    with col5:
+        ultimo_precio_pesos = st.number_input("Último Precio (Pesos)", value=float(producto_seleccionado['Último Precio (Pesos)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Último Precio (Pesos)']) else 0.0, disabled=True)
+    with col6:
+        ultimo_precio_usd = st.number_input("Último Precio (USD)", value=float(producto_seleccionado['Último Precio (USD)']) if producto_seleccionado is not None and pd.notna(producto_seleccionado['Último Precio (USD)']) else 0.0, disabled=True)
+
+    # Marcar último precio en rojo si es menor que el nuevo costo
+    if (nuevo_costo_pesos > ultimo_precio_pesos):
+        col5.markdown("<p style='color:red;'>Último Precio Menor al Costo</p>", unsafe_allow_html=True)
+    if (nuevo_costo_usd > ultimo_precio_usd):
+        col6.markdown("<p style='color:red;'>Último Precio Menor al Costo</p>", unsafe_allow_html=True)
+
+    # Fila para Precio y Precio x Mayor con cálculos automáticos
+    st.markdown("---")
+    col7, col8, col9 = st.columns(3)
+    with col7:
+        precio_x_mayor = st.number_input("Precio x Mayor", min_value=0.0, step=0.01, value=round(nuevo_costo_pesos * 1.44, 2) if nuevo_costo_pesos else 0.0)
+    with col8:
+        precio_venta = st.number_input("Precio", min_value=0.0, step=0.01, value=round(precio_x_mayor * 1.13, 2) if precio_x_mayor else 0.0)
+    with col9:
+        precio_x_menor = st.number_input("Precio x Menor", min_value=0.0, step=0.01, value=round(precio_x_mayor * 1.90, 2) if precio_x_mayor else 0.0)
+
+    # Checkboxes para mostrar precios promocionales
+    st.markdown("---")
+    st.write("### Precios Promocionales")
+    col10, col11, col12 = st.columns(3)
+    with col10:
+        promo_mayor = st.checkbox("Agregar Precio Promocional x Mayor")
+        if promo_mayor:
+            precio_promocional_mayor = st.number_input("Precio Promocional x Mayor", min_value=0.0, step=0.01)
+        else:
+            precio_promocional_mayor = 0.0
+    with col11:
+        promo_venta = st.checkbox("Agregar Precio Promocional")
+        if promo_venta:
+            precio_promocional = st.number_input("Precio Promocional", min_value=0.0, step=0.01)
+        else:
+            precio_promocional = 0.0
+    with col12:
+        promo_menor = st.checkbox("Agregar Precio Promocional x Menor")
+        if promo_menor:
+            precio_promocional_menor = st.number_input("Precio Promocional x Menor", min_value=0.0, step=0.01)
+        else:
+            precio_promocional_menor = 0.0
+
+    # Campos adicionales: Ubicación y Nota
+    st.subheader("📍 Campos Adicionales")
+    col13, col14, col15 = st.columns(3)
+    with col13:
+        pasillo = st.text_input("Pasillo", value=producto_seleccionado['Pasillo'] if producto_seleccionado is not None else "")
+    with col14:
+        estante = st.text_input("Estante", value=producto_seleccionado['Estante'] if producto_seleccionado is not None else "")
+    with col15:
+        columna = st.text_input("Columna", value=producto_seleccionado['Columna'] if producto_seleccionado is not None else "")
+
+    fecha_vencimiento = st.date_input("📅 Fecha de Vencimiento", value=datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')))
+    nota_1 = st.text_area("📝 Nota 1", value=producto_seleccionado['Nota 1'] if producto_seleccionado is not None else "")
+
+    # Botones para guardar o cancelar
+    st.markdown("---")
+    col16, col17 = st.columns(2)
+    with col16:
+        guardar = st.form_submit_button(label='Guardar Producto')
+    with col17:
+        cancelar = st.form_submit_button(label='Cancelar')
 
     if guardar:
         if not nuevo_codigo or not nuevo_nombre:
@@ -103,15 +192,53 @@ with st.form(key='agregar_producto_unique'):
             if producto_seleccionado is not None:
                 idx = st.session_state.df_productos.index[st.session_state.df_productos['Código'] == producto_seleccionado['Código']].tolist()[0]
                 st.session_state.df_productos.loc[idx, 'Código'] = nuevo_codigo
+                st.session_state.df_productos.loc[idx, 'Código de Barras'] = nuevo_codigo_barras
                 st.session_state.df_productos.loc[idx, 'Nombre'] = nuevo_nombre
+                st.session_state.df_productos.loc[idx, 'Descripción'] = nuevo_descripcion
+                st.session_state.df_productos.loc[idx, 'Alto'] = nuevo_alto
+                st.session_state.df_productos.loc[idx, 'Ancho'] = nuevo_ancho
+                st.session_state.df_productos.loc[idx, 'Categorias'] = ','.join(nueva_categoria)
+                st.session_state.df_productos.loc[idx, 'Proveedor'] = proveedor_seleccionado
                 st.session_state.df_productos.loc[idx, 'Costo (Pesos)'] = nuevo_costo_pesos
+                st.session_state.df_productos.loc[idx, 'Costo (USD)'] = nuevo_costo_usd
+                st.session_state.df_productos.loc[idx, 'Precio x Mayor'] = precio_x_mayor
+                st.session_state.df_productos.loc[idx, 'Precio'] = precio_venta
+                st.session_state.df_productos.loc[idx, 'Precio x Menor'] = precio_x_menor
+                st.session_state.df_productos.loc[idx, 'Precio Promocional x Mayor'] = precio_promocional_mayor
+                st.session_state.df_productos.loc[idx, 'Precio Promocional'] = precio_promocional
+                st.session_state.df_productos.loc[idx, 'Precio Promocional x Menor'] = precio_promocional_menor
+                st.session_state.df_productos.loc[idx, 'Pasillo'] = pasillo
+                st.session_state.df_productos.loc[idx, 'Estante'] = estante
+                st.session_state.df_productos.loc[idx, 'Columna'] = columna
+                st.session_state.df_productos.loc[idx, 'Fecha de Vencimiento'] = fecha_vencimiento
+                st.session_state.df_productos.loc[idx, 'Nota 1'] = nota_1
                 st.success("✅ Producto actualizado correctamente.")
             else:
                 nuevo_producto = {
                     'Código': nuevo_codigo,
+                    'Código de Barras': nuevo_codigo_barras,
                     'Nombre': nuevo_nombre,
+                    'Descripción': nuevo_descripcion,
+                    'Alto': nuevo_alto,
+                    'Ancho': nuevo_ancho,
+                    'Categorias': ','.join(nueva_categoria),
+                    'Proveedor': proveedor_seleccionado,
                     'Costo (Pesos)': nuevo_costo_pesos,
-                    # Agregar el resto de las columnas con valores predeterminados
+                    'Costo (USD)': nuevo_costo_usd,
+                    'Último Precio (Pesos)': ultimo_precio_pesos,
+                    'Último Precio (USD)': ultimo_precio_usd,
+                    'Precio x Mayor': precio_x_mayor,
+                    'Precio': precio_venta,
+                    'Precio x Menor': precio_x_menor,
+                    'Precio Promocional x Mayor': precio_promocional_mayor,
+                    'Precio Promocional': precio_promocional,
+                    'Precio Promocional x Menor': precio_promocional_menor,
+                    'Pasillo': pasillo,
+                    'Estante': estante,
+                    'Columna': columna,
+                    'Fecha de Vencimiento': fecha_vencimiento,
+                    'Nota 1': nota_1,
+                    'Activo': 'Sí'
                 }
                 st.session_state.df_productos = pd.concat([st.session_state.df_productos, pd.DataFrame([nuevo_producto])], ignore_index=True)
                 st.success("✅ Producto agregado correctamente.")
@@ -122,6 +249,9 @@ with st.form(key='agregar_producto_unique'):
                 st.success("✅ Cambios guardados en 'Produt2.xlsx'.")
             except Exception as e:
                 st.error(f"❌ Error al guardar los cambios en 'Produt2.xlsx': {e}")
+
+    if cancelar:
+        st.success("✅ Operación cancelada y formulario reseteado.")
 
 # Agregar el footer
 st.markdown("""
