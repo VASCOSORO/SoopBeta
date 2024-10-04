@@ -239,4 +239,7 @@ with st.form(key='agregar_producto_unique'):
             nuevo_costo_pesos = float(producto_seleccionado['Costo (Pesos)']) if (
                 producto_seleccionado is not None and
                 'Costo (Pesos)' in producto_seleccionado and
-                pd.notna(producto_seleccionado['Costo (Pes
+                pd.notna(producto_seleccionado['Costo (Pesos)'])
+            ) else 0.0
+        except (ValueError, TypeError):
+            nuevo_costo_pesos = 0.
