@@ -1,5 +1,5 @@
 # ===== Modulo Productos 2.0 para Carga ======
-# ================
+# ================ ESTE ANDA BIEN HASTA URL FALTAN PRECIOS Y UBICACION
 # =============
 
 import streamlit as st
