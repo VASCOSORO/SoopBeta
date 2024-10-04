@@ -19,7 +19,7 @@ columnas_esperadas = [
     'Codigo', 'Codigo de Barras', 'Nombre', 'Descripcion',
     'Alto', 'Ancho', 'Categorias', 'Proveedor',
     'Costo (Pesos)', 'Costo (USD)', 'Ultimo Precio (Pesos)',
-    'Ultimo Precio (USD)', 'Precio x Mayor', 'Precio',
+    'Ultimo Precio (USD)', 'Precio x Mayor', 'Precio Venta',
     'Precio x Menor', 'Precio Promocional x Mayor',
     'Precio Promocional', 'Precio Promocional x Menor',
     'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento',
@@ -59,7 +59,7 @@ def cargar_y_convertir_csv():
             df.columns = df.columns.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
 
             if 'precio jugueterias face' in df.columns:
-                df.rename(columns={'precio jugueterias face': 'Precio', 'precio': 'Precio x Mayor'}, inplace=True)
+                df.rename(columns={'precio jugueterias face': 'Precio Venta', 'precio': 'Precio x Mayor'}, inplace=True)
             if 'precio' in df.columns:
                 df.rename(columns={'precio': 'Precio x Mayor'}, inplace=True)
 
@@ -87,7 +87,7 @@ def cargar_y_convertir_csv():
         st.warning("⚠️ El archivo 'Produt2.csv' no se encontró en la carpeta raíz.")
     return None
 
-st.sidebar.header("📥 Cargar y Convertir Archivo de Productos")
+st.sidebar.header("📅 Cargar y Convertir Archivo de Productos")
 if st.sidebar.button("Cargar 'Produt2.csv' y Convertir a Excel"):
     df_convertido = cargar_y_convertir_csv()
     if df_convertido is not None:
