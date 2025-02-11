@@ -36,8 +36,11 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             )
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
             
-            if len(df.columns) > 18:
-                df.rename(columns={df.columns[18]: 'Precio Venta'}, inplace=True)
+            # Verificar el nombre exacto de la columna y corregirlo
+            for col in df.columns:
+                if 'Precio Jugueterias' in col and 'face' in col:
+                    df.rename(columns={col: 'Precio Venta'}, inplace=True)
+                    break
 
             st.write(f"🔍 **Columnas encontradas en {tipo}:**")
             st.write(df.columns.tolist())
