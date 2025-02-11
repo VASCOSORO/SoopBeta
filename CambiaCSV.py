@@ -3,17 +3,15 @@ import pandas as pd
 import re
 from io import BytesIO
 from datetime import datetime
-import pytz  # Importar pytz para manejo de zonas horarias
+import pytz
 
-# Configuración de la página
 st.set_page_config(
     page_title="Convertidor de CSV a Excel",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Título de la aplicación
-st.title("📁 Convertidor de CSV 33")
+st.title("📁 Convertidor de CSV")
 
 def limpiar_id(valor):
     if pd.isnull(valor):
@@ -36,9 +34,10 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 on_bad_lines='skip',
                 dtype=str
             )
-            # Eliminar espacios al inicio y final de los nombres de las columnas
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-            df.columns = df.columns.str.strip()
+            
+            if len(df.columns) > 18:
+                df.rename(columns={df.columns[18]: 'Precio Venta'}, inplace=True)
 
             st.write(f"🔍 **Columnas encontradas en {tipo}:**")
             st.write(df.columns.tolist())
@@ -61,8 +60,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             st.dataframe(df)
 
             excel = convertir_a_excel(df)
-            argentina = pytz.timezone('America/Argentina/Buenos_Aires')
-            timestamp = datetime.now(argentina).strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')).strftime("%Y%m%d_%H%M%S")
             file_name = f"archivo_modificado_{tipo.lower()}_{timestamp}.xlsx"
 
             st.download_button(
@@ -80,7 +78,6 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     columnas_a_renombrar = {
         'Precio': 'Precio x Mayor',
-        'Precio Venta': 'Precio Venta',
         'Costo FOB': 'Costo usd',
         'Precio Precio face Dolar': 'Precio USD'
     }
@@ -90,31 +87,18 @@ if uploaded_file_productos is not None:
 
     procesar_archivo(uploaded_file_productos, "Productos", columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id)
 
-# Sección para el archivo de Clientes
 st.header("👥 Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
 if uploaded_file_clientes is not None:
-    columnas_a_renombrar_clientes = {}
-    columnas_a_eliminar_clientes = []
-    columnas_a_agregar_clientes = []
-    columnas_id_clientes = ['Id', 'Id Cliente']
+    procesar_archivo(uploaded_file_clientes, "Clientes", {}, [], [], ['Id', 'Id Cliente'])
 
-    procesar_archivo(uploaded_file_clientes, "Clientes", columnas_a_renombrar_clientes, columnas_a_eliminar_clientes, columnas_a_agregar_clientes, columnas_id_clientes)
-
-# Sección para el archivo de Pedidos
 st.header("📦 Convertidor para CSV de Pedidos")
 uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
 
 if uploaded_file_pedidos is not None:
-    columnas_a_renombrar_pedidos = {}
-    columnas_a_eliminar_pedidos = []
-    columnas_a_agregar_pedidos = []
-    columnas_id_pedidos = ['Id', 'Id Cliente']
+    procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id', 'Id Cliente'])
 
-    procesar_archivo(uploaded_file_pedidos, "Pedidos", columnas_a_renombrar_pedidos, columnas_a_eliminar_pedidos, columnas_a_agregar_pedidos, columnas_id_pedidos)
-
-# Agregar CSS personalizado para el footer
 footer = """
 <style>
 .footer {
