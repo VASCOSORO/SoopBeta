@@ -78,7 +78,7 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     columnas_a_renombrar = {
         'Precio': 'Precio x Mayor',
-        'Precio Jugueterias Face': 'Precio',
+        'Precio Jugueterias Face': 'Precio Venta',
         'Costo FOB': 'Costo usd',
         'Precio Precio face Dolar': 'Precio USD'
     }
