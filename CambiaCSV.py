@@ -36,6 +36,8 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 on_bad_lines='skip',
                 dtype=str
             )
+            # Eliminar espacios al inicio y final de los nombres de las columnas
+            df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
             df.columns = df.columns.str.strip()
 
             st.write(f"🔍 **Columnas encontradas en {tipo}:**")
@@ -78,7 +80,7 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     columnas_a_renombrar = {
         'Precio': 'Precio x Mayor',
-        'Precio Jugueterias Face': 'Precio Venta',
+        'Precio Venta': 'Precio Venta',
         'Costo FOB': 'Costo usd',
         'Precio Precio face Dolar': 'Precio USD'
     }
@@ -133,4 +135,3 @@ footer = """
 """
 
 st.markdown(footer, unsafe_allow_html=True)
- 
