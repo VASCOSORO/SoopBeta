@@ -38,6 +38,9 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             )
             df.columns = df.columns.str.strip()
 
+            st.write(f"🔍 **Columnas encontradas en {tipo}:**")
+            st.write(df.columns.tolist())
+
             for columna in columnas_id:
                 if columna in df.columns:
                     df[columna] = df[columna].apply(limpiar_id)
@@ -51,6 +54,9 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
                     df[columna] = ''
+
+            st.write(f"📊 **Archivo de {tipo} modificado:**")
+            st.dataframe(df)
 
             excel = convertir_a_excel(df)
             argentina = pytz.timezone('America/Argentina/Buenos_Aires')
@@ -72,7 +78,7 @@ uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Product
 if uploaded_file_productos is not None:
     columnas_a_renombrar = {
         'precio': 'Precio x Mayor',
-        'Precio Jugueterias Face': 'Precio',
+        'Precio Jugueterias Face': 'Precio Venta',
         'Costo FOB': 'Costo usd',
         'Precio Precio face Dolar': 'Precio USD'
     }
