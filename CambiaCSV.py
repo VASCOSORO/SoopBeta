@@ -25,7 +25,6 @@ def convertir_a_excel(df):
     return buffer.getvalue()
 
 def merge_duplicate_columns(df, sep=" | "):
-    # Para cada columna única, si aparece más de una vez, se fusionan sus datos
     unique_cols = list(df.columns)
     for col in pd.unique(unique_cols):
         dup_cols = [c for c in df.columns if c == col]
@@ -44,51 +43,59 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 on_bad_lines='skip',
                 dtype=str
             )
-            # Limpiar nombres de columnas: quitar espacios y normalizar
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-            
-            # Corrección específica: si se encuentra "Precio Jugueterias" y "face", renombrarla a "Precio Venta"
-            for col in df.columns:
-                if 'Precio Jugueterias' in col and 'face' in col:
-                    df.rename(columns={col: 'Precio Venta'}, inplace=True)
-                    break
 
-            st.write(f"🔍 **Columnas encontradas en {tipo}:**")
-            st.write(df.columns.tolist())
+            # Renombrar columnas
+            for col_viejo, col_nuevo in columnas_a_renombrar.items():
+                if col_viejo in df.columns:
+                    df.rename(columns={col_viejo: col_nuevo}, inplace=True)
 
-            # Limpiar columnas de ID
-            for columna in columnas_id:
-                if columna in df.columns:
-                    df[columna] = df[columna].apply(limpiar_id)
+            # Eliminar columnas innecesarias
+            df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore', inplace=True)
 
-            # Renombrar columnas según el diccionario
-            if columnas_a_renombrar:
-                df = df.rename(columns=columnas_a_renombrar)
-
-            # Eliminar columnas no deseadas
-            if columnas_a_eliminar:
-                df = df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore')
-
-            # Agregar columnas que falten en el CSV (con valor vacío)
+            # Agregar columnas faltantes
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
-                    df[columna] = ''
+                    df[columna] = '0.00'
 
-            # Asegurar que existan todas las columnas requeridas (antes de fusionar duplicados)
-            for col in columnas_completas:
+            # Agregar historial de precios y costos
+            columnas_historial = [
+                'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
+                'Precio Venta Anterior', 'Precio x Menor Anterior'
+            ]
+            columnas_diferencias = [
+                'Diferencia Costo (Pesos)', 'Diferencia Costo (USD)', 'Diferencia Precio x Mayor',
+                'Diferencia Precio Venta', 'Diferencia Precio x Menor'
+            ]
+            
+            for col in columnas_historial + columnas_diferencias:
                 if col not in df.columns:
-                    df[col] = ''
+                    df[col] = '0.00'
 
-            # Fusionar columnas duplicadas sin perder datos
-            df = merge_duplicate_columns(df)
+            # Convertir a valores numéricos para cálculos
+            cols_a_convertir = [
+                'Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor'
+            ] + columnas_historial
 
-            # Verificar nuevamente que todas las columnas requeridas estén presentes
-            for col in columnas_completas:
-                if col not in df.columns:
-                    df[col] = ''
+            df[cols_a_convertir] = df[cols_a_convertir].astype(float)
 
-            # Reordenar las columnas según el orden definido
-            df = df[columnas_completas]
+            # Guardar valores anteriores
+            df['Costo Anterior (Pesos)'] = df['Costo (Pesos)']
+            df['Costo Anterior (USD)'] = df['Costo (USD)']
+            df['Precio x Mayor Anterior'] = df['Precio x Mayor']
+            df['Precio Venta Anterior'] = df['Precio Venta']
+            df['Precio x Menor Anterior'] = df['Precio x Menor']
+
+            # Calcular diferencias
+            df['Diferencia Costo (Pesos)'] = df['Costo (Pesos)'] - df['Costo Anterior (Pesos)']
+            df['Diferencia Costo (USD)'] = df['Costo (USD)'] - df['Costo Anterior (USD)']
+            df['Diferencia Precio x Mayor'] = df['Precio x Mayor'] - df['Precio x Mayor Anterior']
+            df['Diferencia Precio Venta'] = df['Precio Venta'] - df['Precio Venta Anterior']
+            df['Diferencia Precio x Menor'] = df['Precio x Menor'] - df['Precio x Menor Anterior']
+
+            # Reordenar columnas
+            columnas_completas.extend(columnas_historial + columnas_diferencias)
+            df = df[[col for col in columnas_completas if col in df.columns]]
 
             st.write(f"📊 **Archivo de {tipo} modificado:**")
             st.dataframe(df)
@@ -106,7 +113,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
         except Exception as e:
             st.error(f"❌ Ocurrió un error al procesar el archivo de {tipo}: {e}")
 
-# Lista completa de columnas para Productos (según la ficha que utilizás)
+# Lista completa de columnas para Productos
 columnas_completas_productos = [
     'id', 'Codigo', 'Nombre', 'Activo', 'Fecha Creado', 'Fecha Modificado', 'Descripcion', 'Orden',
     'Codigo de Barras', 'unidad por bulto', 'Presentacion/paquete', 'forzar venta x cantidad',
@@ -116,9 +123,7 @@ columnas_completas_productos = [
     'youtube_link', 'Costo Compuesto', 'Item1', 'Item2', 'Armado'
 ]
 
-# -------------------------
 # Sección de Productos
-# -------------------------
 st.header("🛍️ Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
 
@@ -133,42 +138,3 @@ if uploaded_file_productos is not None:
     columnas_id = ['Id']
     
     procesar_archivo(uploaded_file_productos, "Productos", columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id, columnas_completas_productos)
-
-# -------------------------
-# Sección de Clientes (ejemplo básico)
-# -------------------------
-st.header("👥 Convertidor para CSV de Clientes")
-uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
-if uploaded_file_clientes is not None:
-    columnas_completas_clientes = ['Id', 'Id Cliente', 'Nombre', 'Apellido', 'Email', 'Teléfono', 'Dirección']
-    procesar_archivo(uploaded_file_clientes, "Clientes", {}, [], [], ['Id', 'Id Cliente'], columnas_completas_clientes)
-
-# -------------------------
-# Sección de Pedidos (ejemplo básico)
-# -------------------------
-st.header("📦 Convertidor para CSV de Pedidos")
-uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
-if uploaded_file_pedidos is not None:
-    columnas_completas_pedidos = ['Id', 'Id Cliente', 'Fecha Pedido', 'Producto', 'Cantidad', 'Precio', 'Estado']
-    procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id', 'Id Cliente'], columnas_completas_pedidos)
-
-# Footer personalizado
-footer = """
-<style>
-.footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #f1f1f1;
-    color: #555;
-    text-align: center;
-    padding: 10px 0;
-    font-size: 14px;
-}
-</style>
-<div class="footer">
-    Powered by VASCO.SORO
-</div>
-"""
-st.markdown(footer, unsafe_allow_html=True)
