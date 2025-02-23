@@ -131,12 +131,12 @@ if uploaded_file_productos is not None:
     procesar_archivo(uploaded_file_productos, "Productos", 
         columnas_a_renombrar={'Precio': 'Precio x Mayor', 'Precio Jugueterias face': 'Precio Venta'},
         columnas_a_eliminar=['Precio 25 plus', 'Precio face+50', 'Precio BONUS', 'Precio Mayorista'],
-        columnas_a_agregar=['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento', 'Columna'],
+        columnas_a_agregar=['Proveedor', 'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento', 'Imagen', 'Marca', 'Forzar Venta x Multiplos', 'youtube_link', 'Ultimo en Modificar'],
         columnas_id=['Id'],
         columnas_completas=['Id', 'Codigo', 'Nombre', 'Activo', 'Fecha Creado', 'Fecha Modificado', 'Descripcion', 'Orden',
             'Codigo de Barras', 'Unidad por Bulto', 'Inner', 'Forzar Venta x Multiplos', 'Costo (Pesos)', 'Costo (USD)',
-            'Stock', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 'Categorias', 'Proveedor', 'Costo Compuesto',
-            'Ultimo en Modificar'])
+            'Stock', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 'Categorias', 'Marca', 'Proveedor', 'Costo Compuesto',
+            'Ultimo en Modificar', 'Imagen', 'Pasillo', 'Estante', 'Columna', 'youtube_link'])
 
 st.header("👥 Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
