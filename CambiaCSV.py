@@ -52,14 +52,17 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 df['Costo (USD)'] = df['Costo FOB']
 
             # Convertir valores numéricos
-            columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta']
+            columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor']
             for col in columnas_numericas:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-            # Calcular `Precio x Menor` correctamente como `Costo (Pesos) * 1.90`
-            if 'Costo (Pesos)' in df.columns and 'Precio x Menor' not in df.columns:
-                df['Precio x Menor'] = df['Costo (Pesos)'] * 1.90
+            # Recalcular `Precio x Menor` solo si está vacío
+            if 'Precio x Menor' in df.columns:
+                df['Precio x Menor'] = df.apply(
+                    lambda row: row['Costo (Pesos)'] * 1.90 if pd.isna(row['Precio x Menor']) or row['Precio x Menor'] == 0 else row['Precio x Menor'],
+                    axis=1
+                )
 
             # Agregar columnas faltantes
             for columna in columnas_a_agregar:
