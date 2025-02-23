@@ -24,10 +24,22 @@ def convertir_a_excel(df):
         df.to_excel(writer, index=False, sheet_name='Hoja1')
     return buffer.getvalue()
 
+def merge_duplicate_columns(df, sep=" | "):
+    # Para cada columna única, si aparece más de una vez, se fusionan los datos
+    unique_cols = pd.Series(df.columns).unique()
+    for col in unique_cols:
+        # Encuentra todas las ocurrencias exactas de esa columna
+        dup_cols = [c for c in df.columns if c == col]
+        if len(dup_cols) > 1:
+            # Combina los valores de las columnas duplicadas por fila
+            df[col] = df[dup_cols].apply(lambda row: sep.join([str(x) for x in row if pd.notna(x) and x != ""]), axis=1)
+            # Elimina las columnas duplicadas, dejando la primera
+            df.drop(columns=dup_cols[1:], inplace=True)
+    return df
+
 def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id, columnas_completas):
     if uploaded_file is not None:
         try:
-            # Leer el CSV con la configuración requerida
             df = pd.read_csv(
                 uploaded_file,
                 encoding='ISO-8859-1',
@@ -35,10 +47,10 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 on_bad_lines='skip',
                 dtype=str
             )
-            # Limpiar nombres de columnas: quitar espacios extra y normalizar
+            # Limpieza de nombres: quitar espacios y normalizar
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
             
-            # Verificar y corregir nombre específico de columna
+            # Corrección específica: si se encuentra "Precio Jugueterias" y "face", renombrarla a "Precio Venta"
             for col in df.columns:
                 if 'Precio Jugueterias' in col and 'face' in col:
                     df.rename(columns={col: 'Precio Venta'}, inplace=True)
@@ -47,7 +59,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             st.write(f"🔍 **Columnas encontradas en {tipo}:**")
             st.write(df.columns.tolist())
 
-            # Limpiar columnas que son IDs
+            # Limpiar columnas de ID
             for columna in columnas_id:
                 if columna in df.columns:
                     df[columna] = df[columna].apply(limpiar_id)
@@ -60,23 +72,25 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             if columnas_a_eliminar:
                 df = df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore')
 
-            # Agregar columnas específicas si no existen
+            # Agregar columnas faltantes (vacías)
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
                     df[columna] = ''
 
-            # Asegurarse de que el DataFrame tenga TODAS las columnas necesarias para la ficha de productos
+            # Asegurar que existan todas las columnas requeridas
             for col in columnas_completas:
                 if col not in df.columns:
                     df[col] = ''
 
-            # Reordenar las columnas para que queden en el orden deseado
+            # Fusionar columnas duplicadas sin perder datos
+            df = merge_duplicate_columns(df)
+
+            # Reordenar las columnas según lo definido
             df = df[columnas_completas]
 
             st.write(f"📊 **Archivo de {tipo} modificado:**")
             st.dataframe(df)
 
-            # Convertir a Excel y preparar descarga
             excel = convertir_a_excel(df)
             timestamp = datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')).strftime("%Y%m%d_%H%M%S")
             file_name = f"archivo_modificado_{tipo.lower()}_{timestamp}.xlsx"
@@ -90,7 +104,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
         except Exception as e:
             st.error(f"❌ Ocurrió un error al procesar el archivo de {tipo}: {e}")
 
-# Lista completa de columnas que debe tener el Excel de Productos
+# Lista completa de columnas para Productos (según la ficha que utilizás)
 columnas_completas_productos = [
     'id', 'Codigo', 'Nombre', 'Activo', 'Fecha Creado', 'Fecha Modificado', 'Descripcion', 'Orden',
     'Codigo de Barras', 'unidad por bulto', 'Presentacion/paquete', 'forzar venta x cantidad',
@@ -107,7 +121,6 @@ st.header("🛍️ Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
 
 if uploaded_file_productos is not None:
-    # Opciones de renombrado, eliminación y agregación según lo que recibís en el CSV
     columnas_a_renombrar = {
         'Precio': 'Precio x Mayor',
         'Costo FOB': 'Costo (USD)',
