@@ -14,10 +14,9 @@ st.set_page_config(
 st.title("📁 Convertidor de CSV a Excel")
 
 def detectar_delimitador(uploaded_file):
-    """ Detecta el delimitador correcto en la CSV """
     delimitadores = [',', ';', '\t', '|']
     first_lines = uploaded_file.read(1024).decode('ISO-8859-1')
-    uploaded_file.seek(0)  # Volver al inicio del archivo
+    uploaded_file.seek(0)
     return max(delimitadores, key=lambda d: first_lines.count(d))
 
 def convertir_a_excel(df):
@@ -44,6 +43,18 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             # Eliminar columnas innecesarias
             df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore', inplace=True)
 
+            # Asegurar que 'Costo (Pesos)' y 'Costo (USD)' existan
+            if 'Costo' in df.columns and 'Costo (Pesos)' not in df.columns:
+                df['Costo (Pesos)'] = df['Costo']
+            if 'Costo FOB' in df.columns and 'Costo (USD)' not in df.columns:
+                df['Costo (USD)'] = df['Costo FOB']
+
+            # Si 'Precio x Menor' no existe, calcularlo como un 90% más del costo en pesos
+            if 'Costo (Pesos)' in df.columns:
+                df['Precio x Menor'] = df['Costo (Pesos)'].astype(float) * 1.90
+            else:
+                df['Precio x Menor'] = '0.00'
+
             # Agregar columnas faltantes
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
@@ -65,7 +76,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                     if col not in df.columns:
                         df[col] = '0.00'
 
-                # Convertir valores numéricos para cálculos
+                # Convertir valores numéricos
                 cols_a_convertir = [
                     'Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor',
                     'Item1', 'Item2', 'Costo Armado'
@@ -131,11 +142,5 @@ if uploaded_file_productos is not None:
 st.header("👥 Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
-if uploaded_file_clientes is not None:
-    procesar_archivo(uploaded_file_clientes, "Clientes", {}, [], [], ['Id'], ['Id', 'Nombre', 'Apellido', 'Email', 'Teléfono'])
-
 st.header("📦 Convertidor para CSV de Pedidos")
 uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
-
-if uploaded_file_pedidos is not None:
-    procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id'], ['Id', 'Id Cliente', 'Fecha Pedido', 'Producto'])
