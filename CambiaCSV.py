@@ -51,11 +51,49 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
 
             # Ajustes específicos para Productos
             if tipo == "Productos":
-                # Calcular el precio x menor como 90% más que el costo en pesos
-                if 'Costo (Pesos)' in df.columns:
-                    df['Precio x Menor'] = df['Costo (Pesos)'].astype(float) * 1.90
-                else:
-                    df['Precio x Menor'] = '0.00'
+                # Historial de costos y precios
+                columnas_historial = [
+                    'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
+                    'Precio Venta Anterior', 'Precio x Menor Anterior'
+                ]
+                columnas_diferencias = [
+                    'Diferencia Costo (Pesos)', 'Diferencia Costo (USD)', 'Diferencia Precio x Mayor',
+                    'Diferencia Precio Venta', 'Diferencia Precio x Menor'
+                ]
+                columnas_costos = ['Item1', 'Item2', 'Costo Armado', 'Costo Compuesto', 'Ultimo en Modificar']
+
+                # Asegurar que existan todas las columnas necesarias
+                for col in columnas_historial + columnas_diferencias + columnas_costos:
+                    if col not in df.columns:
+                        df[col] = '0.00'
+
+                # Convertir a valores numéricos para cálculos
+                cols_a_convertir = [
+                    'Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor',
+                    'Item1', 'Item2', 'Costo Armado'
+                ] + columnas_historial
+
+                df[cols_a_convertir] = df[cols_a_convertir].astype(float)
+
+                # Guardar valores anteriores
+                df['Costo Anterior (Pesos)'] = df['Costo (Pesos)']
+                df['Costo Anterior (USD)'] = df['Costo (USD)']
+                df['Precio x Mayor Anterior'] = df['Precio x Mayor']
+                df['Precio Venta Anterior'] = df['Precio Venta']
+                df['Precio x Menor Anterior'] = df['Precio x Menor']
+
+                # Calcular diferencias
+                df['Diferencia Costo (Pesos)'] = df['Costo (Pesos)'] - df['Costo Anterior (Pesos)']
+                df['Diferencia Costo (USD)'] = df['Costo (USD)'] - df['Costo Anterior (USD)']
+                df['Diferencia Precio x Mayor'] = df['Precio x Mayor'] - df['Precio x Mayor Anterior']
+                df['Diferencia Precio Venta'] = df['Precio Venta'] - df['Precio Venta Anterior']
+                df['Diferencia Precio x Menor'] = df['Precio x Menor'] - df['Precio x Menor Anterior']
+
+                # Calcular Costo Compuesto
+                df['Costo Compuesto'] = df[['Item1', 'Item2', 'Costo Armado']].sum(axis=1)
+
+                # Agregar las nuevas columnas al orden esperado
+                columnas_completas.extend(columnas_historial + columnas_diferencias + columnas_costos)
 
             # Reordenar columnas asegurando que todas existan
             columnas_disponibles = [col for col in columnas_completas if col in df.columns]
@@ -98,27 +136,7 @@ if uploaded_file_productos is not None:
         'Costo (Pesos)', 'Costo (USD)', 'Etiquetas', 'Stock', 'StockSuc2', 'StockSucNat',
         'Proveedor', 'Categorias', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor',
         'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento', 'imagen', 'imagen_1', 'imagen_2', 'imagen_3',
-        'youtube_link', 'Costo Compuesto', 'Item1', 'Item2', 'Armado'
+        'youtube_link', 'Costo Compuesto', 'Item1', 'Item2', 'Costo Armado', 'Ultimo en Modificar'
     ]
 
     procesar_archivo(uploaded_file_productos, "Productos", columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id, columnas_completas_productos)
-
-# -------------------------
-# Sección de Clientes
-# -------------------------
-st.header("👥 Convertidor para CSV de Clientes")
-uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
-
-if uploaded_file_clientes is not None:
-    columnas_completas_clientes = ['Id', 'Id Cliente', 'Nombre', 'Apellido', 'Email', 'Teléfono', 'Dirección']
-    procesar_archivo(uploaded_file_clientes, "Clientes", {}, [], [], ['Id', 'Id Cliente'], columnas_completas_clientes)
-
-# -------------------------
-# Sección de Pedidos
-# -------------------------
-st.header("📦 Convertidor para CSV de Pedidos")
-uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
-
-if uploaded_file_pedidos is not None:
-    columnas_completas_pedidos = ['Id', 'Id Cliente', 'Fecha Pedido', 'Producto', 'Cantidad', 'Precio', 'Estado']
-    procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id', 'Id Cliente'], columnas_completas_pedidos)
