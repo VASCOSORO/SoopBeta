@@ -49,61 +49,23 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             if 'Costo FOB' in df.columns and 'Costo (USD)' not in df.columns:
                 df['Costo (USD)'] = df['Costo FOB']
 
-            # Si 'Precio x Menor' no existe, calcularlo como un 90% más del costo en pesos
-            if 'Costo (Pesos)' in df.columns and 'Precio x Menor' not in df.columns:
-                df['Precio x Menor'] = df['Costo (Pesos)'].astype(float) * 1.90
+            # Convertir a valores numéricos
+            columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta']
+            for col in columnas_numericas:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+            # Si 'Precio x Menor' no existe, calcularlo correctamente como un 90% más del costo en pesos
+            if 'Costo (Pesos)' in df.columns:
+                df['Precio x Menor'] = df['Costo (Pesos)'] * 1.90
 
             # Agregar columnas faltantes
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
                     df[columna] = '0.00'
 
-            # Ajustes específicos para Productos
-            if tipo == "Productos":
-                columnas_historial = [
-                    'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
-                    'Precio Venta Anterior', 'Precio x Menor Anterior'
-                ]
-                columnas_diferencias = [
-                    'Diferencia Costo (Pesos)', 'Diferencia Costo (USD)', 'Diferencia Precio x Mayor',
-                    'Diferencia Precio Venta', 'Diferencia Precio x Menor'
-                ]
-                columnas_costos = ['Item1', 'Item2', 'Costo Armado', 'Costo Compuesto', 'Ultimo en Modificar']
-
-                # Asegurar que las columnas de historial y diferencias existen sin duplicar
-                for col in columnas_historial + columnas_diferencias + columnas_costos:
-                    if col not in df.columns:
-                        df[col] = '0.00'
-
-                # Convertir valores numéricos
-                cols_a_convertir = [
-                    'Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor',
-                    'Item1', 'Item2', 'Costo Armado'
-                ] + columnas_historial
-
-                df[cols_a_convertir] = df[cols_a_convertir].astype(float)
-
-                # Guardar valores anteriores
-                df['Costo Anterior (Pesos)'] = df['Costo (Pesos)']
-                df['Costo Anterior (USD)'] = df['Costo (USD)']
-                df['Precio x Mayor Anterior'] = df['Precio x Mayor']
-                df['Precio Venta Anterior'] = df['Precio Venta']
-                df['Precio x Menor Anterior'] = df['Precio x Menor']
-
-                # Calcular diferencias
-                df['Diferencia Costo (Pesos)'] = df['Costo (Pesos)'] - df['Costo Anterior (Pesos)']
-                df['Diferencia Costo (USD)'] = df['Costo (USD)'] - df['Costo Anterior (USD)']
-                df['Diferencia Precio x Mayor'] = df['Precio x Mayor'] - df['Precio x Mayor Anterior']
-                df['Diferencia Precio Venta'] = df['Precio Venta'] - df['Precio Venta Anterior']
-                df['Diferencia Precio x Menor'] = df['Precio x Menor'] - df['Precio x Menor Anterior']
-
-                # Calcular Costo Compuesto
-                df['Costo Compuesto'] = df[['Item1', 'Item2', 'Costo Armado']].sum(axis=1)
-
-            # Eliminar duplicados en la lista de columnas
-            columnas_finales = list(dict.fromkeys(columnas_completas))
-
             # Reordenar columnas
+            columnas_finales = list(dict.fromkeys(columnas_completas))
             columnas_disponibles = [col for col in columnas_finales if col in df.columns]
             df = df[columnas_disponibles]
 
