@@ -25,15 +25,12 @@ def convertir_a_excel(df):
     return buffer.getvalue()
 
 def merge_duplicate_columns(df, sep=" | "):
-    # Para cada columna única, si aparece más de una vez, se fusionan los datos
-    unique_cols = pd.Series(df.columns).unique()
-    for col in unique_cols:
-        # Encuentra todas las ocurrencias exactas de esa columna
+    # Para cada columna única, si aparece más de una vez, se fusionan sus datos
+    unique_cols = list(df.columns)
+    for col in pd.unique(unique_cols):
         dup_cols = [c for c in df.columns if c == col]
         if len(dup_cols) > 1:
-            # Combina los valores de las columnas duplicadas por fila
             df[col] = df[dup_cols].apply(lambda row: sep.join([str(x) for x in row if pd.notna(x) and x != ""]), axis=1)
-            # Elimina las columnas duplicadas, dejando la primera
             df.drop(columns=dup_cols[1:], inplace=True)
     return df
 
@@ -47,7 +44,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 on_bad_lines='skip',
                 dtype=str
             )
-            # Limpieza de nombres: quitar espacios y normalizar
+            # Limpiar nombres de columnas: quitar espacios y normalizar
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
             
             # Corrección específica: si se encuentra "Precio Jugueterias" y "face", renombrarla a "Precio Venta"
@@ -64,7 +61,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 if columna in df.columns:
                     df[columna] = df[columna].apply(limpiar_id)
 
-            # Renombrar columnas según corresponda
+            # Renombrar columnas según el diccionario
             if columnas_a_renombrar:
                 df = df.rename(columns=columnas_a_renombrar)
 
@@ -72,12 +69,12 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             if columnas_a_eliminar:
                 df = df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore')
 
-            # Agregar columnas faltantes (vacías)
+            # Agregar columnas que falten en el CSV (con valor vacío)
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
                     df[columna] = ''
 
-            # Asegurar que existan todas las columnas requeridas
+            # Asegurar que existan todas las columnas requeridas (antes de fusionar duplicados)
             for col in columnas_completas:
                 if col not in df.columns:
                     df[col] = ''
@@ -85,7 +82,12 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             # Fusionar columnas duplicadas sin perder datos
             df = merge_duplicate_columns(df)
 
-            # Reordenar las columnas según lo definido
+            # Verificar nuevamente que todas las columnas requeridas estén presentes
+            for col in columnas_completas:
+                if col not in df.columns:
+                    df[col] = ''
+
+            # Reordenar las columnas según el orden definido
             df = df[columnas_completas]
 
             st.write(f"📊 **Archivo de {tipo} modificado:**")
