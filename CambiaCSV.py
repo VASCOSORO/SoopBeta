@@ -13,10 +13,12 @@ st.set_page_config(
 
 st.title("📁 Convertidor de CSV a Excel")
 
-def limpiar_id(valor):
-    if pd.isnull(valor):
-        return ""
-    return str(valor).replace('.', '')
+def detectar_delimitador(uploaded_file):
+    """ Detecta el delimitador correcto en la CSV """
+    delimitadores = [',', ';', '\t', '|']
+    first_lines = uploaded_file.read(1024).decode('ISO-8859-1')
+    uploaded_file.seek(0)  # Volver al inicio del archivo
+    return max(delimitadores, key=lambda d: first_lines.count(d))
 
 def convertir_a_excel(df):
     buffer = BytesIO()
@@ -27,14 +29,12 @@ def convertir_a_excel(df):
 def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id, columnas_completas):
     if uploaded_file is not None:
         try:
-            df = pd.read_csv(
-                uploaded_file,
-                encoding='ISO-8859-1',
-                sep=';',
-                on_bad_lines='skip',
-                dtype=str
-            )
+            delimitador = detectar_delimitador(uploaded_file)
+            df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=delimitador, on_bad_lines='skip', dtype=str)
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+
+            st.write(f"🔍 **Columnas detectadas en {tipo} (Original):**")
+            st.write(df.columns.tolist())
 
             # Renombrar columnas
             for col_viejo, col_nuevo in columnas_a_renombrar.items():
@@ -60,7 +60,8 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                     'Diferencia Precio Venta', 'Diferencia Precio x Menor'
                 ]
 
-                for col in columnas_historial + columnas_diferencias:
+                # Verificar y agregar si las columnas no existen
+                for col in columnas_historial + columnas_diferencias + ['Costo (Pesos)', 'Precio x Menor']:
                     if col not in df.columns:
                         df[col] = '0.00'
 
@@ -88,8 +89,9 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 # Agregar las nuevas columnas al orden esperado
                 columnas_completas.extend(columnas_historial + columnas_diferencias)
 
-            # Reordenar columnas
-            df = df[[col for col in columnas_completas if col in df.columns]]
+            # Reordenar columnas evitando errores si alguna no existe
+            columnas_disponibles = [col for col in columnas_completas if col in df.columns]
+            df = df[columnas_disponibles]
 
             st.write(f"📊 **Archivo de {tipo} modificado:**")
             st.dataframe(df)
@@ -153,4 +155,3 @@ uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos",
 if uploaded_file_pedidos is not None:
     columnas_completas_pedidos = ['Id', 'Id Cliente', 'Fecha Pedido', 'Producto', 'Cantidad', 'Precio', 'Estado']
     procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id', 'Id Cliente'], columnas_completas_pedidos)
-
