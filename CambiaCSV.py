@@ -51,7 +51,6 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
 
             # Ajustes específicos para Productos
             if tipo == "Productos":
-                # Historial de costos y precios
                 columnas_historial = [
                     'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
                     'Precio Venta Anterior', 'Precio x Menor Anterior'
@@ -62,12 +61,11 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 ]
                 columnas_costos = ['Item1', 'Item2', 'Costo Armado', 'Costo Compuesto', 'Ultimo en Modificar']
 
-                # Asegurar que existan todas las columnas necesarias
                 for col in columnas_historial + columnas_diferencias + columnas_costos:
                     if col not in df.columns:
                         df[col] = '0.00'
 
-                # Convertir a valores numéricos para cálculos
+                # Convertir valores numéricos para cálculos
                 cols_a_convertir = [
                     'Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor',
                     'Item1', 'Item2', 'Costo Armado'
@@ -92,10 +90,9 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 # Calcular Costo Compuesto
                 df['Costo Compuesto'] = df[['Item1', 'Item2', 'Costo Armado']].sum(axis=1)
 
-                # Agregar las nuevas columnas al orden esperado
                 columnas_completas.extend(columnas_historial + columnas_diferencias + columnas_costos)
 
-            # Reordenar columnas asegurando que todas existan
+            # Reordenar columnas
             columnas_disponibles = [col for col in columnas_completas if col in df.columns]
             df = df[columnas_disponibles]
 
@@ -116,27 +113,29 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             st.error(f"❌ Ocurrió un error al procesar el archivo de {tipo}: {e}")
 
 # -------------------------
-# Sección de Productos
+# Convertidores
 # -------------------------
 st.header("🛍️ Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
 
 if uploaded_file_productos is not None:
-    columnas_a_renombrar = {
-        'Precio': 'Precio x Mayor',
-        'Precio Jugueterias face': 'Precio Venta',
-    }
-    columnas_a_eliminar = ['Precio 25 plus', 'Precio face+50', 'Precio BONUS', 'Precio Mayorista', 'Precio Online', 'Precio face Dolar']
-    columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento', 'Columna', 'StockSuc2', 'StockSucNat']
-    columnas_id = ['Id']
+    procesar_archivo(uploaded_file_productos, "Productos", 
+        columnas_a_renombrar={'Precio': 'Precio x Mayor', 'Precio Jugueterias face': 'Precio Venta'},
+        columnas_a_eliminar=['Precio 25 plus', 'Precio face+50', 'Precio BONUS', 'Precio Mayorista', 'Precio Online'],
+        columnas_a_agregar=['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento', 'Columna', 'StockSuc2', 'StockSucNat'],
+        columnas_id=['Id'],
+        columnas_completas=['Id', 'Codigo', 'Nombre', 'Activo', 'Fecha Creado', 'Fecha Modificado', 'Descripcion', 'Orden', 
+            'Codigo de Barras', 'Costo (Pesos)', 'Costo (USD)', 'Stock', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 
+            'Costo Compuesto', 'Ultimo en Modificar'])
 
-    columnas_completas_productos = [
-        'Id', 'Codigo', 'Nombre', 'Activo', 'Fecha Creado', 'Fecha Modificado', 'Descripcion', 'Orden',
-        'Codigo de Barras', 'unidad por bulto', 'Presentacion/paquete', 'forzar venta x cantidad',
-        'Costo (Pesos)', 'Costo (USD)', 'Etiquetas', 'Stock', 'StockSuc2', 'StockSucNat',
-        'Proveedor', 'Categorias', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor',
-        'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento', 'imagen', 'imagen_1', 'imagen_2', 'imagen_3',
-        'youtube_link', 'Costo Compuesto', 'Item1', 'Item2', 'Costo Armado', 'Ultimo en Modificar'
-    ]
+st.header("👥 Convertidor para CSV de Clientes")
+uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
-    procesar_archivo(uploaded_file_productos, "Productos", columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id, columnas_completas_productos)
+if uploaded_file_clientes is not None:
+    procesar_archivo(uploaded_file_clientes, "Clientes", {}, [], [], ['Id'], ['Id', 'Nombre', 'Apellido', 'Email', 'Teléfono'])
+
+st.header("📦 Convertidor para CSV de Pedidos")
+uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
+
+if uploaded_file_pedidos is not None:
+    procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id'], ['Id', 'Id Cliente', 'Fecha Pedido', 'Producto'])
