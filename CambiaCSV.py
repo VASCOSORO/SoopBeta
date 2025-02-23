@@ -57,10 +57,10 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-            # Recalcular `Precio x Menor` solo si está vacío
-            if 'Precio x Menor' in df.columns:
+            # Calcular `Precio x Menor` correctamente como `Precio Venta * 1.90`
+            if 'Precio Venta' in df.columns:
                 df['Precio x Menor'] = df.apply(
-                    lambda row: row['Costo (Pesos)'] * 1.90 if pd.isna(row['Precio x Menor']) or row['Precio x Menor'] == 0 else row['Precio x Menor'],
+                    lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio x Menor')) or row.get('Precio x Menor', 0) == 0 else row['Precio x Menor'],
                     axis=1
                 )
 
