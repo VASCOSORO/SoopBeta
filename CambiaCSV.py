@@ -50,10 +50,8 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 df['Costo (USD)'] = df['Costo FOB']
 
             # Si 'Precio x Menor' no existe, calcularlo como un 90% más del costo en pesos
-            if 'Costo (Pesos)' in df.columns:
+            if 'Costo (Pesos)' in df.columns and 'Precio x Menor' not in df.columns:
                 df['Precio x Menor'] = df['Costo (Pesos)'].astype(float) * 1.90
-            else:
-                df['Precio x Menor'] = '0.00'
 
             # Agregar columnas faltantes
             for columna in columnas_a_agregar:
@@ -72,6 +70,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 ]
                 columnas_costos = ['Item1', 'Item2', 'Costo Armado', 'Costo Compuesto', 'Ultimo en Modificar']
 
+                # Asegurar que las columnas de historial y diferencias existen sin duplicar
                 for col in columnas_historial + columnas_diferencias + columnas_costos:
                     if col not in df.columns:
                         df[col] = '0.00'
@@ -101,10 +100,11 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 # Calcular Costo Compuesto
                 df['Costo Compuesto'] = df[['Item1', 'Item2', 'Costo Armado']].sum(axis=1)
 
-                columnas_completas.extend(columnas_historial + columnas_diferencias + columnas_costos)
+            # Eliminar duplicados en la lista de columnas
+            columnas_finales = list(dict.fromkeys(columnas_completas))
 
             # Reordenar columnas
-            columnas_disponibles = [col for col in columnas_completas if col in df.columns]
+            columnas_disponibles = [col for col in columnas_finales if col in df.columns]
             df = df[columnas_disponibles]
 
             st.write(f"📊 **Archivo de {tipo} modificado:**")
