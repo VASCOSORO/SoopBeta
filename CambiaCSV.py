@@ -13,6 +13,9 @@ st.set_page_config(
 
 st.title("📁 Convertidor de CSV a Excel")
 
+# URL base para las imágenes
+URL_IMAGENES = "https://tuservidor.com/imagenes/"
+
 def detectar_delimitador(uploaded_file):
     delimitadores = [',', ';', '\t', '|']
     first_lines = uploaded_file.read(1024).decode('ISO-8859-1')
@@ -63,6 +66,10 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                     lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio x Menor')) or row.get('Precio x Menor', 0) == 0 else row['Precio x Menor'],
                     axis=1
                 )
+
+            # Si la columna "Imagen" existe, transformar en link
+            if 'Imagen' in df.columns:
+                df['Imagen'] = df['Imagen'].apply(lambda x: x if pd.isna(x) or x.startswith("http") else URL_IMAGENES + x)
 
             # Agregar columnas faltantes
             for columna in columnas_a_agregar:
@@ -126,17 +133,6 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
 # -------------------------
 st.header("🛍️ Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
-
-if uploaded_file_productos is not None:
-    procesar_archivo(uploaded_file_productos, "Productos", 
-        columnas_a_renombrar={'Precio': 'Precio x Mayor', 'Precio Jugueterias face': 'Precio Venta'},
-        columnas_a_eliminar=['Precio 25 plus', 'Precio face+50', 'Precio BONUS', 'Precio Mayorista'],
-        columnas_a_agregar=['Proveedor', 'Pasillo', 'Estante', 'Columna', 'Fecha de Vencimiento', 'Imagen', 'Marca', 'Forzar Venta x Multiplos', 'youtube_link', 'Ultimo en Modificar'],
-        columnas_id=['Id'],
-        columnas_completas=['Id', 'Codigo', 'Nombre', 'Activo', 'Fecha Creado', 'Fecha Modificado', 'Descripcion', 'Orden',
-            'Codigo de Barras', 'Unidad por Bulto', 'Inner', 'Forzar Venta x Multiplos', 'Costo (Pesos)', 'Costo (USD)',
-            'Stock', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 'Categorias', 'Marca', 'Proveedor', 'Costo Compuesto',
-            'Ultimo en Modificar', 'Imagen', 'Pasillo', 'Estante', 'Columna', 'youtube_link'])
 
 st.header("👥 Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
