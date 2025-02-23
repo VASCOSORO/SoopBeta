@@ -55,7 +55,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 df['Costo (USD)'] = df['Costo FOB']
 
             # Convertir valores numéricos
-            columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor']
+            columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 'StockSuc2', 'StockSucNat']
             for col in columnas_numericas:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -64,6 +64,13 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             if 'Precio Venta' in df.columns:
                 df['Precio x Menor'] = df.apply(
                     lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio x Menor')) or row.get('Precio x Menor', 0) == 0 else row['Precio x Menor'],
+                    axis=1
+                )
+
+            # Calcular `Precio Online` como `Precio Venta * 1.90` si está vacío
+            if 'Precio Online' in df.columns:
+                df['Precio Online'] = df.apply(
+                    lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio Online')) or row.get('Precio Online', 0) == 0 else row['Precio Online'],
                     axis=1
                 )
 
@@ -76,7 +83,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 if columna not in df.columns:
                     df[columna] = ''
 
-            # Historial de precios y diferencias
+            # Asegurar historial de precios
             columnas_historial = [
                 'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
                 'Precio Venta Anterior', 'Precio x Menor Anterior'
@@ -85,9 +92,8 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 'Diferencia Costo (Pesos)', 'Diferencia Costo (USD)', 'Diferencia Precio x Mayor',
                 'Diferencia Precio Venta', 'Diferencia Precio x Menor'
             ]
-            columnas_costos = ['Item1', 'Item2', 'Costo Armado', 'Costo Compuesto', 'Ultimo en Modificar']
 
-            for col in columnas_historial + columnas_diferencias + columnas_costos:
+            for col in columnas_historial + columnas_diferencias:
                 if col not in df.columns:
                     df[col] = 0.00
 
@@ -105,13 +111,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             df['Diferencia Precio Venta'] = df['Precio Venta'] - df['Precio Venta Anterior']
             df['Diferencia Precio x Menor'] = df['Precio x Menor'] - df['Precio x Menor Anterior']
 
-            df['Costo Compuesto'] = df[['Item1', 'Item2', 'Costo Armado']].sum(axis=1)
-
-            # Reordenar columnas sin duplicados
-            columnas_finales = list(dict.fromkeys(columnas_completas + columnas_historial + columnas_diferencias + columnas_costos))
-            columnas_disponibles = [col for col in columnas_finales if col in df.columns]
-            df = df[columnas_disponibles]
-
+            # Mostrar tabla final
             st.write(f"📊 **Archivo de {tipo} modificado:**")
             st.dataframe(df)
 
