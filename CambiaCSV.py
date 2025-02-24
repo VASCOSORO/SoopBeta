@@ -50,14 +50,6 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             # Eliminar columnas innecesarias
             df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore', inplace=True)
 
-            # Si "Costo (Pesos)" no existe, usar "Costo"
-            if 'Costo' in df.columns and 'Costo (Pesos)' not in df.columns:
-                df['Costo (Pesos)'] = df['Costo']
-
-            # Si "Costo (USD)" no existe, usar "Costo FOB"
-            if 'Costo FOB' in df.columns and 'Costo (USD)' not in df.columns:
-                df['Costo (USD)'] = df['Costo FOB']
-
             # Convertir valores numéricos
             columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 'StockSuc2', 'StockSucNat']
             for col in columnas_numericas:
