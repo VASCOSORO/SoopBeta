@@ -11,16 +11,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.title("📁 Convertidor de CSV a Excel")
+st.title("📁 Convertidor de CSV")
 
-# URL base para las imágenes
-URL_IMAGENES = "https://tuservidor.com/imagenes/"
-
-def detectar_delimitador(uploaded_file):
-    delimitadores = [',', ';', '\t', '|']
-    first_lines = uploaded_file.read(1024).decode('ISO-8859-1')
-    uploaded_file.seek(0)
-    return max(delimitadores, key=lambda d: first_lines.count(d))
+def limpiar_id(valor):
+    if pd.isnull(valor):
+        return ""
+    return str(valor).replace('.', '')
 
 def convertir_a_excel(df):
     buffer = BytesIO()
@@ -28,88 +24,43 @@ def convertir_a_excel(df):
         df.to_excel(writer, index=False, sheet_name='Hoja1')
     return buffer.getvalue()
 
-def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id, columnas_completas):
+def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id):
     if uploaded_file is not None:
         try:
-            delimitador = detectar_delimitador(uploaded_file)
-            df = pd.read_csv(uploaded_file, encoding='ISO-8859-1', sep=delimitador, on_bad_lines='skip', dtype=str)
+            df = pd.read_csv(
+                uploaded_file,
+                encoding='ISO-8859-1',
+                sep=';',
+                on_bad_lines='skip',
+                dtype=str
+            )
             df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+            
+            # Verificar el nombre exacto de la columna y corregirlo
+            for col in df.columns:
+                if 'Precio Jugueterias' in col and 'face' in col:
+                    df.rename(columns={col: 'Precio Venta'}, inplace=True)
+                    break
 
-            st.write(f"🔍 **Columnas detectadas en {tipo} (Original):**")
+            st.write(f"🔍 **Columnas encontradas en {tipo}:**")
             st.write(df.columns.tolist())
 
-            # Mostrar archivo original antes del procesamiento
-            st.write(f"📊 **Vista previa del archivo original de {tipo}:**")
-            st.dataframe(df.head(10))
+            for columna in columnas_id:
+                if columna in df.columns:
+                    df[columna] = df[columna].apply(limpiar_id)
 
-            # Renombrar columnas
-            for col_viejo, col_nuevo in columnas_a_renombrar.items():
-                if col_viejo in df.columns:
-                    df.rename(columns={col_viejo: col_nuevo}, inplace=True)
+            if columnas_a_renombrar:
+                df = df.rename(columns=columnas_a_renombrar)
 
-            # Eliminar columnas innecesarias
-            df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore', inplace=True)
+            if columnas_a_eliminar:
+                df = df.drop(columns=[col for col in columnas_a_eliminar if col in df.columns], errors='ignore')
 
-            # Convertir valores numéricos
-            columnas_numericas = ['Costo (Pesos)', 'Costo (USD)', 'Precio x Mayor', 'Precio Venta', 'Precio x Menor', 'StockSuc2', 'StockSucNat']
-            for col in columnas_numericas:
-                if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-
-            # Calcular `Precio x Menor` como `Precio Venta * 1.90` si está vacío
-            if 'Precio Venta' in df.columns:
-                df['Precio x Menor'] = df.apply(
-                    lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio x Menor')) or row.get('Precio x Menor', 0) == 0 else row['Precio x Menor'],
-                    axis=1
-                )
-
-            # Calcular `Precio Online` como `Precio Venta * 1.90` si está vacío
-            if 'Precio Online' in df.columns:
-                df['Precio Online'] = df.apply(
-                    lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio Online')) or row.get('Precio Online', 0) == 0 else row['Precio Online'],
-                    axis=1
-                )
-
-            # Transformar "Imagen" en link si es necesario
-            if 'Imagen' in df.columns:
-                df['Imagen'] = df['Imagen'].apply(lambda x: x if pd.isna(x) or x.startswith("http") else URL_IMAGENES + x)
-
-            # Agregar columnas faltantes
             for columna in columnas_a_agregar:
                 if columna not in df.columns:
                     df[columna] = ''
 
-            # Historial de precios y diferencias
-            columnas_historial = [
-                'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
-                'Precio Venta Anterior', 'Precio x Menor Anterior'
-            ]
-            columnas_diferencias = [
-                'Diferencia Costo (Pesos)', 'Diferencia Costo (USD)', 'Diferencia Precio x Mayor',
-                'Diferencia Precio Venta', 'Diferencia Precio x Menor'
-            ]
-
-            for col in columnas_historial + columnas_diferencias:
-                if col not in df.columns:
-                    df[col] = 0.00
-
-            # Guardar valores anteriores
-            df['Costo Anterior (Pesos)'] = df['Costo (Pesos)']
-            df['Costo Anterior (USD)'] = df['Costo (USD)']
-            df['Precio x Mayor Anterior'] = df['Precio x Mayor']
-            df['Precio Venta Anterior'] = df['Precio Venta']
-            df['Precio x Menor Anterior'] = df['Precio x Menor']
-
-            # Calcular diferencias
-            df['Diferencia Costo (Pesos)'] = df['Costo (Pesos)'] - df['Costo Anterior (Pesos)']
-            df['Diferencia Costo (USD)'] = df['Costo (USD)'] - df['Costo Anterior (USD)']
-            df['Diferencia Precio x Mayor'] = df['Precio x Mayor'] - df['Precio x Mayor Anterior']
-            df['Diferencia Precio Venta'] = df['Precio Venta'] - df['Precio Venta Anterior']
-            df['Diferencia Precio x Menor'] = df['Precio x Menor'] - df['Precio x Menor Anterior']
-
-            # Mostrar archivo procesado antes de la descarga
-            st.write(f"📊 **Vista previa del archivo modificado de {tipo}:**")
-            st.dataframe(df.head(10))
+            st.write(f"📊 **Archivo de {tipo} modificado:**")
+            st.dataframe(df)
 
             excel = convertir_a_excel(df)
             timestamp = datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')).strftime("%Y%m%d_%H%M%S")
@@ -124,14 +75,50 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
         except Exception as e:
             st.error(f"❌ Ocurrió un error al procesar el archivo de {tipo}: {e}")
 
-# -------------------------
-# Convertidores
-# -------------------------
 st.header("🛍️ Convertidor para CSV de Productos")
 uploaded_file_productos = st.file_uploader("📤 Subí tu archivo CSV de Productos", type=["csv"], key="productos")
+
+if uploaded_file_productos is not None:
+    columnas_a_renombrar = {
+        'Precio': 'Precio x Mayor',
+        'Costo FOB': 'Costo usd',
+        'Precio Precio face Dolar': 'Precio USD'
+    }
+    columnas_a_eliminar = ['Precio 25 plus', 'Precio face+50', 'Precio BONUS', 'Precio Mayorista', 'Precio Online', 'Precio face Dolar']
+    columnas_a_agregar = ['Proveedor', 'Pasillo', 'Estante', 'Fecha de Vencimiento', 'Columna', 'Stock Suc2', 'Stock SucNat']
+    columnas_id = ['Id']
+
+    procesar_archivo(uploaded_file_productos, "Productos", columnas_a_renombrar, columnas_a_eliminar, columnas_a_agregar, columnas_id)
 
 st.header("👥 Convertidor para CSV de Clientes")
 uploaded_file_clientes = st.file_uploader("📤 Subí tu archivo CSV de Clientes", type=["csv"], key="clientes_file")
 
+if uploaded_file_clientes is not None:
+    procesar_archivo(uploaded_file_clientes, "Clientes", {}, [], [], ['Id', 'Id Cliente'])
+
 st.header("📦 Convertidor para CSV de Pedidos")
 uploaded_file_pedidos = st.file_uploader("📤 Subí tu archivo CSV de Pedidos", type=["csv"], key="pedidos_file")
+
+if uploaded_file_pedidos is not None:
+    procesar_archivo(uploaded_file_pedidos, "Pedidos", {}, [], [], ['Id', 'Id Cliente'])
+
+footer = """
+<style>
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f1f1f1;
+    color: #555;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+}
+</style>
+<div class="footer">
+    Powered by VASCO.SORO
+</div>
+"""
+
+st.markdown(footer, unsafe_allow_html=True)
