@@ -38,6 +38,10 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             st.write(f"🔍 **Columnas detectadas en {tipo} (Original):**")
             st.write(df.columns.tolist())
 
+            # Mostrar archivo original antes del procesamiento
+            st.write(f"📊 **Vista previa del archivo original de {tipo}:**")
+            st.dataframe(df.head(10))
+
             # Renombrar columnas
             for col_viejo, col_nuevo in columnas_a_renombrar.items():
                 if col_viejo in df.columns:
@@ -60,7 +64,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-            # Calcular `Precio x Menor` correctamente como `Precio Venta * 1.90`
+            # Calcular `Precio x Menor` como `Precio Venta * 1.90` si está vacío
             if 'Precio Venta' in df.columns:
                 df['Precio x Menor'] = df.apply(
                     lambda row: row['Precio Venta'] * 1.90 if pd.isna(row.get('Precio x Menor')) or row.get('Precio x Menor', 0) == 0 else row['Precio x Menor'],
@@ -74,7 +78,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                     axis=1
                 )
 
-            # Si la columna "Imagen" existe, transformar en link
+            # Transformar "Imagen" en link si es necesario
             if 'Imagen' in df.columns:
                 df['Imagen'] = df['Imagen'].apply(lambda x: x if pd.isna(x) or x.startswith("http") else URL_IMAGENES + x)
 
@@ -83,7 +87,7 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
                 if columna not in df.columns:
                     df[columna] = ''
 
-            # Asegurar historial de precios
+            # Historial de precios y diferencias
             columnas_historial = [
                 'Costo Anterior (Pesos)', 'Costo Anterior (USD)', 'Precio x Mayor Anterior',
                 'Precio Venta Anterior', 'Precio x Menor Anterior'
@@ -111,9 +115,9 @@ def procesar_archivo(uploaded_file, tipo, columnas_a_renombrar, columnas_a_elimi
             df['Diferencia Precio Venta'] = df['Precio Venta'] - df['Precio Venta Anterior']
             df['Diferencia Precio x Menor'] = df['Precio x Menor'] - df['Precio x Menor Anterior']
 
-            # Mostrar tabla final
-            st.write(f"📊 **Archivo de {tipo} modificado:**")
-            st.dataframe(df)
+            # Mostrar archivo procesado antes de la descarga
+            st.write(f"📊 **Vista previa del archivo modificado de {tipo}:**")
+            st.dataframe(df.head(10))
 
             excel = convertir_a_excel(df)
             timestamp = datetime.now(pytz.timezone('America/Argentina/Buenos_Aires')).strftime("%Y%m%d_%H%M%S")
